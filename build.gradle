@@ -1,0 +1,37 @@
+plugins {
+	id 'com.gradle.plugin-publish' version '0.9.1'
+	id 'java'
+}
+
+group = 'org.gosu-lang.gosu'
+version = '0.1-alpha-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+    mavenLocal() //TODO delete me before publishing
+}
+
+dependencies {
+    compile gradleApi()
+    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: project.gosuVersion
+    compile group: 'org.gosu-lang.gosu', name: 'gosu-core', version: project.gosuVersion // compilation will require this jar at compile-time, not runtime
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile gradleTestKit()
+}
+
+pluginBundle {
+    website = 'http://gosu-lang.org'
+    vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
+    description = 'Gosu language compiler for Gradle'
+    tags = ['gosu']
+
+    plugins {
+        gosuPlugin {
+            id = 'org.gosu-lang.gosu'
+            displayName = 'Gosu Gradle Plugin'
+        }
+    }
+}
