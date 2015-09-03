@@ -103,20 +103,38 @@ publishing {
     }
 }
 
+def isSnapshot = project.version.endsWith('-SNAPSHOT')
+
 /**
  * Fetches the publishing credentials from the build machine's env vars
  */
-task setupPluginUpload << {
 
-    def key = System.env.gradlePublishKey
-    def secret = System.env.gradlePublishSecret
+task setupPluginUpload {
 
-    if( !key || !secret ) {
-        throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
+    onlyIf {
+        !isSnapshot
     }
 
-    System.properties.setProperty('gradle.publish.key', key)
-    System.properties.setProperty('gradle.publish.secret', secret)
+    doLast {
+        def key = System.env.gradlePublishKey
+        def secret = System.env.gradlePublishSecret
+
+        if( !key || !secret ) {
+            //throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
+            println('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
+            return
+        }
+
+        System.properties.setProperty('gradle.publish.key', key)
+        System.properties.setProperty('gradle.publish.secret', secret)
+    }
+
 }
 
 tasks.publishPlugins.dependsOn tasks.setupPluginUpload
+
+// the gradle plugin portal isn't really compatible with SNAPSHOT versions
+// https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
+if (isSnapshot) {
+    publishPlugins.enabled = false
+}
