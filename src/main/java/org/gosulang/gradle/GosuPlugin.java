@@ -19,9 +19,7 @@ import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.SourceSet;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 public class GosuPlugin implements Plugin<Project> {
 
@@ -61,24 +59,25 @@ public class GosuPlugin implements Plugin<Project> {
 
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
 
-      sourceSet.getAllSource().source(gosuSourceSet.getGosu());
-
       sourceSet.getResources().getFilter().exclude( element -> {
         return gosuSourceSet.getGosu().contains(element.getFile());
       });
 
-      configureGosuCompile(javaBasePlugin, sourceSet);
+      sourceSet.getAllSource().source(gosuSourceSet.getGosu());
+
+      configureGosuCompile(javaBasePlugin, sourceSet, gosuSourceSet);
     });
   }
 
-  private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet) {
+  private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
     GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
-    gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
     javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
-    gosuCompile.setDescription("Compiles the $sourceSet.name Gosu source");
-    gosuCompile.setSource(((GosuSourceSet) sourceSet).getGosu()); //KJM setSource blows away existing value (ala compileJava)
-    gosuCompile.setSourceRoots(((GosuSourceSet) sourceSet).getGosu().getSrcDirs());
+    gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
+    gosuCompile.setDescription("Compiles the " + sourceSet.getName() + " Gosu source");
+    gosuCompile.setSource(gosuSourceSet.getGosu());
+    gosuCompile.setSourceRoots(gosuSourceSet.getGosu().getSrcDirs());
+
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 
