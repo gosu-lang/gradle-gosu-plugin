@@ -34,6 +34,7 @@ pluginBundle {
         gosuPlugin {
             id = 'org.gosu-lang.gosu'
             displayName = 'Gosu Gradle Plugin'
+            version = '0.1-alpha'
         }
     }
 }
@@ -101,3 +102,21 @@ publishing {
         mavenLocal()
     }
 }
+
+/**
+ * Fetches the publishing credentials from the build machine's env vars
+ */
+task setupPluginUpload << {
+
+    def key = System.env.gradlePublishKey
+    def secret = System.env.gradlePublishSecret
+
+    if( !key || !secret ) {
+        throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
+    }
+
+    System.properties.setProperty('gradle.publish.key', key)
+    System.properties.setProperty('gradle.publish.secret', secret)
+}
+
+tasks.publishPlugins.dependsOn tasks.setupPluginUpload
