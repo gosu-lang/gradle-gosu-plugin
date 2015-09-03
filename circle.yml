@@ -15,4 +15,4 @@ general:
 test:
   # Call './gradlew clean build pTML' instead of the default 'mvn integration-test'
   override:
-    - ./gradlew clean build pTML
+    - ./gradlew clean build pTML -is --console=plain
