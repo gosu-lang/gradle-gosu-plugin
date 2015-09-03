@@ -13,9 +13,9 @@ general:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
-  # Call './gradlew clean build pTML' instead of the default 'mvn integration-test'
+  # Call './gradlew publish publishPlugins' instead of the default 'mvn integration-test'
   override:
-    - ./gradlew clean build pTML -is --console=plain
+    - ./gradlew publish publishPlugins -is --console=plain
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
