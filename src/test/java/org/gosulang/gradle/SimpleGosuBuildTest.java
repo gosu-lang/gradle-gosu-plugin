@@ -66,7 +66,7 @@ public class SimpleGosuBuildTest {
     String buildFileContent =
         "buildscript {" + LF +
         "    repositories {" + LF +
-        "        mavenLocal() " + LF +
+        "        jcenter() " + LF +
         "    }" + LF +
         "    dependencies {" + LF +
         "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
@@ -75,10 +75,9 @@ public class SimpleGosuBuildTest {
         "    }" + LF +
         "}" + LF +
         "repositories {" + LF +
-        "    mavenLocal() " + LF +
+        "    jcenter() " + LF +
         "}" + LF +
-        "apply plugin: 'org.gosu-lang.gosu' " + LF +
-        "}";
+        "apply plugin: 'org.gosu-lang.gosu'";
     writeFile(_buildFile, buildFileContent);
 
     String simplePogoContent =
