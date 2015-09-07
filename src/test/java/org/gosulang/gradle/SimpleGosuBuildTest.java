@@ -67,6 +67,9 @@ public class SimpleGosuBuildTest {
         "buildscript {" + LF +
         "    repositories {" + LF +
         "        jcenter() " + LF +
+        "        maven {" + LF +
+        "            url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
+        "        }" + LF +
         "    }" + LF +
         "    dependencies {" + LF +
         "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
@@ -76,6 +79,9 @@ public class SimpleGosuBuildTest {
         "}" + LF +
         "repositories {" + LF +
         "    jcenter() " + LF +
+        "    maven {" + LF +
+        "        url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
+        "    }" + LF +
         "}" + LF +
         "apply plugin: 'org.gosu-lang.gosu'";
     writeFile(_buildFile, buildFileContent);

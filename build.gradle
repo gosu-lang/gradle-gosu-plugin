@@ -12,6 +12,10 @@ targetCompatibility = 1.8
 
 repositories {
 	jcenter()
+    //for Gosu snapshot builds:
+    maven {
+        url 'http://gosu-lang.org/nexus/content/repositories/snapshots'
+    }
 }
 
 dependencies {
