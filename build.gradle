@@ -103,10 +103,10 @@ publishing {
     }
     repositories {
         maven {
-            url 'http://gosu-lang.org/nexus/content/repositories/snapshots'
+            url 'http://gosu-lang.org/nexus/content/repositories/snapshots/'
             credentials {
-                username System.getenv('SNAPSHOT_USER')
-                password System.getenv('SNAPSHOT_PASS')
+                username System.env.SNAPSHOT_USER
+                password System.env.SNAPSHOT_PASS
             }
         }
     }

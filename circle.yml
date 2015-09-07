@@ -4,6 +4,8 @@ machine:
   java:
     version:
       oraclejdk8
+  environment:
+    TERM: dumb
 
 general:
   branches:
@@ -15,7 +17,7 @@ general:
 test:
   # Call './gradlew build publish publishPlugins' instead of the default 'mvn integration-test'
   override:
-    - ./gradlew build publish publishPlugins -is --console=plain
+    - ./gradlew build publish publishPlugins -is
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
