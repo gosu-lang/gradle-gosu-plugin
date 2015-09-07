@@ -102,7 +102,13 @@ publishing {
         }
     }
     repositories {
-        mavenLocal()
+        maven {
+            url 'http://gosu-lang.org/nexus/content/repositories/snapshots'
+            credentials {
+                username System.getenv('SNAPSHOT_USER')
+                password System.getenv('SNAPSHOT_PASS')
+            }
+        }
     }
 }
 
@@ -123,8 +129,7 @@ task setupPluginUpload {
         def secret = System.env.gradlePublishSecret
 
         if( !key || !secret ) {
-            //throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
-            println('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
+            throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
             return
         }
 
@@ -139,5 +144,9 @@ tasks.publishPlugins.dependsOn tasks.setupPluginUpload
 // the gradle plugin portal isn't really compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
+    publish.enabled = true
     publishPlugins.enabled = false
+} else {
+    publish.enabled = false
+    publishPlugins.enabled = true
 }
