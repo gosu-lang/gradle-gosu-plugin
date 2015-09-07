@@ -22,13 +22,11 @@ sourceSets {
 
 ## How do I use this?
 
-The latest release version is available here: https://plugins.gradle.org/plugin/org.gosu-lang.gosu
-
-Instructions to apply the plugin to a Gradle build are shown.
+The latest release version, and instructions to apply it, is available here: https://plugins.gradle.org/plugin/org.gosu-lang.gosu
 
 It is not necessary to create any other dependencies on Gosu JARs; the plugin automates this process.
 
-Additionally, snapshots are available from http://gosu-lang.org/nexus/content/repositories/snapshots
+Additionally, snapshots are available from http://gosu-lang.org/nexus/content/repositories/snapshots/org/gosu-lang/gosu/gradle-gosu-plugin/
 
 ### Build status
 [![Circle CI](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master.svg?style=svg)](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master)
