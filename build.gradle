@@ -37,7 +37,7 @@ pluginBundle {
         gosuPlugin {
             id = 'org.gosu-lang.gosu'
             displayName = 'Gosu Gradle Plugin'
-            version = '0.1-alpha'
+            version = project.gosuVersion
         }
     }
 }
