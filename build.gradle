@@ -117,7 +117,6 @@ def isSnapshot = project.version.endsWith('-SNAPSHOT')
 /**
  * Fetches the publishing credentials from the build machine's env vars
  */
-
 task setupPluginUpload {
 
     onlyIf {
@@ -130,7 +129,6 @@ task setupPluginUpload {
 
         if( !key || !secret ) {
             throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
-            return
         }
 
         System.properties.setProperty('gradle.publish.key', key)
