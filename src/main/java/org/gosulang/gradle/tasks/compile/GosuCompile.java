@@ -1,6 +1,6 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gosulang.gradle.GosuPlugin;
+import org.gosulang.gradle.GosuBasePlugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.file.FileCollection;
@@ -30,7 +30,6 @@ public class GosuCompile extends AbstractCompile {
   private final CompileOptions _compileOptions = new CompileOptions();
 
   private static final Logger LOGGER = Logging.getLogger(GosuCompile.class);
-
 
   @Override
   @TaskAction
@@ -75,7 +74,7 @@ public class GosuCompile extends AbstractCompile {
 
     //Force gosu-core into the classpath. Normally it's a runtime dependency but compilation requires it.
     Set<ResolvedArtifact> projectDeps = project.getConfigurations().getByName("runtime").getResolvedConfiguration().getResolvedArtifacts();
-    File gosuCore = GosuPlugin.getArtifactWithName("gosu-core", projectDeps).getFile();
+    File gosuCore = GosuBasePlugin.getArtifactWithName("gosu-core", projectDeps).getFile();
     spec.setGosuClasspath( Collections.singletonList( gosuCore ) );
 
     if(LOGGER.isDebugEnabled()) {
