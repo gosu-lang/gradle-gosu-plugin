@@ -5,7 +5,6 @@ import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.plugins.DslObject;
@@ -15,7 +14,6 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
 
 import javax.inject.Inject;
-import java.util.Set;
 
 public class GosuBasePlugin implements Plugin<Project> {
 
@@ -36,7 +34,6 @@ public class GosuBasePlugin implements Plugin<Project> {
 
     configureCompileDefaults();
     configureSourceSetDefaults(javaBasePlugin);
-    addGosuRuntimeDependencies();
   }
 
   private void configureCompileDefaults() {
@@ -75,31 +72,6 @@ public class GosuBasePlugin implements Plugin<Project> {
     gosuCompile.setSourceRoots(gosuSourceSet.getGosu().getSrcDirs());
 
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
-  }
-
-  private void addGosuRuntimeDependencies() {
-    Set<ResolvedArtifact> buildScriptDeps = _project.getBuildscript().getConfigurations().getByName("classpath").getResolvedConfiguration().getResolvedArtifacts();
-    ResolvedArtifact gosuCore = GosuBasePlugin.getArtifactWithName("gosu-core", buildScriptDeps);
-    ResolvedArtifact gosuCoreApi = GosuBasePlugin.getArtifactWithName("gosu-core-api", buildScriptDeps);
-
-    //inject Gosu jar dependencies into the classpath of the project implementing this plugin
-    if(gosuCore != null) {
-      _project.getDependencies().add("runtime", gosuCore.getModuleVersion().getId().toString());
-    }
-    if(gosuCoreApi != null) {
-      _project.getDependencies().add("compile", gosuCoreApi.getModuleVersion().getId().toString());
-    }
-  }
-
-  public static ResolvedArtifact getArtifactWithName(final String name, final Set<ResolvedArtifact> artifacts) {
-    ResolvedArtifact retval = null;
-    for (ResolvedArtifact artifact : artifacts) {
-      if (artifact.getName().equals(name)) {
-        retval = artifact;
-      }
-    }
-    return retval;
-    //throw new IllegalStateException("Could not find a dependency with name " + name);
   }
 
 }
