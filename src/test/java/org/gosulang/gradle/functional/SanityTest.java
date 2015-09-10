@@ -1,4 +1,4 @@
-package org.gosulang.gradle;
+package org.gosulang.gradle.functional;
 
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
@@ -7,15 +7,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 import static org.gradle.testkit.runner.TaskOutcome.*;
 import static org.junit.Assert.*;
 
-public class SanityTest {
+public class SanityTest extends AbstractGradleTest {
 
   @Rule
   public final TemporaryFolder testProjectDir = new TemporaryFolder();
@@ -49,15 +47,4 @@ public class SanityTest {
     assertEquals(result.task(":helloWorld").getOutcome(), SUCCESS);
   }
 
-  private void writeFile(File destination, String content) throws IOException {
-    BufferedWriter output = null;
-    try {
-      output = new BufferedWriter(new FileWriter(destination));
-      output.write(content);
-    } finally {
-      if (output != null) {
-        output.close();
-      }
-    }
-  }
 }

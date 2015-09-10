@@ -1,4 +1,4 @@
-package org.gosulang.gradle;
+package org.gosulang.gradle.functional;
 
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
@@ -9,19 +9,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
-public class SimpleGosuBuildTest {
+public class SimpleGosuBuildTest extends AbstractGradleTest {
 
   private final URL _pluginClasspathResource = getClass().getClassLoader().getResource("plugin-classpath.txt");
   private final URL _gosuVersionResource = getClass().getClassLoader().getResource("gosuVersion.txt");
@@ -56,34 +50,7 @@ public class SimpleGosuBuildTest {
 
   @Test
   public void applyGosuPlugin() throws IOException {
-    List<String> pluginClasspathRaw = new BufferedReader(new FileReader(_pluginClasspathResource.getFile())).lines().collect(Collectors.toList());
-    String pluginClasspath = "'" + String.join("', '", pluginClasspathRaw) + "'"; //wrap each entry in single quotes
-
-    String gosuVersion = new BufferedReader(new FileReader(_gosuVersionResource.getFile())).lines().findFirst().get();
-
-    String LF = System.lineSeparator();
-
-    String buildFileContent =
-        "buildscript {" + LF +
-        "    repositories {" + LF +
-        "        jcenter() " + LF +
-        "        maven {" + LF +
-        "            url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
-        "        }" + LF +
-        "    }" + LF +
-        "    dependencies {" + LF +
-        "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
-        "        classpath 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
-        "        classpath files(" + pluginClasspath + ")" + LF +
-        "    }" + LF +
-        "}" + LF +
-        "repositories {" + LF +
-        "    jcenter() " + LF +
-        "    maven {" + LF +
-        "        url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
-        "    }" + LF +
-        "}" + LF +
-        "apply plugin: 'org.gosu-lang.gosu'";
+    String buildFileContent = getBasicBuildScriptForTesting();
     writeFile(_buildFile, buildFileContent);
 
     String simplePogoContent =
@@ -115,16 +82,6 @@ public class SimpleGosuBuildTest {
     assertTrue(new File(_testProjectDir.getRoot(), "build/classes/main/example/gradle/SimplePogo.class").exists());
   }
 
-  private void writeFile(File destination, String content) throws IOException {
-    BufferedWriter output = null;
-    try {
-      output = new BufferedWriter(new FileWriter(destination));
-      output.write(content);
-    } finally {
-      if (output != null) {
-        output.close();
-      }
-    }
-  }
+
 
 }
