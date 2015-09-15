@@ -4,7 +4,7 @@
 
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1-alpha...HEAD)
 
-**Closed issues:**
+**Fixed bugs:**
 
 - sourceSets not configurable [\#1](https://github.com/gosu-lang/gradle-gosu-plugin/issues/1)
 
