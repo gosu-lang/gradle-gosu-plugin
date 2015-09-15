@@ -6,6 +6,8 @@ Specifically, this adds compileGosu and compileTestGosu tasks. These tasks are d
 
 Java 8 is required.
 
+Build status: [![Circle CI](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master.svg?style=svg)](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master)
+
 ## Why would I use this?
 
 1. As with Maven's surefire plugin, Gradle's test runner looks for compiled .class files in the build directory.  Using this plugin allows test execution outside of the IDE, such as with a build/CI server.
@@ -28,10 +30,6 @@ It is not necessary to create any other dependencies on Gosu JARs; the plugin au
 
 Additionally, snapshots are available from http://gosu-lang.org/nexus/content/repositories/snapshots/org/gosu-lang/gosu/gradle-gosu-plugin/
 
-### Build status
-[![Circle CI](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master.svg?style=svg)](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master)
-
 ### Changelog
 
-#### 0.1-alpha
-Initial release, based on Gosu 1.7. Future revisions will be aligned with the version of Gosu they import.
+See **[CHANGELOG.md](https://github.com/gosu-lang/gradle-gosu-plugin/blob/master/CHANGELOG.md)**
