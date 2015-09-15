@@ -69,7 +69,6 @@ public class GosuBasePlugin implements Plugin<Project> {
     gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
     gosuCompile.setDescription("Compiles the " + sourceSet.getName() + " Gosu source");
     gosuCompile.setSource(gosuSourceSet.getGosu());
-    gosuCompile.setSourceRoots(gosuSourceSet.getGosu().getSrcDirs());
 
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }

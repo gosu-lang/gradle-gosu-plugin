@@ -5,6 +5,7 @@ import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -21,16 +22,8 @@ public class SourceSetsModificationTest extends AbstractGradleTest {
   @Rule
   public final TemporaryFolder _testProjectDir = new TemporaryFolder();
 
-  private File _javaSourceRoot;
   private File _gosuSourceRoot;
-  private File _javaTestRoot;
-  private File _gosuTestRoot;
   private File _buildFile;
-  private File _pojo;
-  private File _pogo;
-  private File _enhancement;
-  private File _javaTest;
-  private File _gosuTest;
 
   @BeforeClass
   public static void beforeClass() {
@@ -40,10 +33,7 @@ public class SourceSetsModificationTest extends AbstractGradleTest {
   @Before
   public void beforeMethod() throws IOException {
     _buildFile = _testProjectDir.newFile("build.gradle");
-//    _javaSourceRoot = _testProjectDir.newFolder("src", "main", "java");
     _gosuSourceRoot = _testProjectDir.newFolder("src", "main", "gosu");
-//    _javaTestRoot = _testProjectDir.newFolder("src", "test", "java");
-//    _gosuTestRoot = _testProjectDir.newFolder("src", "test", "gosu");
   }
 
   @Test
@@ -55,7 +45,7 @@ public class SourceSetsModificationTest extends AbstractGradleTest {
     String[] rootThree = {"baz"};
     String[] ignoredRoot = {"ignored", "source", "root"};
 
-    File configuredSourceRootOne = _testProjectDir.newFolder(rootOne); //.join("/", rootOne); // "folder/containing/POGOs";
+    File configuredSourceRootOne = _testProjectDir.newFolder(rootOne);
     File configuredSourceRootTwo = _testProjectDir.newFolder(rootTwo);
     File configuredSourceRootThree = _testProjectDir.newFolder(rootThree);
     File ignoredSourceRoot = _testProjectDir.newFolder(ignoredRoot);
@@ -73,36 +63,36 @@ public class SourceSetsModificationTest extends AbstractGradleTest {
     writeFile(_buildFile, buildFileContent);
 
     String configuredPogoOne =
-        "package " + asPackage(rootOne) + LF +
+        "package one" + LF +
             LF +
             "public class ConfiguredPogoOne {}";
-    _pogo = new File(configuredSourceRootOne, "ConfiguredPogoOne.gs");
-    _pogo.getParentFile().mkdirs();
-    writeFile(_pogo, configuredPogoOne);
+    File pogo = new File(configuredSourceRootOne, asPath("one", "ConfiguredPogoOne.gs"));
+    pogo.getParentFile().mkdirs();
+    writeFile(pogo, configuredPogoOne);
 
     String configuredPogoTwo =
-        "package " + asPackage(rootTwo) + LF +
+        "package two" + LF +
             LF +
             "public class ConfiguredPogoTwo {}";
-    _pogo = new File(configuredSourceRootTwo, "ConfiguredPogoTwo.gs");
-    _pogo.getParentFile().mkdirs();
-    writeFile(_pogo, configuredPogoTwo);
+    pogo = new File(configuredSourceRootTwo, asPath("two", "ConfiguredPogoTwo.gs"));
+    pogo.getParentFile().mkdirs();
+    writeFile(pogo, configuredPogoTwo);
 
     String configuredPogoThree =
-        "package " + asPackage(rootThree) + LF +
+        "package three" + LF +
             LF +
             "public class ConfiguredPogoThree {}";
-    _pogo = new File(configuredSourceRootThree, "ConfiguredPogoThree.gs");
-    _pogo.getParentFile().mkdirs();
-    writeFile(_pogo, configuredPogoThree);
+    pogo = new File(configuredSourceRootThree, asPath("three", "ConfiguredPogoThree.gs"));
+    pogo.getParentFile().mkdirs();
+    writeFile(pogo, configuredPogoThree);
 
     String ignoredPogo =
-        "package " + asPackage(ignoredRoot) + LF +
+        "package four" + LF +
             LF +
             "public class IgnoredPogo {}";
-    _pogo = new File(ignoredSourceRoot, "IgnoredPogo.gs");
-    _pogo.getParentFile().mkdirs();
-    writeFile(_pogo, ignoredPogo);
+    pogo = new File(ignoredSourceRoot, "IgnoredPogo.gs");
+    pogo.getParentFile().mkdirs();
+    writeFile(pogo, ignoredPogo);
 
     System.out.println("--- Dumping build.gradle ---");
     System.out.println(buildFileContent);
@@ -124,9 +114,10 @@ public class SourceSetsModificationTest extends AbstractGradleTest {
     assertEquals(TaskOutcome.UP_TO_DATE, result.task(":test").getOutcome()); //no tests to compile
 
     //did we actually compile anything?
-    assertTrue(new File(_testProjectDir.getRoot(), asPath("build", "classes", asPath(rootOne), "ConfiguredPogoOne.class")).exists());
-    assertTrue(new File(_testProjectDir.getRoot(), configuredSourceRootTwo.getPath() + "/ConfiguredPogoOne.class").exists());
-    assertTrue(new File(_testProjectDir.getRoot(), configuredSourceRootThree.getPath() + "/ConfiguredPogoOne.class").exists());
-    assertFalse(new File(_testProjectDir.getRoot(), ignoredSourceRoot.getPath() + "/IgnoredPogo.class").exists());
+    File buildOutputRoot = new File(_testProjectDir.getRoot(), asPath("build", "classes", "main"));
+    assertTrue(new File(buildOutputRoot, asPath("one", "ConfiguredPogoOne.class")).exists());
+    assertTrue(new File(buildOutputRoot, asPath("two", "ConfiguredPogoTwo.class")).exists());
+    assertTrue(new File(buildOutputRoot, asPath("three", "ConfiguredPogoThree.class")).exists());
+    assertFalse(new File(buildOutputRoot, asPath("four", "IgnoredPogo.class")).exists());
   }
 }

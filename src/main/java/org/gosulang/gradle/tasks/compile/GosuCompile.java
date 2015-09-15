@@ -4,6 +4,7 @@ import org.gosulang.gradle.GosuPlugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.compile.JavaCompilerFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
@@ -19,13 +20,13 @@ import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 public class GosuCompile extends AbstractCompile {
 
   private Compiler<DefaultGosuCompileSpec> _compiler;
   private FileCollection _gosuClasspath;
-  private Set<File> _sourceRoots;
 
   private final CompileOptions _compileOptions = new CompileOptions();
 
@@ -57,11 +58,13 @@ public class GosuCompile extends AbstractCompile {
   }
 
   public Set<File> getSourceRoots() {
-    return _sourceRoots;
-  }
-
-  public void setSourceRoots(Set<File> sourceRoots) {
-    _sourceRoots = sourceRoots;
+    Set<File> returnValues = new HashSet<>();
+    for(Object obj : this.source) {
+      if(obj instanceof DefaultSourceDirectorySet) {
+        returnValues.addAll(((DefaultSourceDirectorySet) obj).getSrcDirs());
+      }
+    }
+    return returnValues;
   }
 
   private DefaultGosuCompileSpec createSpec() {

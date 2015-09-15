@@ -1,5 +1,9 @@
 package org.gosulang.gradle.tasks.compile;
 
+import gw.lang.gosuc.simple.GosuCompiler;
+import gw.lang.gosuc.simple.ICompilerDriver;
+import gw.lang.gosuc.simple.IGosuCompiler;
+import gw.lang.gosuc.simple.SoutCompilerDriver;
 import org.codehaus.plexus.util.FileUtils;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.tasks.compile.daemon.CompileResult;
@@ -7,11 +11,6 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.language.base.internal.compile.Compiler;
-
-import gw.lang.gosuc.simple.GosuCompiler;
-import gw.lang.gosuc.simple.ICompilerDriver;
-import gw.lang.gosuc.simple.IGosuCompiler;
-import gw.lang.gosuc.simple.SoutCompilerDriver;
 
 import java.io.File;
 import java.io.IOException;
