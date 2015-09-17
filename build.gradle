@@ -20,13 +20,13 @@ repositories {
 }
 
 dependencies {
-    compile gradleApi()
-    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: project.gosuVersion
-    compile group: 'org.gosu-lang.gosu', name: 'gosu-core', version: project.gosuVersion // compilation will require this jar at compile-time, not runtime
+    compile     gradleApi()
+    compile     group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: project.gosuVersion
+    compile     group: 'org.gosu-lang.gosu', name: 'gosu-core', version: project.gosuVersion // compilation will require this jar at compile-time, not runtime
     testCompile group: 'junit', name: 'junit', version: project.junitVersion
     testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'
     testCompile gradleTestKit()
-    runtime group: 'org.codehaus.plexus', name: 'plexus-utils', version: '3.0.22'
+    runtime     group: 'org.codehaus.plexus', name: 'plexus-utils', version: '3.0.22'
 }
 
 pluginBundle {
@@ -39,7 +39,6 @@ pluginBundle {
         gosuPlugin {
             id = 'org.gosu-lang.gosu'
             displayName = 'Gosu Gradle Plugin'
-            version = project.gosuVersion
         }
     }
 }
@@ -126,8 +125,8 @@ task setupPluginUpload {
     }
 
     doLast {
-        def key = System.env.gradlePublishKey
-        def secret = System.env.gradlePublishSecret
+        String key = System.env.gradlePublishKey
+        String secret = System.env.gradlePublishSecret
 
         if( !key || !secret ) {
             throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
