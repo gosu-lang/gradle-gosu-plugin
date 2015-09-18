@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'org.gosu-lang.gosu'
-version = project.gosuVersion
+version = project.pluginVersion + '-SNAPSHOT'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -32,7 +32,7 @@ dependencies {
 pluginBundle {
     website = 'http://gosu-lang.org'
     vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
-    description = 'Gosu language compiler for Gradle'
+    description = 'Gosu language compiler for Gradle.  The plugin bundles Gosu version ' + project.gosuVersion
     tags = ['gosu']
 
     plugins {
