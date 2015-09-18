@@ -4,6 +4,10 @@
 
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1-alpha...HEAD)
 
+**Implemented enhancements:**
+
+- Gosu 1.8 support [\#2](https://github.com/gosu-lang/gradle-gosu-plugin/issues/2)
+
 **Fixed bugs:**
 
 - sourceSets not configurable [\#1](https://github.com/gosu-lang/gradle-gosu-plugin/issues/1)

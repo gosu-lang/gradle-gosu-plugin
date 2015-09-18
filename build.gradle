@@ -1,12 +1,14 @@
 plugins {
-	id 'com.gradle.plugin-publish' version '0.9.1'
-    id 'maven-publish'
-	id 'java'
+    id 'com.gradle.plugin-publish' version '0.9.1'
+    id 'maven'
+    id 'signing'
+    id 'java'
     id 'groovy'
 }
 
 group = 'org.gosu-lang.gosu'
-version = project.pluginVersion + '-SNAPSHOT'
+version = project.pluginVersion
+description = 'Gosu language compiler for Gradle.  The plugin bundles Gosu version ' + project.gosuVersion
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -15,7 +17,7 @@ repositories {
 	jcenter()
     //for Gosu snapshot builds:
     maven {
-        url 'http://gosu-lang.org/nexus/content/repositories/snapshots'
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
 }
 
@@ -29,10 +31,17 @@ dependencies {
     runtime     group: 'org.codehaus.plexus', name: 'plexus-utils', version: '3.0.22'
 }
 
+/**
+ * Store keyId, password, secretKeyRingFile in ~/.gradle/gradle.properties
+ */
+signing {
+    sign configurations.archives
+}
+
 pluginBundle {
     website = 'http://gosu-lang.org'
     vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
-    description = 'Gosu language compiler for Gradle.  The plugin bundles Gosu version ' + project.gosuVersion
+    description = project.description
     tags = ['gosu']
 
     plugins {
@@ -79,44 +88,70 @@ dependencies {
 
 task sourceJar(type: Jar) {
     description 'generate sources'
+    classifier = 'sources'
     from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar) {
     description 'generate javadoc'
+    classifier = 'javadoc'
     from javadoc
 }
 
-/* from 'maven-publish' */
-publishing {
-    publications {
-        pluginArtifact(MavenPublication) {
-            from components.java
-
-            artifact sourceJar {
-                classifier 'sources'
-            }
-
-            artifact javadocJar {
-                classifier 'javadoc'
-            }
-        }
-    }
-    repositories {
-        maven {
-            url 'http://gosu-lang.org/nexus/content/repositories/snapshots/'
-            credentials {
-                username System.env.SNAPSHOT_USER
-                password System.env.SNAPSHOT_PASS
-            }
-        }
-    }
+artifacts {
+    archives sourceJar, javadocJar
 }
 
 def isSnapshot = project.version.endsWith('-SNAPSHOT')
 
+/* from 'maven' plugin */
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
+            }
+
+            pom.project {
+                name project.name
+                packaging 'jar'
+                description project.description
+                url 'http://gosu-lang.github.io/'
+
+                scm {
+                    connection 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
+                    developerConnection 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
+                    url 'git@github.com:gosu-lang/gosu-lang.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name 'The Gosu Team'
+                        email 'gosu.lang.team@gmail.com'
+                        organization 'Guidewire'
+                    }
+                }
+            }
+        }
+    }
+}
+
 /**
  * Fetches the publishing credentials from the build machine's env vars
+ * Necessitated by https://issues.gradle.org/browse/GRADLE-3281
  */
 task setupPluginUpload {
 
@@ -143,9 +178,5 @@ tasks.publishPlugins.dependsOn tasks.setupPluginUpload
 // the gradle plugin portal isn't really compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
-    publish.enabled = true
     publishPlugins.enabled = false
-} else {
-    publish.enabled = false
-    publishPlugins.enabled = true
 }
