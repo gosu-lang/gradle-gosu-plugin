@@ -10,6 +10,8 @@ group = 'org.gosu-lang.gosu'
 version = project.pluginVersion
 description = 'Gosu language compiler for Gradle.  The plugin bundles Gosu version ' + project.gosuVersion
 
+def isSnapshot = project.version.endsWith('-SNAPSHOT')
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -95,8 +97,6 @@ artifacts {
     archives sourceJar, javadocJar
 }
 
-def isSnapshot = project.version.endsWith('-SNAPSHOT')
-
 /**
  * Only execute for release builds, which must be done locally.
  * Store keyId, password, secretKeyRingFile in ~/.gradle/gradle.properties
@@ -110,7 +110,7 @@ signing {
 uploadArchives {
     repositories {
         mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            beforeDeployment { MavenDeployment deployment -> if(!isSnapshot) { signing.signPom(deployment) } }
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
@@ -180,5 +180,6 @@ tasks.publishPlugins.dependsOn tasks.setupPluginUpload
 // the gradle plugin portal isn't really compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
+    signArchives.enabled = false
     publishPlugins.enabled = false
 }
