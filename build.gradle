@@ -31,13 +31,6 @@ dependencies {
     runtime     group: 'org.codehaus.plexus', name: 'plexus-utils', version: '3.0.22'
 }
 
-/**
- * Store keyId, password, secretKeyRingFile in ~/.gradle/gradle.properties
- */
-signing {
-    sign configurations.archives
-}
-
 pluginBundle {
     website = 'http://gosu-lang.org'
     vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
@@ -103,6 +96,15 @@ artifacts {
 }
 
 def isSnapshot = project.version.endsWith('-SNAPSHOT')
+
+/**
+ * Only execute for release builds, which must be done locally.
+ * Store keyId, password, secretKeyRingFile in ~/.gradle/gradle.properties
+ */
+signing {
+    required { !isSnapshot && gradle.taskGraph.hasTask('uploadArchives') }
+    sign configurations.archives
+}
 
 /* from 'maven' plugin */
 uploadArchives {
@@ -178,6 +180,5 @@ tasks.publishPlugins.dependsOn tasks.setupPluginUpload
 // the gradle plugin portal isn't really compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
-    signArchives.enabled = false
     publishPlugins.enabled = false
 }
