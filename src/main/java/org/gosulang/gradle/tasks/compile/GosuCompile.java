@@ -1,10 +1,11 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gosulang.gradle.GosuPlugin;
+import org.gosulang.gradle.GosuBasePlugin;
+import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
+import org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.compile.JavaCompilerFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
@@ -21,6 +22,7 @@ import org.gradle.language.base.internal.compile.Compiler;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 public class GosuCompile extends AbstractCompile {
@@ -73,22 +75,30 @@ public class GosuCompile extends AbstractCompile {
     spec.setSource(getSource()); //project.files([ "src/main/gosu" ])
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
-    spec.setClasspath(getClasspath());
 
     //Force gosu-core into the classpath. Normally it's a runtime dependency but compilation requires it.
-    Set<ResolvedArtifact> projectDeps = project.getConfigurations().getByName("runtime").getResolvedConfiguration().getResolvedArtifacts();
-    File gosuCore = GosuPlugin.getArtifactWithName("gosu-core", projectDeps).getFile();
-    spec.setGosuClasspath( Collections.singletonList( gosuCore ) );
+    GosuRuntime gosuRuntime = ((GosuRuntime) project.getExtensions().getByName(GosuBasePlugin.GOSU_RUNTIME_EXTENSION_NAME));
+    FileCollection classpath = getClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath()));
+    spec.setClasspath(classpath);
+    spec.setGosuClasspath(Collections.emptyList());
 
-    if(LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Gosu Compiler Spec classpath is:");
-      for(File file : spec.getClasspath()) {
-        LOGGER.debug(file.getAbsolutePath());
+    if(LOGGER.isInfoEnabled()) {
+      LOGGER.info("Gosu Compile Spec classpath is:");
+      if(!spec.getClasspath().iterator().hasNext()) {
+        LOGGER.info("<empty>");
+      } else {
+        for (File file : spec.getClasspath()) {
+          LOGGER.info(file.getAbsolutePath());
+        }
       }
-
-      LOGGER.debug("Gosu Compile Spec gosuClasspath is:");
-      for(File file : spec.getGosuClasspath()) {
-        LOGGER.debug(file.getAbsolutePath());
+      
+      LOGGER.info("Gosu Compile Spec gosuClasspath is:");
+      if(!spec.getGosuClasspath().iterator().hasNext()) {
+        LOGGER.info("<empty>");
+      } else {
+          for(File file : spec.getGosuClasspath()) {
+            LOGGER.info(file.getAbsolutePath());
+          }
       }
     }
 

@@ -46,6 +46,11 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     classpath.addAll(gosuClasspath);
     classpath.addAll(getJreJars());
 
+    if(LOGGER.isInfoEnabled()) {
+      LOGGER.info("Initializing Gosu compiler using the following classpath:");
+      classpath.forEach(LOGGER::info);
+    }
+    
     gosuc.initializeGosu(sourceRoots, classpath, spec.getDestinationDir().getAbsolutePath());
 
     FileTree allSourceFiles = spec.getSource().getAsFileTree();

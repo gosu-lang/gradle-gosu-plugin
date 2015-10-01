@@ -107,6 +107,10 @@ public class SourceSetsModificationTest extends AbstractGradleTest {
     System.out.println(result.getStandardOutput());
     System.out.println("--- Done dumping stdout ---");
 
+    System.out.println("--- Dumping stderr ---");
+    System.out.println(result.getStandardError());
+    System.out.println("--- Done dumping stderrt ---");
+
     assertTrue(result.getStandardOutput().contains("Initializing Gosu compiler..."));
     assertTrue(result.getStandardError().isEmpty());
     assertEquals(TaskOutcome.SUCCESS, result.task(":compileGosu").getOutcome());

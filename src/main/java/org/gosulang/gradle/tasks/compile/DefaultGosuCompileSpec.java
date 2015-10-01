@@ -43,6 +43,10 @@ public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implem
     return _gosuClasspath;
   }
 
+  /**
+   * Use this property to add additional JARs available exclusively to the Gosu compiler and not the enclosing project
+   * @param _gosuClasspath
+   */
   void setGosuClasspath(Iterable<File> _gosuClasspath) {
     this._gosuClasspath = _gosuClasspath;
   }

@@ -30,13 +30,6 @@ class DefaultGosuSourceSetTest {
         assertThat(sourceSet.gosu.displayName, equalTo('<set-display-name> Gosu source'))
         assertThat(sourceSet.gosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst'] as Set))
         assertThat(sourceSet.gosu.filter.excludes, empty())
-
-//        assertThat(sourceSet.allGosu, instanceOf(DefaultSourceDirectorySet))
-//        assertThat(sourceSet.allGosu, emptyIterable())
-//        assertThat(sourceSet.allGosu.displayName, equalTo('<set-display-name> Gosu source'))
-//        assertThat(sourceSet.allGosu.source, hasItem(sourceSet.gosu))
-//        assertThat(sourceSet.allGosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst'] as Set))
-//        assertThat(sourceSet.allGosu.filter.excludes, empty())
     }
 
     @Test

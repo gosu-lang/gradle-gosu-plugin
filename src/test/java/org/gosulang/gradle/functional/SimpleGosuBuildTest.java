@@ -17,9 +17,6 @@ import static org.junit.Assert.*;
 
 public class SimpleGosuBuildTest extends AbstractGradleTest {
 
-  private final URL _pluginClasspathResource = getClass().getClassLoader().getResource("plugin-classpath.txt");
-  private final URL _gosuVersionResource = getClass().getClassLoader().getResource("gosuVersion.txt");
-
   @Rule
   public final TemporaryFolder _testProjectDir = new TemporaryFolder();
 
@@ -36,7 +33,7 @@ public class SimpleGosuBuildTest extends AbstractGradleTest {
 
   @BeforeClass
   public static void beforeClass() {
-    //noop
+    //no-op
   }
 
   @Before
@@ -74,6 +71,10 @@ public class SimpleGosuBuildTest extends AbstractGradleTest {
     System.out.println(result.getStandardOutput());
     System.out.println("--- Done dumping stdout ---");
 
+    System.out.println("--- Dumping stderr ---");
+    System.out.println(result.getStandardError());
+    System.out.println("--- Done dumping stderrt ---");    
+    
     assertTrue(result.getStandardOutput().contains("Initializing Gosu compiler..."));
     assertTrue(result.getStandardError().isEmpty());
     assertEquals(TaskOutcome.SUCCESS, result.task(":compileGosu").getOutcome());
