@@ -25,7 +25,7 @@ public class SanityTest extends AbstractGradleTest {
   }
 
   @Test
-  public void applyGosuPlugin() throws IOException {
+  public void helloWorld() throws IOException {
     String buildFileContent = "task helloWorld {" +
         "    doLast {" +
         "        println 'Hello world!'" +

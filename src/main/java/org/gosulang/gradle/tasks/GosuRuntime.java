@@ -5,15 +5,11 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
-import org.gradle.api.internal.file.collections.SimpleFileCollection;
-import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.TaskDependency;
 import org.gradle.internal.Cast;
 
@@ -23,10 +19,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +31,7 @@ public class GosuRuntime {
   
   private final Project _project;
   
-  public GosuRuntime(Project project ) {
+  public GosuRuntime(Project project) {
     _project = project;
     _project.getLogger().quiet("Constructing Gosu Runtime");
   }
@@ -58,7 +51,11 @@ public class GosuRuntime {
         }
 
         File gosuCoreApiJar = findGosuJar(classpath, "core-api");
-        File gosuCoreJar = findGosuJar(classpath, "core");
+//        File gosuCoreJar = findGosuJar(classpath, "core");
+        Configuration runtime = _project.getConfigurations().getByName("runtime");
+        System.out.println("Runtime convention isssss: " + runtime.getFiles());
+        File gosuCoreJar = findGosuJar(runtime, "core");
+//        File gosuCoreJar = findGosuJar(_project.getConfigurations().getByName("runtime"), "core");
         
         //could not find Gosu as external dependencies; before throwing check if they are present on the classpath in another form
         if(gosuCoreApiJar == null) {
@@ -96,7 +93,7 @@ public class GosuRuntime {
 
         return Cast.cast(FileCollectionInternal.class, _project.getConfigurations().detachedConfiguration(
             new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-core-api", gosuCoreApiVersion),
-            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-core", gosuCoreVersion)));
+            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-core", gosuCoreApiVersion)));
       }
 
       // let's override this so that delegate isn't created at autowiring time (which would mean on every build)

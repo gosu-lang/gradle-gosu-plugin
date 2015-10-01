@@ -43,8 +43,8 @@ public class GosuPlugin implements Plugin<Project> {
       });
     });
 
-    //theTask = _project.getTasks().withType(Test.class).iterator().next();
-    //System.out.println("After config; using theTask.getBootStrapClasspath(): " + theTask.getBootstrapClasspath().getFiles());
+//    theTask = _project.getTasks().withType(Test.class).iterator().next();
+//    System.out.println("After config; using theTask.getBootStrapClasspath(): " + theTask.getBootstrapClasspath().getFiles());
   
   }
   

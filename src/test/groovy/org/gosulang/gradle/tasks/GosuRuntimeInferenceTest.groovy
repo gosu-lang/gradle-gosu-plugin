@@ -41,7 +41,7 @@ repositories {
 dependencies {
     compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
     testCompile group: 'junit', name: 'junit', version: '4.11'
-//    runtime group: 'org.gosu-lang.gosu', name: 'gosu-core', version: '$gosuVersion' //intentionally commenting-out to cause test failure
+    runtime group: 'org.gosu-lang.gosu', name: 'gosu-core', version: '$gosuVersion' //intentionally commenting-out to cause test failure
 }
 """
         writeFile(_buildFile, buildFileContent)

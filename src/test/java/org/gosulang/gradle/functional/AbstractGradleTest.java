@@ -46,8 +46,8 @@ public abstract class AbstractGradleTest {
             "        }" + LF +
             "    }" + LF +
             "    dependencies {" + LF +
-            "        classpath 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
-            "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
+            //"        classpath 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
+            //"        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
             //"        compile 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
             "        classpath files(" + getClasspath() + ")" + LF + //stupid hack - in order to test the plugin, we must include the build's output on this test script's classpath
             "    }" + LF +
