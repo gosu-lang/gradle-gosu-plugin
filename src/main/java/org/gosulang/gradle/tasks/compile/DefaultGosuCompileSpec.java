@@ -29,6 +29,10 @@ public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implem
     return _compileOptions;
   }
 
+  public void setCompileOptions(CompileOptions compileOptions) {
+    _compileOptions = compileOptions;
+  }
+  
   @Override
   public File getDependencyCacheDir() {
     return _dependencyCacheDir;
@@ -46,6 +50,5 @@ public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implem
   void setGosuClasspath(Iterable<File> _gosuClasspath) {
     this._gosuClasspath = _gosuClasspath;
   }
-
 
 }

@@ -119,7 +119,11 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     }
 
     if(errorsInCompilation) {
-      throw new CompilationFailedException();
+      if(spec.getCompileOptions().isFailOnError()) {
+        throw new CompilationFailedException();
+      } else {
+        LOGGER.info("Gosu Compiler: Ignoring compilation failure as 'failOnError' was set to false");
+      }
     }
 
     return new CompileResult(didWork, null);

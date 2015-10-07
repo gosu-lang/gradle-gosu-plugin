@@ -72,7 +72,8 @@ public class GosuCompile extends AbstractCompile {
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
     spec.setClasspath(getClasspath());
-
+    spec.setCompileOptions(_compileOptions);
+    
     //Force gosu-core into the classpath. Normally it's a runtime dependency but compilation requires it.
     Set<ResolvedArtifact> projectDeps = project.getConfigurations().getByName("runtime").getResolvedConfiguration().getResolvedArtifacts();
     File gosuCore = GosuPlugin.getArtifactWithName("gosu-core", projectDeps).getFile();

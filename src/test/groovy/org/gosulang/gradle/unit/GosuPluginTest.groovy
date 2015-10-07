@@ -7,6 +7,7 @@ import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.testfixtures.ProjectBuilder
 import org.hamcrest.Matchers
@@ -177,6 +178,38 @@ class GosuPluginTest {
             }
         }
         assertThat(project.sourceSets.main.gosu.srcDirs, equalTo(toLinkedSet(project.file('src/main/gosu'), project.file(dirAsString), project.file(anotherSource), project.file(aThirdSource))))
+    }
+
+    /** 
+     * Get the default fork setting, then reverse it
+     * Verify failOnError defaults to true, then reverse it
+     */
+    @Test
+    public void canConfigureCompileOptionsForJava() {
+        def isFork = project.tasks.compileJava.options.fork
+        assertThat(project.tasks.compileJava.options.failOnError, equalTo(true))
+        project.tasks.withType(JavaCompile.class) {
+            options.fork = !isFork
+            options.failOnError = false
+        }
+        assertThat(project.tasks.compileJava.options.fork, equalTo(!isFork))
+        assertThat(project.tasks.compileJava.options.failOnError, equalTo(false)) 
+    }
+
+    /**
+     * Get the default fork setting, then reverse it
+     * Verify failOnError defaults to true, then reverse it
+     */
+    @Test
+    public void canConfigureCompileOptionsForGosu() {
+        def isFork = project.tasks.compileGosu.options.fork
+        assertThat(project.tasks.compileGosu.options.failOnError, equalTo(true))
+        project.tasks.withType(GosuCompile.class) {
+            options.fork = !isFork
+            options.failOnError = false
+        }
+        assertThat(project.tasks.compileGosu.options.fork, equalTo(!isFork))
+        assertThat(project.tasks.compileGosu.options.failOnError, equalTo(false))
     }
 
 }
