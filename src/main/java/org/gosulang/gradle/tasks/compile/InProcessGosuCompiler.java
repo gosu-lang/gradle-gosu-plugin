@@ -6,6 +6,7 @@ import gw.lang.gosuc.simple.IGosuCompiler;
 import gw.lang.gosuc.simple.SoutCompilerDriver;
 import org.codehaus.plexus.util.FileUtils;
 import org.gradle.api.file.FileTree;
+import org.gradle.api.internal.tasks.compile.CompilationFailedException;
 import org.gradle.api.internal.tasks.compile.daemon.CompileResult;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -24,6 +25,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
   @Override
   public WorkResult execute( DefaultGosuCompileSpec spec ) {
+    LOGGER.info("Initializing Gosu compiler...");
     final ICompilerDriver driver = new SoutCompilerDriver();
     final IGosuCompiler gosuc = new GosuCompiler();
     boolean didWork = false;
@@ -53,7 +55,18 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
       didWork = true;
     }
 
+    if(LOGGER.isInfoEnabled()) {
+      int fileCount = allSourceFiles.getFiles().size();
+      LOGGER.info("Compiling " + fileCount + " " +
+          "source file" + (fileCount == 1 ? "" : "s") +
+          " to " + spec.getDestinationDir().getAbsolutePath());
+    }
+
+    boolean isDebug = LOGGER.isDebugEnabled(); 
     allSourceFiles.forEach(sourceFile -> {
+      if (isDebug) {
+        LOGGER.debug("Compiling Gosu source file: " + sourceFile.getAbsolutePath());
+      }
       try {
         gosuc.compile(sourceFile, driver);
       } catch (Exception e) {
@@ -64,16 +77,51 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     gosuc.unitializeGosu();
 
     boolean errorsInCompilation = ((SoutCompilerDriver) driver).hasErrors();
+    List<String> warningMessages = new ArrayList<>();
     List<String> errorMessages = new ArrayList<>();
 
-    ((SoutCompilerDriver) driver).getWarnings().forEach( warning -> errorMessages.add("[WARN] " + warning));
+    ((SoutCompilerDriver) driver).getWarnings().forEach(warning -> warningMessages.add("[WARNING] " + warning));
+    int numWarnings = warningMessages.size();
 
+    int numErrors = 0;
     if(errorsInCompilation) {
-      ((SoutCompilerDriver) driver).getErrors().forEach( error -> errorMessages.add("[ERROR] " + error));
-      return new CompileResult(didWork, new Exception(errorMessages.get(0)));
+      ((SoutCompilerDriver) driver).getErrors().forEach(error -> errorMessages.add("[ERROR] " + error));
+      numErrors = errorMessages.size();
     }
 
-    //TODO report errors?
+    boolean hasWarningsOrErrors = numWarnings > 0 || errorsInCompilation;
+    StringBuilder sb;
+    sb = new StringBuilder();
+    sb.append("Gosu compilation completed");
+    if(hasWarningsOrErrors) {
+      sb.append(" with ");
+      if(numWarnings > 0) {
+        sb.append(numWarnings).append(" warning").append(numWarnings == 1 ? "" : 's');
+      }
+      if(errorsInCompilation) {
+        sb.append(numWarnings > 0 ? " and " : "");
+        sb.append(numErrors).append(" error").append(numErrors == 1 ? "" : 's');
+      }
+    } else {
+      sb.append(" successfully.");
+    }
+    
+    if(LOGGER.isInfoEnabled()) {
+        sb.append(hasWarningsOrErrors ? ':' : "");
+        LOGGER.info(sb.toString());
+        warningMessages.forEach(LOGGER::info);
+        errorMessages.forEach(LOGGER::info);
+    } else {
+      if(hasWarningsOrErrors) {
+        sb.append("; rerun with INFO level logging to display details.");
+        LOGGER.quiet(sb.toString());
+      }
+    }
+
+    if(errorsInCompilation) {
+      throw new CompilationFailedException();
+    }
+
     return new CompileResult(didWork, null);
   }
 

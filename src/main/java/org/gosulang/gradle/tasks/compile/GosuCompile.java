@@ -30,8 +30,6 @@ public class GosuCompile extends AbstractCompile {
 
   private final CompileOptions _compileOptions = new CompileOptions();
 
-  private static final Logger LOGGER = Logging.getLogger(GosuCompile.class);
-
   @Override
   @TaskAction
   protected void compile() {
@@ -80,15 +78,17 @@ public class GosuCompile extends AbstractCompile {
     File gosuCore = GosuPlugin.getArtifactWithName("gosu-core", projectDeps).getFile();
     spec.setGosuClasspath( Collections.singletonList( gosuCore ) );
 
-    if(LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Gosu Compiler Spec classpath is:");
+    Logger logger = project.getLogger();
+
+    if(logger.isDebugEnabled()) {
+      logger.debug("Gosu Compiler Spec classpath is:");
       for(File file : spec.getClasspath()) {
-        LOGGER.debug(file.getAbsolutePath());
+        logger.debug(file.getAbsolutePath());
       }
 
-      LOGGER.debug("Gosu Compile Spec gosuClasspath is:");
+      logger.debug("Gosu Compile Spec gosuClasspath is:");
       for(File file : spec.getGosuClasspath()) {
-        LOGGER.debug(file.getAbsolutePath());
+        logger.debug(file.getAbsolutePath());
       }
     }
 
@@ -102,7 +102,6 @@ public class GosuCompile extends AbstractCompile {
       //      var inProcessCompilerDaemonFactory = getServices().getFactory(InProcessCompilerDaemonFactory);
       JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
       GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, javaCompilerFactory, compilerDaemonManager); //inProcessCompilerDaemonFactory
-      LOGGER.quiet("Initializing Gosu compiler...");
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
