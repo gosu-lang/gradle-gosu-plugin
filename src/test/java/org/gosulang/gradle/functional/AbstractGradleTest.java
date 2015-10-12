@@ -46,8 +46,8 @@ public abstract class AbstractGradleTest {
             "        }" + LF +
             "    }" + LF +
             "    dependencies {" + LF +
-            "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
-            "        classpath 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
+//            "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
+//            "        classpath 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
             "        classpath files(" + getClasspath() + ")" + LF +
             "    }" + LF +
             "}" + LF +
@@ -57,8 +57,12 @@ public abstract class AbstractGradleTest {
             "        url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
             "    }" + LF +
             "}" + LF +
-            "apply plugin: 'org.gosu-lang.gosu'" + LF;
-
+            "apply plugin: 'org.gosu-lang.gosu'" + LF +
+            "dependencies {" + LF +
+            "    compile 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +
+            "    compile 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +
+            "}" + LF +
+            LF;
 
     return buildFileContent;
   }

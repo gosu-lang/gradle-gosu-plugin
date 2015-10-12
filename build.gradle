@@ -8,7 +8,14 @@ plugins {
 
 group = 'org.gosu-lang.gosu'
 version = project.pluginVersion
-description = 'Gosu language compiler for Gradle.  The plugin bundles Gosu version ' + project.gosuVersion
+description = """Gosu language compiler for Gradle.
+
+A compile-time reference to the gosu-core-api library is required.  Please include this in the depencencies closure:
+
+dependencies {
+    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$project.gosuVersion'
+}
+"""
 
 def isSnapshot = project.version.endsWith('-SNAPSHOT')
 
@@ -25,11 +32,10 @@ repositories {
 
 dependencies {
     compile     gradleApi()
-    compile     group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: project.gosuVersion
-    compile     group: 'org.gosu-lang.gosu', name: 'gosu-core', version: project.gosuVersion // compilation will require this jar at compile-time, not runtime
     testCompile group: 'junit', name: 'junit', version: project.junitVersion
     testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'
     testCompile gradleTestKit()
+    testCompile 'org.spockframework:spock-core:0.7-groovy-2.0@jar'
     runtime     group: 'org.codehaus.plexus', name: 'plexus-utils', version: '3.0.22'
 }
 

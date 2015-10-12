@@ -1,6 +1,8 @@
 package org.gosulang.gradle.tasks.compile;
 
+import org.gosulang.gradle.GosuBasePlugin;
 import org.gosulang.gradle.GosuPlugin;
+import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.file.FileCollection;
@@ -75,21 +77,30 @@ public class GosuCompile extends AbstractCompile {
     spec.setCompileOptions(_compileOptions);
     
     //Force gosu-core into the classpath. Normally it's a runtime dependency but compilation requires it.
-    Set<ResolvedArtifact> projectDeps = project.getConfigurations().getByName("runtime").getResolvedConfiguration().getResolvedArtifacts();
-    File gosuCore = GosuPlugin.getArtifactWithName("gosu-core", projectDeps).getFile();
-    spec.setGosuClasspath( Collections.singletonList( gosuCore ) );
+    GosuRuntime gosuRuntime = ((GosuRuntime) project.getExtensions().getByName(GosuBasePlugin.GOSU_RUNTIME_EXTENSION_NAME));
+    FileCollection classpath = getClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath()));
+    spec.setClasspath(classpath);
+    spec.setGosuClasspath(Collections.emptyList());
 
     Logger logger = project.getLogger();
 
-    if(logger.isDebugEnabled()) {
-      logger.debug("Gosu Compiler Spec classpath is:");
-      for(File file : spec.getClasspath()) {
-        logger.debug(file.getAbsolutePath());
+    if(logger.isInfoEnabled()) {
+      logger.info("Gosu Compiler Spec classpath is:");
+      if(!spec.getClasspath().iterator().hasNext()) {
+        logger.info("<empty>");
+      } else {
+        for(File file : spec.getClasspath()) {
+          logger.info(file.getAbsolutePath());
+        }
       }
 
-      logger.debug("Gosu Compile Spec gosuClasspath is:");
+      logger.info("Gosu Compile Spec gosuClasspath is:");
+      if(!spec.getGosuClasspath().iterator().hasNext()) {
+        logger.info("<empty>");
+      } else {
       for(File file : spec.getGosuClasspath()) {
-        logger.debug(file.getAbsolutePath());
+        logger.info(file.getAbsolutePath());
+        }
       }
     }
 
