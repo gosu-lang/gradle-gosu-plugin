@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.codehaus.plexus.util.FileUtils;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
 import org.gradle.api.internal.tasks.compile.daemon.CompileResult;
@@ -13,6 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -205,17 +207,19 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
    * Get all JARs from the lib directory of the System's java.home property
    * @return List of absolute paths to all JRE libraries
    */
-  @SuppressWarnings("unchecked")
   private List<String> getJreJars() {
-    File javaHome = new File(System.getProperty("java.home"));
-    File libsDir = new File(javaHome + "/lib");
-    List<String> classes = new ArrayList<>();
+    String javaHome = System.getProperty("java.home");
+    Path libsDir = FileSystems.getDefault().getPath(javaHome, "/lib");
     try {
-      classes = FileUtils.getFileNames(libsDir, "**/*.jar", null, true); //gradleApi is using an older version of plexus-utils which does not support generics
-    } catch (IOException e) {
+      return Files.walk(libsDir)
+          .filter( path -> path.toFile().isFile())
+          .filter( path -> path.toString().endsWith(".jar"))
+          .map( java.nio.file.Path::toString )
+          .collect(Collectors.toList());
+    } catch (SecurityException | IOException e) {
       e.printStackTrace();
+      throw new RuntimeException(e);
     }
-    return classes;
   }
 
 }
