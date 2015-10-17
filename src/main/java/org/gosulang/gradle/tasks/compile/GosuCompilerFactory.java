@@ -9,9 +9,6 @@ import org.gradle.api.internal.tasks.compile.daemon.InProcessCompilerDaemonFacto
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.CompilerFactory;
 
-import java.io.File;
-import java.util.Set;
-
 public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSpec> {
 
   private final ProjectInternal _project;
@@ -38,9 +35,8 @@ public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSp
   public Compiler<DefaultGosuCompileSpec> newCompiler( DefaultGosuCompileSpec spec ) {
     GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
     Compiler<DefaultGosuCompileSpec> gosuCompiler;
-    Set<File> gosuClasspathFiles = _gosuClasspath.getFiles();
     if(gosuOptions.isUseAnt()) {
-      gosuCompiler = new AntGosuCompiler(_antBuilder, gosuClasspathFiles); //spec.getGosuClasspath()
+      gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath());
     } else {
       gosuCompiler = new InProcessGosuCompiler();
     }
