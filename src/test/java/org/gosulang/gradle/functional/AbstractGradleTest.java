@@ -40,23 +40,22 @@ public abstract class AbstractGradleTest {
     String buildFileContent =
         "buildscript {" + LF +
             "    repositories {" + LF +
-            "        jcenter() " + LF +
+            "        mavenLocal() " + LF +
             "        maven {" + LF +
             "            url 'https://oss.sonatype.org/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
             "        }" + LF +
+            "        jcenter() " + LF +
             "    }" + LF +
             "    dependencies {" + LF +
-//            "        classpath 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +       // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
-//            "        classpath 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +   // special hack for gradleTestKit - ordinarily these dependencies will be resolved by the gosu plugin's dependencies
             "        classpath files(" + getClasspath() + ")" + LF +
             "    }" + LF +
             "}" + LF +
             "repositories {" + LF +
             "    mavenLocal() " + LF +
-//            "    jcenter() " + LF +
-//            "    maven {" + LF +
-//            "        url 'https://oss.sonatype.org/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
-//            "    }" + LF +
+            "    maven {" + LF +
+            "        url 'https://oss.sonatype.org/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
+            "    }" + LF +
+            "    jcenter() " + LF +
             "}" + LF +
             "apply plugin: 'org.gosu-lang.gosu'" + LF +
             "dependencies {" + LF +

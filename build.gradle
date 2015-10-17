@@ -23,12 +23,11 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-	jcenter()
-    //for Gosu snapshot builds:
     mavenLocal()
     maven {
-        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        url 'https://oss.sonatype.org/content/repositories/snapshots/' //for Gosu snapshot builds
     }
+	jcenter()
 }
 
 dependencies {
