@@ -10,7 +10,7 @@ group = 'org.gosu-lang.gosu'
 version = project.pluginVersion
 description = """Gosu language compiler for Gradle.
 
-A compile-time reference to the gosu-core-api library is required.  Please include this in the depencencies closure:
+Projects applying this plugin require compile-time reference to the gosu-core-api library.  Please include this in the depencencies closure:
 
 dependencies {
     compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$project.gosuVersion'
