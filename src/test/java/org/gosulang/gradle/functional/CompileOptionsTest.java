@@ -53,7 +53,7 @@ public class CompileOptionsTest extends AbstractGradleTest {
     String buildFileContent = getBasicBuildScriptForTesting();
     buildFileContent += LF +
         "compileGosu {" + LF +
-        "    options.failOnError = false" + LF +
+        "    gosuOptions.failOnError = false" + LF +
 //        "    options.fork = true" + LF + //TODO setting fork = true causes NPE.
         "}";
     writeFile(_buildFile, buildFileContent);
@@ -108,7 +108,7 @@ public class CompileOptionsTest extends AbstractGradleTest {
 
     assertTrue(result.getStandardOutput().contains("Initializing Gosu compiler..."));
     assertTrue(result.getStandardOutput().contains("Gosu compilation completed with 1 error:"));
-    assertTrue(result.getStandardOutput().contains("Gosu Compiler: Ignoring compilation failure as 'failOnError' was set to false"));
+    assertTrue(result.getStandardOutput().contains("Gosu Compiler: Ignoring compilation failure(s) as 'failOnError' was set to false"));
     assertTrue(result.getStandardError().isEmpty());
     assertEquals(TaskOutcome.SUCCESS, result.task(":compileGosu").getOutcome());
 

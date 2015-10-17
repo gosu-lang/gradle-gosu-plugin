@@ -1,10 +1,8 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.gosulang.gradle.GosuBasePlugin;
-import org.gosulang.gradle.GosuPlugin;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
@@ -12,7 +10,6 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.compile.JavaCompilerFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.TaskAction;
@@ -21,7 +18,6 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,16 +30,6 @@ public class GosuCompile extends AbstractCompile {
 
   private final CompileOptions _compileOptions = new CompileOptions();
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
-
-//  @Inject
-//  protected GosuCompile(GosuCompileOptions gosuCompileOptions) {
-//    _gosuCompileOptions = gosuCompileOptions;
-//  }
-//
-//  @Inject
-//  protected GosuCompile() {
-//    this(new GosuCompileOptions());
-//  }
   
   @Override
   @TaskAction
@@ -136,7 +122,7 @@ public class GosuCompile extends AbstractCompile {
       CompilerDaemonManager compilerDaemonManager = getServices().get(CompilerDaemonManager.class);
       //      var inProcessCompilerDaemonFactory = getServices().getFactory(InProcessCompilerDaemonFactory);
       JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, antBuilder, javaCompilerFactory, compilerDaemonManager); //inProcessCompilerDaemonFactory
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, antBuilder, javaCompilerFactory, compilerDaemonManager, getGosuClasspath()); //inProcessCompilerDaemonFactory
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;

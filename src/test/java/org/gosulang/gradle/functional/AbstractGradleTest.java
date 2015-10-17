@@ -42,7 +42,7 @@ public abstract class AbstractGradleTest {
             "    repositories {" + LF +
             "        jcenter() " + LF +
             "        maven {" + LF +
-            "            url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
+            "            url 'https://oss.sonatype.org/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
             "        }" + LF +
             "    }" + LF +
             "    dependencies {" + LF +
@@ -52,15 +52,16 @@ public abstract class AbstractGradleTest {
             "    }" + LF +
             "}" + LF +
             "repositories {" + LF +
-            "    jcenter() " + LF +
-            "    maven {" + LF +
-            "        url 'http://gosu-lang.org/nexus/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
-            "    }" + LF +
+            "    mavenLocal() " + LF +
+//            "    jcenter() " + LF +
+//            "    maven {" + LF +
+//            "        url 'https://oss.sonatype.org/content/repositories/snapshots'" + LF + //for Gosu snapshot builds
+//            "    }" + LF +
             "}" + LF +
             "apply plugin: 'org.gosu-lang.gosu'" + LF +
             "dependencies {" + LF +
             "    compile 'org.gosu-lang.gosu:gosu-core-api:" + gosuVersion + "'" + LF +
-            "    compile 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +
+//            "    compile 'org.gosu-lang.gosu:gosu-core:" + gosuVersion + "'" + LF +
             "}" + LF +
             LF;
 

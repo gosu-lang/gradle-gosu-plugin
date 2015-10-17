@@ -1,39 +1,47 @@
 package org.gosulang.gradle.tasks.compile;
 
+import com.google.common.collect.ImmutableSet;
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.compile.AbstractOptions;
 
 public class GosuCompileOptions extends AbstractOptions {
-  private boolean _failOnError = true;
-  private boolean _fork = true;
-  private boolean _useAnt = true;
+
+  private static final ImmutableSet<String> EXCLUDE_FROM_ANT_PROPERTIES =
+      ImmutableSet.of("useAnt");
+
+  //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
+  private boolean failOnError = true;
+//  private boolean fork = true;
+  private boolean useAnt = true;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
    */
+  @Input
   public boolean isFailOnError() {
-    return _failOnError;
+    return failOnError;
   }
 
   /**
    * Sets whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
    */
   public void setFailOnError(boolean failOnError) {
-    this._failOnError = failOnError;
+    this.failOnError = failOnError;
   }
 
-  /**
-   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
-   */
-  public boolean isFork() {
-    return _fork;
-  }
-
-  /**
-   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
-   */
-  public void setFork(boolean fork) {
-    this._fork = fork;
-  }
+//  /**
+//   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
+//   */
+//  public boolean isFork() {
+//    return fork;
+//  }
+//
+//  /**
+//   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
+//   */
+//  public void setFork(boolean fork) {
+//    this.fork = fork;
+//  }
 
   /**
    * Tells whether to use Ant for compilation. If {@code true}, the standard Ant gosuc task will be used for
@@ -42,16 +50,26 @@ public class GosuCompileOptions extends AbstractOptions {
    * Defaults to {@code true}.
    */
   public boolean isUseAnt() {
-    return _useAnt;
+    return useAnt;
   }
 
   public void setUseAnt(boolean useAnt) {
-    this._useAnt = useAnt;
+    this.useAnt = useAnt;
 //    if (!useAnt) {
 //      setFork(true);
 //    }
   }
 
+  /**
+   * Some compiler options are not recognizable by the gosuc ant task; 
+   * this method prevents incompatible values from being passed to the ant configuration closure
+   * @param fieldName
+   * @return true if the given fieldName should be excluded
+   */
+  @Override
+  protected boolean excludeFromAntProperties(String fieldName) {
+    return EXCLUDE_FROM_ANT_PROPERTIES.contains(fieldName);
+  }
 
 
 }

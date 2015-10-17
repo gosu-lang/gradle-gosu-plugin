@@ -4,8 +4,6 @@ import org.gradle.api.Buildable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.file.FileCollectionInternal;
@@ -15,13 +13,7 @@ import org.gradle.api.tasks.TaskDependency;
 import org.gradle.internal.Cast;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.Collections;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +28,6 @@ public class GosuRuntime {
     _project = project;
     _project.getLogger().quiet("Constructing Gosu Runtime");
   }
-
 
   /**
    * Searches the specified classpath for a 'gosu-core-api' Jar, and returns a classpath
@@ -65,36 +56,8 @@ public class GosuRuntime {
           throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
         }
 
-
-
         File gosuCoreApiJar = findGosuJar(classpath, "core-api");
-        logger.quiet("Got gosuCoreApiJar:" + gosuCoreApiJar.getAbsolutePath());
-//        File gosuCoreJar = findGosuJar(classpath, "core");
-//        Configuration runtime = _project.getConfigurations().getByName("runtime");
-//        logger.quiet("Runtime convention isssss: " + runtime.getFiles());
-//        File gosuCoreJar = findGosuJar(runtime, "core");
-//        File gosuCoreJar = findGosuJar(_project.getConfigurations().getByName("runtime"), "core");
 
-        //could not find Gosu as external dependencies; before throwing check if they are present on the classpath in another form
-//        if(gosuCoreApiJar == null) {
-//          logger.quiet("gosuCoreApiJar was null; going to Plan B");
-//          gosuCoreApiJar = getClassLocation("gw.lang.Gosu");
-//        }
-//        if(gosuCoreJar == null) {
-//          logger.quiet("gosuCoreJar was null; going to Plan B");
-//          gosuCoreJar = getClassLocation("gw.internal.gosu.parser.MetaType");
-//        }
-
-//        if(gosuCoreApiJar == null || gosuCoreJar == null) {
-//          throw new GradleException(String.format("Cannot infer Gosu class path because both the Gosu Core API and Gosu Core Jars were not found." + LF +
-//              "Does %s declare dependency to gosu-core-api and gosu-core? Searched classpath: %s.", _project, classpath) + LF +
-//              "An example dependencies closure may resemble the following:" + LF +
-//              LF +
-//              "dependencies {" + LF +
-//              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.8.1'" + LF +
-//              "    runtime 'org.gosu-lang.gosu:gosu-core:1.8.1'" + LF +
-//              "}" + LF);
-//        }
         if(gosuCoreApiJar == null) {
           throw new GradleException(String.format("Cannot infer Gosu class path because the Gosu Core API Jar was not found." + LF +
               "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, classpath) + LF +
@@ -106,24 +69,13 @@ public class GosuRuntime {
         }
 
         String gosuCoreApiVersion = getGosuVersion(gosuCoreApiJar);
-//        String gosuCoreVersion = getGosuVersion(gosuCoreJar);
 
         if (gosuCoreApiVersion == null ) {
           throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
         }
-//        if (gosuCoreVersion == null ) {
-//          throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreJar, _project));
-//        }
-
-//        if(!gosuCoreApiVersion.equals(gosuCoreVersion)) {
-//          throw new GradleException("Gosu library version mismatch detected.  Please ensure these two libraries version numbers are in sync:" + LF
-//              + "gosu-core-api:" + gosuCoreApiVersion + LF
-//              + "gosu-core:" + gosuCoreVersion);
-//        }
 
         return Cast.cast(FileCollectionInternal.class, _project.getConfigurations().detachedConfiguration(
-//            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-core-api", gosuCoreApiVersion),
-            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-core", gosuCoreApiVersion)));
+            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-ant-compiler", gosuCoreApiVersion)));
       }
 
       // let's override this so that delegate isn't created at autowiring time (which would mean on every build)
@@ -155,31 +107,6 @@ public class GosuRuntime {
       }
     }
     return null;
-  }
-
-  private File getClassLocation(String className) {
-    Class clazz;
-    try {
-      clazz = Class.forName(className);
-    } catch (ClassNotFoundException e) {
-      return null;
-    }
-    ProtectionDomain pDomain = clazz.getProtectionDomain();
-    CodeSource cSource = pDomain.getCodeSource();
-    if (cSource != null) {
-      URL loc = cSource.getLocation();
-      File file;
-      try {
-        file = new File(URLDecoder.decode(loc.getPath(), "UTF-8"));
-      } catch (UnsupportedEncodingException e) {
-        _project.getLogger().warn("Unsupported Encoding for URL: " + loc, e);
-        file = new File(loc.getPath());
-      }
-      _project.getLogger().info("Found location <" + file.getPath() + "> for className <" + className + ">");
-      return file;
-    } else {
-      return null;
-    }
   }
 
   /**

@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks.compile;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
@@ -8,13 +7,15 @@ import org.codehaus.groovy.runtime.MethodClosure;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.tasks.WorkResult;
-import org.gradle.api.tasks.javadoc.Groovydoc;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
@@ -34,55 +35,70 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
       
   @Override
   public WorkResult execute(DefaultGosuCompileSpec spec) {
-    File destinationDir = spec.getDestinationDir();
-//    GosuCompileOptions options = spec.getGosuCompileOptions(); //TODO implement GCO
-    Object options = "";
-    String taskName = "gosuc";
+    final String gosuClasspathRefId = "gosu.classpath";
+    final File destinationDir = spec.getDestinationDir();
+    final GosuCompileOptions options = spec.getGosuCompileOptions();
+    Map<String, Object> optionsMap = options.optionMap();
+
+    final String taskName = "gosuc";
     Iterable<File> compileClasspath = spec.getClasspath();
 
     LOGGER.info("Compiling with Ant gosuc task.");
-    LOGGER.debug("Ant gosuc task options: {}", options);
+//    LOGGER.info("Ant gosuc task generic options: {}", genericOptions); //TODO change to debug
+    LOGGER.info("Ant gosuc task options: {}", optionsMap); //TODO change to debug
+    LOGGER.info("_gosuClasspath: {}", _gosuClasspath); //TODO change to debug
     
     _antBuilder.withClasspath(_gosuClasspath).execute(new Closure<Object>(this, this) {
       @SuppressWarnings("UnusedDeclaration")
       public Object doCall( Object it ) {
         final GroovyObjectSupport antBuilder = (GroovyObjectSupport) it;
+        
+        LOGGER.info("About to call antBuilder.invokeMethod(\"taskdef\")");
+        
+//        antBuilder.invokeMethod("taskdef", ImmutableMap.of(
+//            "resource", "gosu/tools/ant/antlib.xml"
+//        ));
 
         antBuilder.invokeMethod("taskdef", ImmutableMap.of(
-//            "name", taskName,
-//            "classname", "org.codehaus.groovy.ant.Groovydoc",
-            "resource", "gosu/tools/ant/antlib.xml"
-        ));
+            "name", taskName,
+            "classname", "gosu.tools.ant.Gosuc"
+        ));        
         
-//        antBuilder.invokeMethod(taskName, new Object[]{options, new Closure<Object>(this, this) {
-//          public Object doCall( Object ignore ) {
-//            
-//            return null;
-//          }
-//        }});
+        LOGGER.info("Finished calling antBuilder.invokeMethod(\"taskdef\")");
+        
+        //define the PATH for the classpath
+        List<String> gosuClasspathAsStrings = new ArrayList<>();
+        _gosuClasspath.forEach(file -> gosuClasspathAsStrings.add(file.getAbsolutePath()));
 
-        antBuilder.invokeMethod(taskName, new Object[]{options, ImmutableMap.of(
-            "srcdir", "",
-            "destdir", "",
-            "classpathref", "gosu.classpath",
-            "failonerror", "true" //TODO parameterize
-        )});
+        Map<String, Object> classpath = new HashMap<>();
+        classpath.put("id", gosuClasspathRefId);
+        classpath.put("path", String.join(":", gosuClasspathAsStrings));
+//        classpath.put("path", '"' + String.join(":", gosuClasspathAsStrings) + '"');
+//        _gosuClasspath.forEach(file -> classpath.put("file", file));
 
+        LOGGER.info("About to call antBuilder.invokeMethod(\"path\")");
+        LOGGER.info("classpath map {}", classpath);
+        
+        antBuilder.invokeMethod("path", classpath);
 
-//        antBuilder.invokeMethod("groovydoc", new Object[]{args, new Closure<Object>(this, this) {
-//          public Object doCall( Object ignore ) {
-//            for (Groovydoc.Link link : links) {
-//              antBuilder.invokeMethod("link", new Object[]{
-//                  ImmutableMap.of(
-//                      "packages", Joiner.on(",").join(link.getPackages()),
-//                      "href", link.getUrl()
-//                  )
-//              });
-//            }
-//
-//            return null;
-//          }
-//        }});
+        LOGGER.info("Finished calling antBuilder.invokeMethod(\"path\")");
+
+        LOGGER.info("About to call antBuilder.invokeMethod(\"" + taskName + "\")");
+
+        //define the PATH for the source root(s)
+        List<String> srcDirAsStrings = new ArrayList<>();
+        spec.getSourceRoots().forEach(file -> srcDirAsStrings.add(file.getAbsolutePath()));
+
+        optionsMap.putAll(ImmutableMap.of(
+                "srcdir", String.join(":", srcDirAsStrings),
+                "destdir", destinationDir.getAbsolutePath(),
+                "classpathref", gosuClasspathRefId
+            ));
+
+        LOGGER.info("Dumping optionsMap:");
+        optionsMap.forEach( (key, value) -> LOGGER.info('\t' + key + '=' + value));
+        
+        antBuilder.invokeMethod(taskName, optionsMap);
 
         return null;
       }

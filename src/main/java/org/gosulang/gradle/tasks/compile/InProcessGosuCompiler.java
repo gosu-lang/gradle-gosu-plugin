@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use AntGosuCompiler instead
+ */
+@Deprecated
 public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
   private static final Logger LOGGER = Logging.getLogger(InProcessGosuCompiler.class);

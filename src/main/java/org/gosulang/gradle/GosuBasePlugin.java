@@ -6,16 +6,12 @@ import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.plugins.JavaBasePlugin;
-import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.testing.Test;
 
 import javax.inject.Inject;
 
@@ -49,11 +45,14 @@ public class GosuBasePlugin implements Plugin<Project> {
     _gosuRuntime = _project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class, _project);
   }
 
+  /**
+   * Sets the gosuClasspath property for all GosuCompile tasks: compileGosu and compileTestGosu 
+   */
   private void configureCompileDefaults() {
 
     _project.getTasks().withType(GosuCompile.class, gosuCompile -> {
       gosuCompile.getConventionMapping().map("gosuClasspath", () -> {
-        _project.getLogger().quiet("delete me for debugging " + gosuCompile.getName() + " " + gosuCompile.getClasspath());
+        _project.getLogger().quiet("delete me for debugging " + gosuCompile.getName() + " ~ " + gosuCompile.getClasspath() + " ~~ " + gosuCompile.getClasspath().getFiles());
         return _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath());});
     });
   }

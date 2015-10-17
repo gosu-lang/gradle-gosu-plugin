@@ -25,26 +25,19 @@ class GosuRuntimeInferenceTest extends Specification {
         def buildFileContent = 
 """
 buildscript {
-    repositories {
-//        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
-        jcenter()
-    }
-    
     dependencies {
-        classpath 'org.gosu-lang.gosu:gosu-core-api:1.8.1'
-        classpath 'org.gosu-lang.gosu:gosu-core:1.8.1'
         classpath files(${getClasspathWithoutGosuJars()})
     }
 }
 apply plugin: 'org.gosu-lang.gosu'
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+//    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion' //intentionally commenting-out to cause build failure
     testCompile group: 'junit', name: 'junit', version: '4.11'
-//    runtime group: 'org.gosu-lang.gosu', name: 'gosu-core', version: '$gosuVersion' //intentionally commenting-out to cause build failure
 }
 """
         writeFile(_buildFile, buildFileContent)
@@ -60,7 +53,7 @@ dependencies {
         writeFile(pogo, simplePogoContent);
     }
     
-    def "Build throws when only one gosu jar is explicitly declared as a dependency"() {
+    def "Build throws when gosu-core-api jar is not declared as a dependency"() {
 
         when:
         GradleRunner runner = GradleRunner.create()
@@ -79,15 +72,20 @@ dependencies {
                 
         then:
         notThrown(UnexpectedBuildSuccess)
-        //result.getStandardError().contains('Cannot infer Gosu class path because both the Gosu Core API and Gosu Core Jars were not found.')
+        result.getStandardError().contains('Cannot infer Gosu class path because the Gosu Core API Jar was not found.')
 
     }
 
+    /**
+     * This method might be overkill
+     * @return the classpath containing the bytecode of the gosu plugin before it is packaged, sans any dependencies on gosu JARs
+     */
     protected String getClasspathWithoutGosuJars() {
         URL url = _pluginClasspathResource
         List<String> pluginClasspathRaw = new BufferedReader(new FileReader(url.getFile())).lines().collect(Collectors.toList())
         List<String> elementsToRemove = pluginClasspathRaw.findAll { it.contains('/org.gosu-lang.gosu/gosu-core-api/') || 
                                                                      it.contains('/org.gosu-lang.gosu/gosu-core/') ||
+                                                                     it.contains('/org.gosu-lang.gosu/gosu-ant-compiler/') ||
                                                                      it.contains('/org.gosu-lang.gosu.managed/')}
         return "'" + String.join("', '", pluginClasspathRaw.minus(elementsToRemove)) + "'"; //wrap each entry in single quotes
     }
