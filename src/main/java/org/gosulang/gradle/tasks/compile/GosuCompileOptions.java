@@ -1,13 +1,9 @@
 package org.gosulang.gradle.tasks.compile;
 
-import com.google.common.collect.ImmutableSet;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.compile.AbstractOptions;
 
 public class GosuCompileOptions extends AbstractOptions {
-
-  private static final ImmutableSet<String> EXCLUDE_FROM_ANT_PROPERTIES =
-      ImmutableSet.of("useAnt");
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
   private boolean failOnError = true;
@@ -68,7 +64,7 @@ public class GosuCompileOptions extends AbstractOptions {
    */
   @Override
   protected boolean excludeFromAntProperties(String fieldName) {
-    return EXCLUDE_FROM_ANT_PROPERTIES.contains(fieldName);
+    return fieldName.equals("useAnt");
   }
 
 

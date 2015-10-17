@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks.compile;
 
-import com.google.common.collect.ImmutableMap;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.runtime.MethodClosure;
@@ -58,11 +57,11 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 //        antBuilder.invokeMethod("taskdef", ImmutableMap.of(
 //            "resource", "gosu/tools/ant/antlib.xml"
 //        ));
+        Map<String, Object> taskdefMap = new HashMap<>();
+        taskdefMap.put("name", taskName);
+        taskdefMap.put("classname", "gosu.tools.ant.Gosuc");
 
-        antBuilder.invokeMethod("taskdef", ImmutableMap.of(
-            "name", taskName,
-            "classname", "gosu.tools.ant.Gosuc"
-        ));        
+        antBuilder.invokeMethod("taskdef", taskdefMap);
         
         LOGGER.info("Finished calling antBuilder.invokeMethod(\"taskdef\")");
         
@@ -89,11 +88,9 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
         List<String> srcDirAsStrings = new ArrayList<>();
         spec.getSourceRoots().forEach(file -> srcDirAsStrings.add(file.getAbsolutePath()));
 
-        optionsMap.putAll(ImmutableMap.of(
-                "srcdir", String.join(":", srcDirAsStrings),
-                "destdir", destinationDir.getAbsolutePath(),
-                "classpathref", gosuClasspathRefId
-            ));
+        optionsMap.put("srcdir", String.join(":", srcDirAsStrings));
+        optionsMap.put("destdir", destinationDir.getAbsolutePath());
+        optionsMap.put("classpathref", gosuClasspathRefId);
 
         LOGGER.info("Dumping optionsMap:");
         optionsMap.forEach( (key, value) -> LOGGER.info('\t' + key + '=' + value));
