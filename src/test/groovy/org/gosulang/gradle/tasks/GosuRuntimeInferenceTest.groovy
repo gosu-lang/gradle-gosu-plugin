@@ -53,7 +53,7 @@ dependencies {
         String simplePogoContent = 'public class SimplePogo {}'
         File pogo = new File(_testProjectDir.newFolder('src', 'main', 'gosu'), 'SimplePogo.gs')
         pogo.getParentFile().mkdirs();
-        writeFile(pogo, simplePogoContent);
+        writeFile(pogo, simplePogoContent)
     }
     
     def "Build throws when gosu-core-api jar is not declared as a dependency"() {
@@ -65,13 +65,13 @@ dependencies {
         
         BuildResult result = runner.buildAndFail()
 
-        println("--- Dumping stdout ---");
-        println(result.getStandardOutput());
-        println("--- Done dumping stdout ---");
-        println();
-        println("--- Dumping stderr ---");
-        println(result.getStandardError());
-        println("--- Done dumping stderr ---");
+        println("--- Dumping stdout ---")
+        println(result.getStandardOutput())
+        println("--- Done dumping stdout ---")
+        println()
+        println("--- Dumping stderr ---")
+        println(result.getStandardError())
+        println("--- Done dumping stderr ---")
                 
         then:
         notThrown(UnexpectedBuildSuccess)
@@ -90,21 +90,21 @@ dependencies {
                                                                      it.contains('/org.gosu-lang.gosu/gosu-core/') ||
                                                                      it.contains('/org.gosu-lang.gosu/gosu-ant-compiler/') ||
                                                                      it.contains('/org.gosu-lang.gosu.managed/')}
-        return "'" + String.join("', '", pluginClasspathRaw.minus(elementsToRemove)) + "'"; //wrap each entry in single quotes
+        return "'" + String.join("', '", pluginClasspathRaw.minus(elementsToRemove)) + "'" //wrap each entry in single quotes
     }
 
     protected static String getGosuVersion(URL url) throws IOException {
-        return new BufferedReader(new FileReader(url.getFile())).lines().findFirst().get();
+        return new BufferedReader(new FileReader(url.getFile())).lines().findFirst().get()
     }
 
     protected static void writeFile(File destination, String content) throws IOException {
-        BufferedWriter output = null;
+        BufferedWriter output = null
         try {
-            output = new BufferedWriter(new FileWriter(destination));
-            output.write(content);
+            output = new BufferedWriter(new FileWriter(destination))
+            output.write(content)
         } finally {
             if (output != null) {
-                output.close();
+                output.close()
             }
         }
     }
