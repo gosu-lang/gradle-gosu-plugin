@@ -7,7 +7,7 @@ public class GosuCompileOptions extends AbstractOptions {
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
   private boolean failOnError = true;
-//  private boolean fork = true;
+  private boolean checkedArithmetic = false;
   private boolean useAnt = true;
 
   /**
@@ -39,6 +39,18 @@ public class GosuCompileOptions extends AbstractOptions {
 //    this.fork = fork;
 //  }
 
+  public boolean isCheckedArithmetic() {
+    return checkedArithmetic;
+  }
+
+  /**
+   * If true, Gosu classes will be compiled with {@code -DcheckedArithmetic=true}.  Defaults to {@code false}.
+   * @param checkedArithmetic
+   */
+  public void setCheckedArithmetic(boolean checkedArithmetic) {
+    this.checkedArithmetic = checkedArithmetic;
+  }
+  
   /**
    * Tells whether to use Ant for compilation. If {@code true}, the standard Ant gosuc task will be used for
    * Gosu compilation. {@code false} is currently not supported.
@@ -66,6 +78,5 @@ public class GosuCompileOptions extends AbstractOptions {
   protected boolean excludeFromAntProperties(String fieldName) {
     return fieldName.equals("useAnt");
   }
-
 
 }
