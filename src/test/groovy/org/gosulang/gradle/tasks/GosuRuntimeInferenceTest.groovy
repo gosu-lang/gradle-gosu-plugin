@@ -75,7 +75,7 @@ dependencies {
                 
         then:
         notThrown(UnexpectedBuildSuccess)
-        result.getStandardError().contains('Cannot infer Gosu class path because the Gosu Core API Jar was not found.')
+        result.getStandardError().contains('Cannot infer Gosu classpath because the Gosu Core API Jar was not found.')
 
     }
 

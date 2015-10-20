@@ -3,78 +3,37 @@ package org.gosulang.gradle;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ResolvedArtifact;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.testing.Test;
-
-import java.util.Set;
-import java.util.concurrent.Callable;
+import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.tasks.SourceSet;
 
 public class GosuPlugin implements Plugin<Project> {
 
-  private Project _project;
-
   public void apply(Project project) {
-    _project = project;
     project.getPluginManager().apply(GosuBasePlugin.class);
     project.getPluginManager().apply(JavaPlugin.class);
 
-//    configureTestRuntime();
+    JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 
-//    addGosuRuntimeDependencies();
+    refreshTestRuntimeClasspath(javaConvention);
   }
 
-  private void configureTestRuntime() {
-    GosuRuntime gosuRuntime = _project.getExtensions().getByType(GosuRuntime.class);
-    Logger logger = _project.getLogger();
-    logger.quiet("delete me! Test task count: " + _project.getTasks().withType(Test.class).size());
-    Test theTask = _project.getTasks().withType(Test.class).iterator().next();
-    logger.quiet("using theTask.getClasspath(): " + theTask.getClasspath().getFiles());
-    logger.quiet("using theTask.getBootStrapClasspath(): " + theTask.getBootstrapClasspath().getFiles());
+  /**
+   * Ensures that the runtime dependency on gosu-core is included the testRuntime's classpath
+   * @param pluginConvention
+   */
+  private void refreshTestRuntimeClasspath( final JavaPluginConvention pluginConvention ) {
+    final Project project = pluginConvention.getProject();
+    GosuRuntime gosuRuntime = project.getExtensions().getByType(GosuRuntime.class);
 
-    _project.getTasks().withType(Test.class, testTask -> {
-      testTask.getConventionMapping().map("bootstrapClasspath", () -> {
-//        System.out.println("using testTask.getClasspath(): " + testTask.getClasspath().getFiles());
-//        System.out.println("using testTask.getBootStrapClasspath(): " + testTask.getBootstrapClasspath().getFiles());
-//        System.out.println("inferred runtime from bootstrapclasspath: " + gosuRuntime.inferGosuClasspath(testTask.getBootstrapClasspath()));
-//        System.out.println("inferred runtime from classpath: " + gosuRuntime.inferGosuClasspath(testTask.getClasspath()));
-        return gosuRuntime.inferGosuClasspath(testTask.getBootstrapClasspath());
-      });
-    });
+    SourceSet main = pluginConvention.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+    SourceSet test = pluginConvention.getSourceSets().getByName(SourceSet.TEST_SOURCE_SET_NAME);
 
-    theTask = _project.getTasks().withType(Test.class).iterator().next();
-    logger.quiet("After config; using theTask.getBootStrapClasspath(): " + theTask.getBootstrapClasspath().getFiles());
-
+    test.setRuntimeClasspath(project.files(
+        test.getOutput(), 
+        main.getOutput(), 
+        project.getConfigurations().getByName(JavaPlugin.TEST_RUNTIME_CONFIGURATION_NAME),
+        gosuRuntime.inferGosuClasspath(project.getConfigurations().getByName(JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME))));
   }
-
-//  private void addGosuRuntimeDependencies() {
-//    Set<ResolvedArtifact> buildScriptDeps = _project.getBuildscript().getConfigurations().getByName("classpath").getResolvedConfiguration().getResolvedArtifacts();
-//    ResolvedArtifact gosuCore = GosuPlugin.getArtifactWithName("gosu-core", buildScriptDeps);
-//    ResolvedArtifact gosuCoreApi = GosuPlugin.getArtifactWithName("gosu-core-api", buildScriptDeps);
-//
-//  _project.getLogger().quiet("gosuCoreApi is: " + gosuCoreApi);
-//  _project.getLogger().quiet("gosuCore is: " + gosuCore);
-//    //inject Gosu jar dependencies into the classpath of the project implementing this plugin
-//    if(gosuCore != null) {
-//      _project.getDependencies().add("runtime", gosuCore.getModuleVersion().getId().toString());
-//    }
-//    if(gosuCoreApi != null) {
-//      _project.getDependencies().add("compile", gosuCoreApi.getModuleVersion().getId().toString());
-//    }
-//  }
-//
-//  public static ResolvedArtifact getArtifactWithName(final String name, final Set<ResolvedArtifact> artifacts) {
-//    ResolvedArtifact retval = null;
-//    for (ResolvedArtifact artifact : artifacts) {
-//      if (artifact.getName().equals(name)) {
-//        retval = artifact;
-//      }
-//    }
-//    return retval;
-//    //throw new IllegalStateException("Could not find a dependency with name " + name);
-//  }
 
 }

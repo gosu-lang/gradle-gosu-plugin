@@ -13,7 +13,9 @@ import org.gradle.api.tasks.TaskDependency;
 import org.gradle.internal.Cast;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,8 +33,8 @@ public class GosuRuntime {
 
   /**
    * Searches the specified classpath for a 'gosu-core-api' Jar, and returns a classpath
-   * containing a corresponding (same version) 'gosu-core' Jar and its dependencies.
-   *
+   * containing a corresponding (same version) 'gosu-ant-compiler' Jar and its dependencies.
+   * 
    * <p>The returned class path may be empty, or may fail to resolve when asked for its contents.
    *
    * @param classpath a classpath containing a 'gosu-core-api' Jar
@@ -59,8 +61,11 @@ public class GosuRuntime {
         File gosuCoreApiJar = findGosuJar(classpath, "core-api");
 
         if(gosuCoreApiJar == null) {
-          throw new GradleException(String.format("Cannot infer Gosu class path because the Gosu Core API Jar was not found." + LF +
-              "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, classpath) + LF +
+          List<String> classpathAsStrings = new ArrayList<>();
+          classpath.forEach(file -> classpathAsStrings.add(file.getAbsolutePath()));
+          String flattenedClasspath = String.join(":", classpathAsStrings);
+          throw new GradleException(String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
+              "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, flattenedClasspath) + LF +
               "An example dependencies closure may resemble the following:" + LF +
               LF +
               "dependencies {" + LF +

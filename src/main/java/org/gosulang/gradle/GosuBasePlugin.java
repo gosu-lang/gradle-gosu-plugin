@@ -53,7 +53,8 @@ public class GosuBasePlugin implements Plugin<Project> {
     _project.getTasks().withType(GosuCompile.class, gosuCompile -> {
       gosuCompile.getConventionMapping().map("gosuClasspath", () -> {
         _project.getLogger().quiet("delete me for debugging " + gosuCompile.getName() + " ~ " + gosuCompile.getClasspath() + " ~~ " + gosuCompile.getClasspath().getFiles());
-        return _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath());});
+        return _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath());
+      });
     });
   }
 
