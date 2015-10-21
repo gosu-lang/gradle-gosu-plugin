@@ -6,10 +6,13 @@
 
 **Implemented enhancements:**
 
+- Add failOnError flag [\#4](https://github.com/gosu-lang/gradle-gosu-plugin/issues/4)
+- Add support for checked arithmetic [\#3](https://github.com/gosu-lang/gradle-gosu-plugin/issues/3)
 - Gosu 1.8 support [\#2](https://github.com/gosu-lang/gradle-gosu-plugin/issues/2)
 
 **Fixed bugs:**
 
+- Fix classpath pollution [\#5](https://github.com/gosu-lang/gradle-gosu-plugin/issues/5)
 - sourceSets not configurable [\#1](https://github.com/gosu-lang/gradle-gosu-plugin/issues/1)
 
 ## [0.1-alpha](https://github.com/gosu-lang/gradle-gosu-plugin/tree/0.1-alpha) (2015-09-03)

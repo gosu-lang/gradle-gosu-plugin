@@ -20,15 +20,23 @@ sourceSets {
     main {
         gosu {
             exclude 'example/**'
+        }
+    }
+}
+
+compileGosu {
+    gosuOptions.checkedArithmetic = true
+    gosuOptions.failOnError = false
+}
 ```
 
 ## How do I use this?
 
 The latest release version, and instructions to apply it, is available here: https://plugins.gradle.org/plugin/org.gosu-lang.gosu
 
-It is not necessary to create any other dependencies on Gosu JARs; the plugin automates this process.
+It is now necessary to create a single compile-time dependency on the gosu-core-api JAR.  Runtime and other dependencies are automatically inferred and applied by the plugin.
 
-Additionally, snapshots are available from http://gosu-lang.org/nexus/content/repositories/snapshots/org/gosu-lang/gosu/gradle-gosu-plugin/
+Additionally, snapshots are available from https://oss.sonatype.org/content/repositories/snapshots/org/gosu-lang/gosu/gradle-gosu-plugin/
 
 ### Changelog
 
