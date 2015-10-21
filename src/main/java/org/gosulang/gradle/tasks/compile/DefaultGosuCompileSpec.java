@@ -10,6 +10,7 @@ import java.util.Set;
 public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implements JavaCompileSpec, GosuCompileSpec {
 
   private CompileOptions _compileOptions;
+  private GosuCompileOptions _gosuCompileOptions;
   private Iterable<File> _gosuClasspath;
   private File _dependencyCacheDir;
   private Set<File> _srcDirSet;
@@ -50,5 +51,14 @@ public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implem
   void setGosuClasspath(Iterable<File> _gosuClasspath) {
     this._gosuClasspath = _gosuClasspath;
   }
+
+  public GosuCompileOptions getGosuCompileOptions() {
+    return _gosuCompileOptions;
+  }
+
+  public void setGosuCompileOptions(GosuCompileOptions gosuCompileOptions) {
+    _gosuCompileOptions = gosuCompileOptions;
+  }
+
 
 }

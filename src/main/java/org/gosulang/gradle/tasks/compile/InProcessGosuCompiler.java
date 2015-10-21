@@ -1,10 +1,5 @@
 package org.gosulang.gradle.tasks.compile;
 
-import gw.lang.gosuc.simple.GosuCompiler;
-import gw.lang.gosuc.simple.ICompilerDriver;
-import gw.lang.gosuc.simple.IGosuCompiler;
-import gw.lang.gosuc.simple.SoutCompilerDriver;
-import org.codehaus.plexus.util.FileUtils;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
 import org.gradle.api.internal.tasks.compile.daemon.CompileResult;
@@ -15,10 +10,19 @@ import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use AntGosuCompiler instead
+ */
+@Deprecated
 public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
   private static final Logger LOGGER = Logging.getLogger(InProcessGosuCompiler.class);
@@ -26,8 +30,23 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
   @Override
   public WorkResult execute( DefaultGosuCompileSpec spec ) {
     LOGGER.info("Initializing Gosu compiler...");
-    final ICompilerDriver driver = new SoutCompilerDriver();
-    final IGosuCompiler gosuc = new GosuCompiler();
+
+    Class<?> driverIF = null;
+    Object driver = null;
+    Object gosuc = null;
+
+    try {
+      driverIF = Class.forName("gw.lang.gosuc.simple.ICompilerDriver");
+      driver = Class.forName("gw.lang.gosuc.simple.SoutCompilerDriver").newInstance();
+      gosuc = Class.forName("gw.lang.gosuc.simple.GosuCompiler").newInstance();
+    }
+    catch(ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      LOGGER.error(e.getMessage());
+      throw new RuntimeException(e.getClass() + ": gosu-core-api not on classpath: " + e.getMessage()); //FIXME
+    }
+
+//    final ICompilerDriver driver = new SoutCompilerDriver();
+//    final IGosuCompiler gosuc = new GosuCompiler();
     boolean didWork = false;
 
     List<String> sourceRoots = spec.getSourceRoots().stream()
@@ -48,7 +67,18 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     classpath.addAll(gosuClasspath);
     classpath.addAll(getJreJars());
 
-    gosuc.initializeGosu(sourceRoots, classpath, spec.getDestinationDir().getAbsolutePath());
+    Method initializeGosuMethod = null;
+    try {
+      LOGGER.quiet("gosuc: " + gosuc);
+      LOGGER.quiet("gosuc.getClass(): " + gosuc.getClass());
+      initializeGosuMethod = gosuc.getClass().getMethod("initializeGosu", List.class, List.class, String.class);
+      initializeGosuMethod.invoke(gosuc, sourceRoots, classpath, spec.getDestinationDir().getAbsolutePath());
+    }
+    catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      Throwable cause = e.getCause(); //FIXME
+      LOGGER.error(cause.getMessage());
+      LOGGER.error(e.getMessage());
+    }
 
     FileTree allSourceFiles = spec.getSource().getAsFileTree();
     if(!allSourceFiles.isEmpty()) {
@@ -62,30 +92,78 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
           " to " + spec.getDestinationDir().getAbsolutePath());
     }
 
-    boolean isDebug = LOGGER.isDebugEnabled(); 
-    allSourceFiles.forEach(sourceFile -> {
+    Method compileMethod = null;
+    boolean isDebug = LOGGER.isDebugEnabled();
+    try {
+      if(driverIF.getClass() == null || driver.getClass() == null || gosuc.getClass() == null) {
+        System.out.println("**************************************");
+      }
+      LOGGER.quiet("driverIF: " + driverIF);
+      LOGGER.quiet("driver.getClass(): " + driver.getClass());
+      LOGGER.quiet("gosuc.getClass(): " + gosuc.getClass());
+      compileMethod = gosuc.getClass().getMethod("compile", File.class, driverIF);//driver.getClass());
+      LOGGER.quiet("compileMethod.toString(): " + compileMethod.toString());
+    }
+    catch (NoSuchMethodException e) {
+      Throwable cause = e.getCause(); //FIXME
+//      LOGGER.error(cause.getMessage());
+      LOGGER.error(e.getMessage());
+    }
+      for(File sourceFile : allSourceFiles) {
       if (isDebug) {
         LOGGER.debug("Compiling Gosu source file: " + sourceFile.getAbsolutePath());
       }
       try {
-        gosuc.compile(sourceFile, driver);
-      } catch (Exception e) {
+        LOGGER.quiet("driver.getClass(): " + driver.getClass());
+        LOGGER.quiet("driver: " + driver);
+        LOGGER.quiet("sourceFile: " + sourceFile);
+        LOGGER.quiet("compileMethod: " + compileMethod);
+        compileMethod.invoke(gosuc, sourceFile, driver);
+      } catch (InvocationTargetException | IllegalAccessException e) {
+        Throwable cause = e.getCause(); //FIXME
+        LOGGER.error(cause.getMessage());
         LOGGER.error(e.getMessage());
       }
-    });
+    }
 
-    gosuc.unitializeGosu();
+    Method uninitializeGosuMethod = null;
+    try {
+      uninitializeGosuMethod = gosuc.getClass().getMethod("unitializeGosu");
+      uninitializeGosuMethod.invoke(gosuc);
+    }
+    catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      Throwable cause = e.getCause(); //FIXME
+      LOGGER.error(cause.getMessage());
+      LOGGER.error(e.getMessage());
+    }
 
-    boolean errorsInCompilation = ((SoutCompilerDriver) driver).hasErrors();
+    Method hasErrorsMethod, getWarningsMethod, getErrorsMethod;
+    boolean errorsInCompilation = false;
+    List<String> warnings = null;
+    List<String> errors = null;
+    try {
+      hasErrorsMethod = driver.getClass().getMethod("hasErrors");
+      getWarningsMethod = driver.getClass().getMethod("getWarnings");
+      getErrorsMethod = driver.getClass().getMethod("getErrors");
+      errorsInCompilation = (boolean) hasErrorsMethod.invoke(driver);
+      warnings = (List<String>) getWarningsMethod.invoke(driver);
+      errors = (List<String>) getErrorsMethod.invoke(driver);
+    }
+    catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      Throwable cause = e.getCause(); //FIXME
+      LOGGER.error(cause.getMessage());
+      LOGGER.error(e.getMessage());
+    }
+
     List<String> warningMessages = new ArrayList<>();
     List<String> errorMessages = new ArrayList<>();
 
-    ((SoutCompilerDriver) driver).getWarnings().forEach(warning -> warningMessages.add("[WARNING] " + warning));
+    warnings.forEach(warning -> warningMessages.add("[WARNING] " + warning));
     int numWarnings = warningMessages.size();
 
     int numErrors = 0;
     if(errorsInCompilation) {
-      ((SoutCompilerDriver) driver).getErrors().forEach(error -> errorMessages.add("[ERROR] " + error));
+     errors.forEach(error -> errorMessages.add("[ERROR] " + error));
       numErrors = errorMessages.size();
     }
 
@@ -133,17 +211,19 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
    * Get all JARs from the lib directory of the System's java.home property
    * @return List of absolute paths to all JRE libraries
    */
-  @SuppressWarnings("unchecked")
   private List<String> getJreJars() {
-    File javaHome = new File(System.getProperty("java.home"));
-    File libsDir = new File(javaHome + "/lib");
-    List<String> classes = new ArrayList<>();
+    String javaHome = System.getProperty("java.home");
+    Path libsDir = FileSystems.getDefault().getPath(javaHome, "/lib");
     try {
-      classes = FileUtils.getFileNames(libsDir, "**/*.jar", null, true); //gradleApi is using an older version of plexus-utils which does not support generics
-    } catch (IOException e) {
+      return Files.walk(libsDir)
+          .filter( path -> path.toFile().isFile())
+          .filter( path -> path.toString().endsWith(".jar"))
+          .map( java.nio.file.Path::toString )
+          .collect(Collectors.toList());
+    } catch (SecurityException | IOException e) {
       e.printStackTrace();
+      throw new RuntimeException(e);
     }
-    return classes;
   }
 
 }

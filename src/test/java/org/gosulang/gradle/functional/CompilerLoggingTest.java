@@ -91,7 +91,7 @@ public class CompilerLoggingTest extends AbstractGradleTest {
     System.out.println("--- Done dumping stderr ---");
 
     assertFalse(result.getStandardOutput().contains("Initializing Gosu compiler...")); // this message requires info level and below
-    assertTrue(result.getStandardOutput().contains("Gosu compilation completed with 1 warning; rerun with INFO level logging to display details.")); // this message requires info level and below
+    assertTrue(result.getStandardOutput().contains("Gosu compilation completed with 1 warning"));
     assertTrue(result.getStandardError().isEmpty());
     assertEquals(TaskOutcome.SUCCESS, result.task(":compileGosu").getOutcome());
 
@@ -136,8 +136,8 @@ public class CompilerLoggingTest extends AbstractGradleTest {
     System.out.println("--- Done dumping stderr ---");
 
     assertTrue(result.getStandardOutput().contains("BUILD FAILED"));
-    assertTrue(result.getStandardOutput().contains("Gosu compilation completed with 1 error; rerun with INFO level logging to display details."));
-    assertTrue(result.getStandardError().contains("Compilation failed; see the compiler error output for details."));
+    assertTrue(result.getStandardOutput().contains("Gosu compilation completed with 1 error"));
+    assertTrue(result.getStandardError().contains("Gosu compilation failed with errors; see compiler output for details."));
     assertEquals(TaskOutcome.FAILED, result.task(":compileGosu").getOutcome());
 
     //did we actually compile anything?

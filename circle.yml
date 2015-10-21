@@ -10,14 +10,13 @@ machine:
 general:
   branches:
     only:
-      - master # only build/deploy from master
+      - reflection
   artifacts:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
-  # Call './gradlew build uploadArchives' instead of the default 'mvn integration-test'
   override:
-    - ./gradlew build uploadArchives -is
+    - ./gradlew test -is # just test on this branch, don't bother publishing
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;

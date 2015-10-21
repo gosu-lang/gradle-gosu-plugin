@@ -1,11 +1,11 @@
 package org.gosulang.gradle;
 
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
+import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
@@ -16,9 +16,12 @@ import org.gradle.api.tasks.SourceSet;
 import javax.inject.Inject;
 
 public class GosuBasePlugin implements Plugin<Project> {
+  public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
 
   private final FileResolver _fileResolver;
+
   private Project _project;
+  private GosuRuntime _gosuRuntime;
 
   @Inject
   GosuBasePlugin(FileResolver fileResolver) {
@@ -32,15 +35,25 @@ public class GosuBasePlugin implements Plugin<Project> {
 
     JavaBasePlugin javaBasePlugin = _project.getPlugins().getPlugin(JavaBasePlugin.class);
 
+    configureGosuRuntimeExtension();
     configureCompileDefaults();
     configureSourceSetDefaults(javaBasePlugin);
   }
 
+  private void configureGosuRuntimeExtension() {
+    _project.getLogger().quiet("Defining Gosu Runtime");
+    _gosuRuntime = _project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class, _project);
+  }
+
+  /**
+   * Sets the gosuClasspath property for all GosuCompile tasks: compileGosu and compileTestGosu 
+   */
   private void configureCompileDefaults() {
+
     _project.getTasks().withType(GosuCompile.class, gosuCompile -> {
       gosuCompile.getConventionMapping().map("gosuClasspath", () -> {
-        FileCollection cp = gosuCompile.getClasspath();
-        return cp;
+        _project.getLogger().quiet("delete me for debugging " + gosuCompile.getName() + " ~ " + gosuCompile.getClasspath() + " ~~ " + gosuCompile.getClasspath().getFiles());
+        return _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath());
       });
     });
   }

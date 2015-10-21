@@ -73,6 +73,10 @@ public class SimpleGosuBuildTest extends AbstractGradleTest {
     System.out.println("--- Dumping stdout ---");
     System.out.println(result.getStandardOutput());
     System.out.println("--- Done dumping stdout ---");
+    System.out.println();
+    System.out.println("--- Dumping stderr ---");
+    System.out.println(result.getStandardError());
+    System.out.println("--- Done dumping stderr ---");
 
     assertTrue(result.getStandardOutput().contains("Initializing Gosu compiler..."));
     assertTrue(result.getStandardError().isEmpty());
