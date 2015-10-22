@@ -8,7 +8,6 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
-import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskDependency;
 import org.gradle.internal.Cast;
 
@@ -28,7 +27,6 @@ public class GosuRuntime {
 
   public GosuRuntime(Project project) {
     _project = project;
-    _project.getLogger().quiet("Constructing Gosu Runtime");
   }
 
   /**
