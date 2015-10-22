@@ -8,12 +8,11 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
-import org.gradle.api.tasks.TaskDependency;
+import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
 import org.gradle.internal.Cast;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,11 +78,10 @@ public class GosuRuntime {
 
       // let's override this so that delegate isn't created at autowiring time (which would mean on every build)
       @Override
-      public TaskDependency getBuildDependencies() {
+      public void visitDependencies(TaskDependencyResolveContext context) {
         if (classpath instanceof Buildable) {
-          return ((Buildable) classpath).getBuildDependencies();
+          context.add(classpath);
         }
-        return task -> Collections.emptySet();
       }
     };
 
