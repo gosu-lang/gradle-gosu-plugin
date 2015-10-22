@@ -40,7 +40,7 @@ public class GosuCompile extends AbstractCompile {
   }
 
   /**
-   * Returns the Gosu-specific compilation options.
+   * @return Gosu-specific compilation options.
    */
   @Nested
   public GosuCompileOptions getGosuOptions() {
