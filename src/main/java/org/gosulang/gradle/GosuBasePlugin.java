@@ -41,7 +41,6 @@ public class GosuBasePlugin implements Plugin<Project> {
   }
 
   private void configureGosuRuntimeExtension() {
-    _project.getLogger().quiet("Defining Gosu Runtime");
     _gosuRuntime = _project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class, _project);
   }
 
@@ -52,7 +51,6 @@ public class GosuBasePlugin implements Plugin<Project> {
 
     _project.getTasks().withType(GosuCompile.class, gosuCompile -> {
       gosuCompile.getConventionMapping().map("gosuClasspath", () -> {
-        _project.getLogger().quiet("delete me for debugging " + gosuCompile.getName() + " ~ " + gosuCompile.getClasspath() + " ~~ " + gosuCompile.getClasspath().getFiles());
         return _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath());
       });
     });

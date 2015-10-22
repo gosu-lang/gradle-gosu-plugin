@@ -50,10 +50,6 @@ public class GosuRuntime {
 
       @Override
       public FileCollectionInternal createDelegate() {
-        Logger logger = _project.getLogger();
-
-        logger.quiet("Evaluating GosuRuntime#inferGosuClasspatn$LazilyInitializedFileCollection#createDelegate()");
-
         if (_project.getRepositories().isEmpty()) {
           throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
         }
