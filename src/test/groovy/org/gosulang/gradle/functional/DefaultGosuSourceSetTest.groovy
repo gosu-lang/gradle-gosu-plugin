@@ -1,5 +1,6 @@
-package org.gosulang.gradle.tasks
+package org.gosulang.gradle.functional
 
+import org.gosulang.gradle.tasks.DefaultGosuSourceSet
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.FileResolver
 import org.gradle.internal.nativeintegration.services.NativeServices

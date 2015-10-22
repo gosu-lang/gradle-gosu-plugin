@@ -1,4 +1,4 @@
-package org.gosulang.gradle.tasks
+package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner

@@ -1,4 +1,4 @@
-package org.gosulang.gradle.tasks
+package org.gosulang.gradle.functional
 
 import org.gosulang.gradle.GosuBasePlugin
 import org.gradle.api.GradleException
