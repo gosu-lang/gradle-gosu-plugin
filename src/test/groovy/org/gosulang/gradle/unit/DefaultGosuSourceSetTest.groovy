@@ -1,13 +1,14 @@
-package org.gosulang.gradle.functional
+package org.gosulang.gradle.unit
 
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.FileResolver
+import spock.lang.Specification
 
 import static org.hamcrest.Matchers.*
 import static spock.util.matcher.HamcrestSupport.expect
 
-class DefaultGosuSourceSetTest extends AbstractGosuPluginSpecification {
+class DefaultGosuSourceSetTest extends Specification {
 
     private DefaultGosuSourceSet sourceSet
 
