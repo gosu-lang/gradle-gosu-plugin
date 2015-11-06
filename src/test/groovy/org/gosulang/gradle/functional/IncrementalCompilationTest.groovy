@@ -67,13 +67,8 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         when:
         println('B is now:')
         println(B.getText())
-//        GradleRunner secondRunner = GradleRunner.create()
-//                .withProjectDir(testProjectDir.root)
-//                .withPluginClasspath(pluginClasspath)
-//                .withArguments('compileGosu', '-ds')
         runner.withArguments('compileGosu', '-d') // intentionally use debug logging
 
-//        BuildResult secondResult = secondRunner.build() //AndFail() //build should fail since A now references an invalid symbol, B.abc
         result = runner.buildAndFail()
         
         then:
