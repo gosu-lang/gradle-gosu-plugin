@@ -15,7 +15,7 @@ general:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
-  # Call './gradlew build uploadArchives' instead of the default 'mvn integration-test'
+  # Call './gradlew build uploadArchives' to test and upload a snapshot build
   override:
     - ./gradlew build uploadArchives -is
   post:

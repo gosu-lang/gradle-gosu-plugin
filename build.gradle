@@ -182,7 +182,7 @@ task setupPluginUpload {
 
 tasks.publishPlugins.dependsOn tasks.setupPluginUpload
 
-// the gradle plugin portal isn't really compatible with SNAPSHOT versions
+// the gradle plugin portal isn't compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
     signArchives.enabled = false
