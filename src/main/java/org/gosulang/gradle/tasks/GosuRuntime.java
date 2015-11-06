@@ -57,13 +57,15 @@ public class GosuRuntime {
           List<String> classpathAsStrings = new ArrayList<>();
           classpath.forEach(file -> classpathAsStrings.add(file.getAbsolutePath()));
           String flattenedClasspath = String.join(":", classpathAsStrings);
-          throw new GradleException(String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
+          String errorMsg = String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
               "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, flattenedClasspath) + LF +
               "An example dependencies closure may resemble the following:" + LF +
               LF +
               "dependencies {" + LF +
-              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.8.1'" + LF +
-              "}" + LF);
+              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.9'" + LF +
+              "}" + LF;
+          _project.getLogger().quiet(errorMsg);
+          throw new GradleException(errorMsg);
         }
 
         String gosuCoreApiVersion = getGosuVersion(gosuCoreApiJar);
