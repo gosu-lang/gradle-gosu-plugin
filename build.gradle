@@ -17,7 +17,7 @@ dependencies {
 }
 """
 
-def isSnapshot = project.version.endsWith('-SNAPSHOT')
+final boolean isSnapshot = project.version.endsWith('-SNAPSHOT')
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
