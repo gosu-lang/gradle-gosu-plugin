@@ -1,18 +1,27 @@
 # Change Log
 
 ## [0.1.2-alpha](https://github.com/gosu-lang/gradle-gosu-plugin/tree/0.1.2-alpha) (2015-11-06)
-[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1-alpha...0.1.2-alpha)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1.1-alpha...0.1.2-alpha)
 
 **Implemented enhancements:**
 
 - Gosu 1.9 support [\#6](https://github.com/gosu-lang/gradle-gosu-plugin/issues/6)
 - Add failOnError flag [\#4](https://github.com/gosu-lang/gradle-gosu-plugin/issues/4)
 - Add support for checked arithmetic [\#3](https://github.com/gosu-lang/gradle-gosu-plugin/issues/3)
-- Gosu 1.8 support [\#2](https://github.com/gosu-lang/gradle-gosu-plugin/issues/2)
 
 **Fixed bugs:**
 
 - Fix classpath pollution [\#5](https://github.com/gosu-lang/gradle-gosu-plugin/issues/5)
+
+## [0.1.1-alpha](https://github.com/gosu-lang/gradle-gosu-plugin/tree/0.1.1-alpha) (2015-09-21)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1-alpha...0.1.1-alpha)
+
+**Implemented enhancements:**
+
+- Gosu 1.8 support [\#2](https://github.com/gosu-lang/gradle-gosu-plugin/issues/2)
+
+**Fixed bugs:**
+
 - sourceSets not configurable [\#1](https://github.com/gosu-lang/gradle-gosu-plugin/issues/1)
 
 ## [0.1-alpha](https://github.com/gosu-lang/gradle-gosu-plugin/tree/0.1-alpha) (2015-09-03)
