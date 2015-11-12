@@ -20,15 +20,13 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
   private static final Logger LOGGER = LoggerFactory.getLogger(AntGosuCompiler.class);
   
   private final IsolatedAntBuilder _antBuilder;
-  private final Iterable<File> _bootclasspathFiles;
-  private final Iterable<File> _extensionDirs;
+  private Iterable<File> _compileClasspath;
   private Iterable<File> _gosuClasspath;
   
-  public AntGosuCompiler( IsolatedAntBuilder antBuilder, Iterable<File> gosuClasspath ) {
-    _gosuClasspath = gosuClasspath;
+  public AntGosuCompiler( IsolatedAntBuilder antBuilder, Iterable<File> compileClasspath, Iterable<File> gosuClasspath) {
     _antBuilder = antBuilder;
-    _bootclasspathFiles = new ArrayList<>();
-    _extensionDirs = new ArrayList<>();
+    _compileClasspath = compileClasspath;
+    _gosuClasspath = gosuClasspath;
   }
       
   @Override
@@ -39,13 +37,19 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     Map<String, Object> optionsMap = options.optionMap();
 
     final String taskName = "gosuc";
-    Iterable<File> compileClasspath = spec.getClasspath();
 
     LOGGER.info("Compiling with Ant gosuc task.");
-    LOGGER.debug("Ant gosuc task options: {}", optionsMap);
-    LOGGER.debug("_gosuClasspath: {}", _gosuClasspath);
+    LOGGER.info("Ant gosuc task options: {}", optionsMap);
+    LOGGER.info("_compileClasspath: {}", _compileClasspath);
+    LOGGER.info("_gosuClasspath: {}", _gosuClasspath);
 
-    _antBuilder.withClasspath(_gosuClasspath).execute(new Closure<Object>(this, this) {
+    List<File> jointClasspath = new ArrayList<>();
+    _compileClasspath.forEach(jointClasspath::add);
+    _gosuClasspath.forEach(jointClasspath::add);
+
+    LOGGER.info("jointClasspath: {}", jointClasspath);
+    
+    _antBuilder.withClasspath(jointClasspath).execute(new Closure<Object>(this, this) {
       @SuppressWarnings("UnusedDeclaration")
       public Object doCall( Object it ) {
         final GroovyObjectSupport antBuilder = (GroovyObjectSupport) it;
@@ -57,15 +61,15 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 //        ));
         Map<String, Object> taskdefMap = new HashMap<>();
         taskdefMap.put("name", taskName);
-        taskdefMap.put("classname", "gosu.tools.ant.Gosuc");
+        taskdefMap.put("classname", "gosu.tools.ant.Gosuc");  //TODO load from antlib.xml
 
         antBuilder.invokeMethod("taskdef", taskdefMap);
-        
+
         LOGGER.debug("Finished calling antBuilder.invokeMethod(\"taskdef\")");
         
         //define the PATH for the classpath
         List<String> gosuClasspathAsStrings = new ArrayList<>();
-        _gosuClasspath.forEach(file -> gosuClasspathAsStrings.add(file.getAbsolutePath()));
+        jointClasspath.forEach(file -> gosuClasspathAsStrings.add(file.getAbsolutePath()));
 
         Map<String, Object> classpath = new HashMap<>();
         classpath.put("id", gosuClasspathRefId);
@@ -80,8 +84,6 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
         LOGGER.debug("Finished calling antBuilder.invokeMethod(\"path\")");
 
-        LOGGER.debug("About to call antBuilder.invokeMethod(\"" + taskName + "\")");
-
         //define the PATH for the source root(s)
         List<String> srcDirAsStrings = new ArrayList<>();
         spec.getSourceRoots().forEach(file -> srcDirAsStrings.add(file.getAbsolutePath()));
@@ -91,7 +93,9 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
         optionsMap.put("classpathref", gosuClasspathRefId);
 
         LOGGER.debug("Dumping optionsMap:");
-        optionsMap.forEach( (key, value) -> LOGGER.debug('\t' + key + '=' + value));
+        optionsMap.forEach(( key, value ) -> LOGGER.debug('\t' + key + '=' + value));
+        
+        LOGGER.debug("About to call antBuilder.invokeMethod(\"" + taskName + "\")");
         
         antBuilder.invokeMethod(taskName, optionsMap);
 

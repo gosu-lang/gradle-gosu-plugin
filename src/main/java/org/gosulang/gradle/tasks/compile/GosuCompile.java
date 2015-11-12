@@ -87,9 +87,8 @@ public class GosuCompile extends AbstractCompile {
     spec.setGosuCompileOptions(_gosuCompileOptions);
     
     GosuRuntime gosuRuntime = ((GosuRuntime) project.getExtensions().getByName(GosuBasePlugin.GOSU_RUNTIME_EXTENSION_NAME));
-    FileCollection classpath = getClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath()));
-    spec.setClasspath(classpath);
-    spec.setGosuClasspath(Collections.emptyList());
+    spec.setClasspath(getClasspath());
+    spec.setGosuClasspath(getGosuClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath())));
 
     Logger logger = project.getLogger();
 
