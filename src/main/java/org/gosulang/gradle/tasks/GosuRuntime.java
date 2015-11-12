@@ -6,7 +6,6 @@ import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
-import org.gradle.api.internal.file.FileCollectionInternal;
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
 import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
 import org.gradle.internal.Cast;
@@ -46,7 +45,7 @@ public class GosuRuntime {
       }
 
       @Override
-      public FileCollectionInternal createDelegate() {
+      public FileCollection createDelegate() {
         if (_project.getRepositories().isEmpty()) {
           throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
         }
@@ -74,7 +73,7 @@ public class GosuRuntime {
           throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
         }
 
-        return Cast.cast(FileCollectionInternal.class, _project.getConfigurations().detachedConfiguration(
+        return Cast.cast(FileCollection.class, _project.getConfigurations().detachedConfiguration(
             new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-ant-compiler", gosuCoreApiVersion)));
       }
 

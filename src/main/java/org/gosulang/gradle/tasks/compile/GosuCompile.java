@@ -61,6 +61,7 @@ public class GosuCompile extends AbstractCompile {
   }
 
   public void setGosuClasspath(FileCollection gosuClasspath) {
+    getProject().getLogger().quiet("Setting the GosuClasspath to: " + gosuClasspath.getFiles()); //TODO delete me!
     _gosuClasspath = gosuClasspath;
   }
 
@@ -75,16 +76,16 @@ public class GosuCompile extends AbstractCompile {
   }
 
   private DefaultGosuCompileSpec createSpec() {
-    DefaultGosuCompileSpec spec = new DefaultGosuCompileSpecFactory(_compileOptions).create();
+    DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
+    spec.setCompileOptions(_compileOptions);
     Project project = getProject();
-    spec.setSource(getSource()); //project.files([ "src/main/gosu" ])
+    spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
     spec.setClasspath(getClasspath());
     spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
     
-    //Force gosu-core into the classpath. Normally it's a runtime dependency but compilation requires it.
     GosuRuntime gosuRuntime = ((GosuRuntime) project.getExtensions().getByName(GosuBasePlugin.GOSU_RUNTIME_EXTENSION_NAME));
     FileCollection classpath = getClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath()));
     spec.setClasspath(classpath);
