@@ -23,11 +23,13 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
 
     File rootProjectSettings
 
-    GString rootBuildScriptText
-    
     File rootBuildScript
     File appExtBuildScript
     File appTestBuildScript
+
+    File baseTestFoo
+    File appFoo
+    File fooTest
 
     /**
      * super#setup is invoked automatically
@@ -46,7 +48,11 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         rootBuildScript = buildScript //from superclass
         appExtBuildScript = new File(appExtFolder, 'build.gradle')
         appTestBuildScript = new File(appTestFolder, 'build.gradle')
-        
+
+        baseTestFoo = new File(rootFolder.newFolder('baseTest', 'src', 'main', 'gosu'), 'Foo.gs')
+        appFoo = new File(rootFolder.newFolder('app', 'src', 'main', 'gosu'), 'Foo.gs')
+        fooTest = new File(rootFolder.newFolder('appTest', 'src', 'test', 'gosu'), 'FooTest.gs')
+
         rootBuildScript <<
             """
             plugins {
@@ -63,7 +69,8 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                     }
                 }
                 dependencies {
-                    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+                    compile 'org.gosu-lang.gosu:gosu-core-api:$gosuVersion'
+                    testCompile 'junit:junit:4.12'
                 }
                 task printClasspath << {
                     println 'The classpath is: ' + compileGosu.classpath.files.collect { it.name } //configurations.compile.files.collect { it.name }
@@ -91,6 +98,37 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
             dependencies {
                 compile project(':appExt')
                 compile project(':baseTest')
+            }
+            """
+
+        baseTestFoo <<
+            """
+            class Foo {
+                construct() {
+                    print("baseTest wins!")
+                }
+            }
+            """
+
+        appFoo <<
+            """
+            class Foo {
+                construct() {
+                    print("app wins!")
+                }
+            }
+            """
+
+        fooTest <<
+            """
+            uses org.junit.Test
+
+            class FooTest {
+
+                @Test
+                function whoWins() {
+                    new Foo()  //later we'll check the output of this
+                }
             }
             """
     }
@@ -121,9 +159,10 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         assertThat(actual).containsExactly(expected)
 
         result.task(':appTest:printClasspath').outcome == SUCCESS
-//        result.task(':appTest:test').outcome == SUCCESS
+        result.task(':appTest:test').outcome == SUCCESS
 
-//        result.standardOutput.contains('baseTest wins!') //TODO enable
+        result.standardOutput.contains('baseTest wins!')
+        !result.standardOutput.contains('app wins!')
     }
 
     /**
@@ -137,15 +176,11 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         given:
         appTestBuildScript <<
             """
-            compileGosu {
-                classpath = putAppAheadOfBaseTest()
-            }
-
-            def putAppAheadOfBaseTest() {
+            def putAppAheadOfBaseTest(Configuration config) {
                 FileCollection rearrangedClasspath // = []
                 //outputs.files rearrangedClasspath
 
-                List<File> defaultClasspath = configurations.compile.files.asList()
+                List<File> defaultClasspath = config.files.asList()
                 println 'Got defaultClasspath: ' + defaultClasspath.collect { it.name }
                 int baseTestPosition = defaultClasspath.findIndexOf { it.name.equals('baseTest.jar') }
                 int appPosition = defaultClasspath.findIndexOf { it.name.equals('app.jar') }
@@ -155,6 +190,15 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                 rearrangedClasspath = project.files(defaultClasspath)
                 println 'Rearranged to ' + rearrangedClasspath.collect { it.name }
                 return rearrangedClasspath
+            }
+
+            sourceSets {
+                main {
+                    compileClasspath = putAppAheadOfBaseTest(configurations.compile)
+                }
+                test {
+                   runtimeClasspath = putAppAheadOfBaseTest(configurations.testRuntime) + sourceSets.test.runtimeClasspath
+                }
             }
             """
         
@@ -183,9 +227,10 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         assertThat(actual).containsExactly(expected)
 
         result.task(':appTest:printClasspath').outcome == SUCCESS
-//        result.task(':appTest:test').outcome == SUCCESS
+        result.task(':appTest:test').outcome == SUCCESS
 
-//        result.standardOutput.contains('app wins!') //TODO enable
+        result.standardOutput.contains('app wins!')
+        !result.standardOutput.contains('baseTest wins!')
     }
 
     private static String[] getOrderedClasspath(String stdOut) {
