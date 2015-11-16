@@ -47,4 +47,17 @@ class DefaultGosuSourceSetTest extends Specification {
         expect sourceSet.gosu.srcDirs, equalTo([new File('src/somepathtogosu').canonicalFile] as Set)
     }
 
+    def 'can exclude a file pattern'() {
+        given:
+        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
+
+        when:
+        sourceSet.gosu {
+            exclude '**/Errant_*'
+        }
+
+        then:
+        expect sourceSet.gosu.excludes, equalTo(['**/Errant_*'] as Set)
+    }
+
 }

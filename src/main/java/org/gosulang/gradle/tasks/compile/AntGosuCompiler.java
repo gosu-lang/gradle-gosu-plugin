@@ -2,6 +2,7 @@ package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.tasks.WorkResult;
@@ -74,8 +75,6 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
         Map<String, Object> classpath = new HashMap<>();
         classpath.put("id", gosuClasspathRefId);
         classpath.put("path", String.join(":", gosuClasspathAsStrings));
-//        classpath.put("path", '"' + String.join(":", gosuClasspathAsStrings) + '"');
-//        _gosuClasspath.forEach(file -> classpath.put("file", file));
 
         LOGGER.debug("About to call antBuilder.invokeMethod(\"path\")");
         LOGGER.debug("classpath map {}", classpath);
@@ -84,11 +83,6 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
         LOGGER.debug("Finished calling antBuilder.invokeMethod(\"path\")");
 
-        //define the PATH for the source root(s)
-        List<String> srcDirAsStrings = new ArrayList<>();
-        spec.getSourceRoots().forEach(file -> srcDirAsStrings.add(file.getAbsolutePath()));
-
-        optionsMap.put("srcdir", String.join(":", srcDirAsStrings));
         optionsMap.put("destdir", destinationDir.getAbsolutePath());
         optionsMap.put("classpathref", gosuClasspathRefId);
 
@@ -96,8 +90,14 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
         optionsMap.forEach(( key, value ) -> LOGGER.debug('\t' + key + '=' + value));
         
         LOGGER.debug("About to call antBuilder.invokeMethod(\"" + taskName + "\")");
-        
-        antBuilder.invokeMethod(taskName, optionsMap);
+
+        antBuilder.invokeMethod(taskName, new Object[]{ optionsMap, new Closure<Object>(this, this) {
+          public Object doCall(Object ignore) {
+            spec.getSource().addToAntBuilder(antBuilder, "src", FileCollection.AntType.ResourceCollection);
+
+            return null;
+          }
+        }});
 
         return null;
       }
