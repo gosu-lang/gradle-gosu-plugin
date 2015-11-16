@@ -93,7 +93,7 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
         antBuilder.invokeMethod(taskName, new Object[]{ optionsMap, new Closure<Object>(this, this) {
           public Object doCall(Object ignore) {
-            spec.getSource().addToAntBuilder(antBuilder, "src", FileCollection.AntType.ResourceCollection);
+            spec.getSource().addToAntBuilder(antBuilder, "src", FileCollection.AntType.MatchingTask);
 
             return null;
           }
