@@ -1,5 +1,6 @@
 package org.gosulang.gradle.tasks.compile;
 
+import groovy.lang.Closure;
 import org.gosulang.gradle.GosuBasePlugin;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gradle.api.Project;
@@ -10,6 +11,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.compile.JavaCompilerFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.TaskAction;
@@ -19,7 +21,6 @@ import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,6 +28,7 @@ public class GosuCompile extends AbstractCompile {
 
   private Compiler<DefaultGosuCompileSpec> _compiler;
   private FileCollection _gosuClasspath;
+  private Closure<FileCollection> _orderClasspath;
 
   private final CompileOptions _compileOptions = new CompileOptions();
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
@@ -65,6 +67,14 @@ public class GosuCompile extends AbstractCompile {
     _gosuClasspath = gosuClasspath;
   }
 
+  public Closure<FileCollection> getOrderClasspath() {
+    return _orderClasspath;
+  }
+
+  public void setOrderClasspath(Closure<FileCollection> orderClasspath) {
+    _orderClasspath = orderClasspath;
+  }
+
   public Set<File> getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     for(Object obj : this.source) {
@@ -87,8 +97,12 @@ public class GosuCompile extends AbstractCompile {
     spec.setGosuCompileOptions(_gosuCompileOptions);
     
     GosuRuntime gosuRuntime = ((GosuRuntime) project.getExtensions().getByName(GosuBasePlugin.GOSU_RUNTIME_EXTENSION_NAME));
-    spec.setClasspath(getClasspath());
     spec.setGosuClasspath(getGosuClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath())));
+    if (_orderClasspath == null) {
+      spec.setClasspath(getClasspath());
+    } else {
+      spec.setClasspath(getOrderClasspath().call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)));
+    }
 
     Logger logger = project.getLogger();
 
