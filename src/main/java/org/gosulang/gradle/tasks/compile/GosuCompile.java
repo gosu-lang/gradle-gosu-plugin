@@ -93,11 +93,10 @@ public class GosuCompile extends AbstractCompile {
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
     spec.setClasspath(getClasspath());
+    spec.setGosuClasspath(getGosuClasspath());
     spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
-    
-    GosuRuntime gosuRuntime = ((GosuRuntime) project.getExtensions().getByName(GosuBasePlugin.GOSU_RUNTIME_EXTENSION_NAME));
-    spec.setGosuClasspath(getGosuClasspath().plus(gosuRuntime.inferGosuClasspath(getClasspath())));
+
     if (_orderClasspath == null) {
       spec.setClasspath(getClasspath());
     } else {
