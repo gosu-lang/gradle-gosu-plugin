@@ -5,6 +5,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection
 import org.gradle.testfixtures.ProjectBuilder
+import org.gradle.util.VersionNumber
 import org.junit.Ignore
 import spock.lang.Specification
 
@@ -16,32 +17,9 @@ class GosuRuntimeTest extends Specification {
         project.pluginManager.apply(GosuBasePlugin)
     }
 
-//    @Ignore("Plugin requires explicit declaration of gosu-core-api and gosu-core; inference is not required")
-//    def "inferred Gosu class path contains 'gosu-core' repository dependency matching 'gosu-core-api' Jar found on class path"() {
-//        project.repositories {
-//            mavenCentral()
-//        }
-//
-//        when:
-//        def classpath = project.gosuRuntime.inferGosuClasspath ([new File("other.jar"), new File("gosu-core-api-1.8.jar")])
-//
-//        then:
-//        classpath instanceof LazilyInitializedFileCollection
-//        with(classpath.delegate) {
-//            it instanceof Configuration
-//            it.state == Configuration.State.UNRESOLVED
-//            it.dependencies.size() == 1
-//            with(it.dependencies.iterator().next()) {
-//                group == "org.gosu-lang.gosu"
-//                name == "gosu-core"
-//                version == "1.8"
-//            }
-//        }
-//    }
-
-    def "inference fails if no repository declared"() {
+    def 'inference fails if no repository declared'() {
         when:
-        def gosuClasspath = project.gosuRuntime.inferGosuClasspath([new File("other.jar"), new File("gosu-core-api-1.8.jar")])
+        def gosuClasspath = project.gosuRuntime.inferGosuClasspath([new File('other.jar'), new File('gosu-core-api-1.8.jar')])
         gosuClasspath.files
 
         then:
@@ -50,30 +28,34 @@ class GosuRuntimeTest extends Specification {
         e.message.equals('Cannot infer Gosu classpath because no repository is declared in ' + project)
     }
 
-    def "test to find Gosu Jars on class path"() {
+    def 'test to find Gosu Jars on class path'() {
         when:
-        def core = project.gosuRuntime.findGosuJar([new File("other.jar"), new File("gosu-core-1.7.jar"), new File("gosu-core-api-1.8.jar")], "core")
-        def core_api = project.gosuRuntime.findGosuJar([new File("other.jar"), new File("gosu-core-1.7.jar"), new File("gosu-core-api-1.8.jar")], "core-api")
+        def core = project.gosuRuntime.findGosuJar([new File('other.jar'), new File('gosu-core-1.7.jar'), new File('gosu-core-api-1.8.jar')], 'core')
+        def core_api = project.gosuRuntime.findGosuJar([new File('other.jar'), new File('gosu-core-1.7.jar'), new File('gosu-core-api-1.8.jar')], 'core-api')
 
         then:
-        core.name == "gosu-core-1.7.jar"
-        core_api.name == "gosu-core-api-1.8.jar"
+        core.name == 'gosu-core-1.7.jar'
+        core_api.name == 'gosu-core-api-1.8.jar'
     }
 
-    def "returns null if Gosu Jar not found"() {
+    def 'returns null if Gosu Jar not found'() {
         when:
-        def file = project.gosuRuntime.findGosuJar([new File("other.jar"), new File("gosu-core-1.7.jar"), new File("gosu-core-api-1.8.jar")], "xml")
+        def file = project.gosuRuntime.findGosuJar([new File('other.jar'), new File('gosu-core-1.7.jar'), new File('gosu-core-api-1.8.jar')], 'xml')
 
         then:
         file == null
     }
 
-    def "correctly determines version of a Gosu Jar"() {
+    def 'correctly determines version of a Gosu Jar'() {
         expect:
         with(project.gosuRuntime) {
-            getGosuVersion(new File("gosu-core-1-spec-SNAPSHOT.jar")) == "1-spec-SNAPSHOT"
-            getGosuVersion(new File("gosu-core-api-1.8.jar")) == "1.8"
-            getGosuVersion(new File("gosu-xml-0.9-15-SNAPSHOT.jar")) == "0.9-15-SNAPSHOT"
+            getGosuVersion(new File('gosu-core-1-spec-SNAPSHOT.jar')) == '1-spec-SNAPSHOT'
+            getGosuVersion(new File('gosu-core-api-1.8.jar')) == '1.8'
+            getGosuVersion(new File('gosu-xml-0.9-15-SNAPSHOT.jar')) == '0.9-15-SNAPSHOT'
+            
+            VersionNumber.parse(getGosuVersion(new File('gosu-core-1-spec-SNAPSHOT.jar'))).toString() == '1.0.0-spec-SNAPSHOT'
+            VersionNumber.parse(getGosuVersion(new File('gosu-core-api-1.8.jar'))).toString() == '1.8.0'
+            VersionNumber.parse(getGosuVersion(new File('gosu-xml-0.9-15-SNAPSHOT.jar'))).toString() == '0.9.0-15-SNAPSHOT'
         }
     }
     
