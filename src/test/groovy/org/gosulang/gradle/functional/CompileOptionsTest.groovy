@@ -61,9 +61,9 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildFailure)
         result.standardOutput.contains('Initializing Gosu compiler...')
-        result.standardOutput.contains('Gosu compilation completed with 1 error:')
+        result.standardOutput.contains('Gosu compilation completed with 1 error')
         result.standardOutput.contains('Gosu Compiler: Ignoring compilation failure(s) as \'failOnError\' was set to false')
-        result.standardError.empty
+        result.standardError.contains('src/main/gosu/example/gradle/ErrantPogo.gs:[6,27] error: The type "java.lang.String" cannot be converted to "int"')
         result.task(':compileGosu').outcome == SUCCESS
 
         new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()

@@ -77,7 +77,7 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         result.standardOutput.contains('/src/main/gosu/B.gs has changed.')
         !result.standardOutput.contains('[ant:gosuc] A.gs omitted as')
         !result.standardOutput.contains('[ant:gosuc] B.gs omitted as')
-        result.standardOutput.contains('src/main/gosu/A.gs:[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
+        result.standardError.contains('src/main/gosu/A.gs:[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
     }
 
 }
