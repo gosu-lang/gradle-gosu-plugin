@@ -71,6 +71,13 @@ public class GosuCompile extends AbstractCompile {
     return _orderClasspath;
   }
 
+  /**
+   * Normally setting this value is not required.
+   * Certain projects relying on depth-first resolution of module dependencies can use this
+   * Closure to reorder the classpath as needed.
+   *
+   * @param orderClasspath a Closure returning a classpath to be passed to the GosuCompile task
+   */
   public void setOrderClasspath(Closure<FileCollection> orderClasspath) {
     _orderClasspath = orderClasspath;
   }
@@ -100,7 +107,7 @@ public class GosuCompile extends AbstractCompile {
     if (_orderClasspath == null) {
       spec.setClasspath(getClasspath());
     } else {
-      spec.setClasspath(getOrderClasspath().call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)));
+      spec.setClasspath(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)));
     }
 
     Logger logger = project.getLogger();
