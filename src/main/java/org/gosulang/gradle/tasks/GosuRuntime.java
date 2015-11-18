@@ -30,7 +30,7 @@ public class GosuRuntime {
 
   /**
    * Searches the specified classpath for a 'gosu-core-api' Jar, and returns a classpath
-   * containing a corresponding (same version) 'gosu-ant-compiler' Jar and its dependencies.
+   * containing a corresponding (same version) 'gosu-ant-tools' Jar and its dependencies.
    * 
    * <p>The returned class path may be empty, or may fail to resolve when asked for its contents.
    *
