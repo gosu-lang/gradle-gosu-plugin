@@ -41,7 +41,7 @@ public class GosuPlugin implements Plugin<Project> {
   
   private void configureGosuDoc( final Project project ) {
     GosuDoc gosuDoc = project.getTasks().create("gosudoc", GosuDoc.class);
-    gosuDoc.setDescription("Generates GosuDoc API documentation for the main source code.");
+    gosuDoc.setDescription("Generates Gosudoc API documentation for the main source code.");
     gosuDoc.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
 
     JavaPluginConvention convention = project.getConvention().getPlugin(JavaPluginConvention.class);

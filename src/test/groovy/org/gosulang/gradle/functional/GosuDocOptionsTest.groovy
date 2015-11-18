@@ -47,10 +47,17 @@ class GosuDocOptionsTest extends AbstractGosuPluginSpecification {
         BuildResult result = runner.build()
 
         then:
-//        notThrown(UnexpectedBuildFailure)
+        notThrown(UnexpectedBuildFailure)
         result.standardOutput.contains('Generating Documentation')
-        //TODO add way more assertions
+        result.standardOutput.contains('example.gradle.SimplePogo - document : true')
+        
+        File gosudocOutputRoot = new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc'))
+        File simplePogoGosudoc = new File(gosudocOutputRoot, asPath('example', 'gradle', 'example.gradle.SimplePogo.html'))
 
+        //validate the generated HTML
+        simplePogoGosudoc.exists()
+        simplePogoGosudoc.readLines().contains('<div class="block">I can has gosudoc</div>')
+        
     }
     
     
