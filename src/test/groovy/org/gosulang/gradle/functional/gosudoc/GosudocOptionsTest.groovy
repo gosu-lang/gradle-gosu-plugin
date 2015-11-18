@@ -1,10 +1,11 @@
-package org.gosulang.gradle.functional
+package org.gosulang.gradle.functional.gosudoc
 
+import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 
-class GosuDocOptionsTest extends AbstractGosuPluginSpecification {
+class GosudocOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
     File simplePogo
