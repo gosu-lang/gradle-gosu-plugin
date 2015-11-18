@@ -167,7 +167,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
 
     /**
      * simulate depth-first traversal for top-level module 'appTest'
-     * we want to order it like this: [gosu-core-api-1.9.1.jar, appExt.jar, app.jar, gw-asm-all-5.0.4.jar, baseTest.jar]
+     * we want to order it like this: [gosu-core-api-1.x.jar, appExt.jar, app.jar, gw-asm-all-5.0.4.jar, baseTest.jar]
      * we'll do this by getting the list positions of app.jar and baseTest.jar and swapping them
      *
      * @return

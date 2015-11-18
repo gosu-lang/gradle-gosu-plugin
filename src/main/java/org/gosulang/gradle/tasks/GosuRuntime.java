@@ -9,6 +9,7 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDepen
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
 import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
 import org.gradle.internal.Cast;
+import org.gradle.util.VersionNumber;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -61,20 +62,28 @@ public class GosuRuntime {
               "An example dependencies closure may resemble the following:" + LF +
               LF +
               "dependencies {" + LF +
-              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.9'" + LF +
+              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.10' //a newer version may be available" + LF +
               "}" + LF;
           _project.getLogger().quiet(errorMsg);
           throw new GradleException(errorMsg);
         }
 
-        String gosuCoreApiVersion = getGosuVersion(gosuCoreApiJar);
+        String gosuCoreApiRawVersion = getGosuVersion(gosuCoreApiJar);
 
-        if (gosuCoreApiVersion == null ) {
+        if (gosuCoreApiRawVersion == null ) {
           throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
         }
 
+        //Use Gradle's VersionNumber construct, which implements Comparable
+        VersionNumber gosuCoreApiVersion = VersionNumber.parse(gosuCoreApiRawVersion);
+
+        //Gosu >= 1.10 is required
+        if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && gosuCoreApiVersion.getBaseVersion().compareTo(VersionNumber.parse("1.10")) < 0) {
+          throw new GradleException(String.format("Please declare a dependency on Gosu version 1.10 or greater. Found: %s", gosuCoreApiRawVersion));
+        }
+
         return Cast.cast(FileCollection.class, _project.getConfigurations().detachedConfiguration(
-            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-ant-compiler", gosuCoreApiVersion)));
+            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-ant-tools", gosuCoreApiRawVersion)));
       }
 
       // let's override this so that delegate isn't created at autowiring time (which would mean on every build)
