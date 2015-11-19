@@ -88,14 +88,14 @@ dependencies {
 }
 
 task sourceJar(type: Jar) {
-    description 'generate sources'
     classifier = 'sources'
+    description 'generate sources'
     from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar) {
-    description 'generate javadoc'
     classifier = 'javadoc'
+    description 'generate javadoc'
     from javadoc
 }
 
