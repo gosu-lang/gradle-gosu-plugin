@@ -59,7 +59,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     }
 
     List<String> gosuClasspath = new ArrayList<>();
-    spec.getGosuClasspath().forEach(file -> gosuClasspath.add(file.getAbsolutePath()));
+//    spec.getGosuClasspath().forEach(file -> gosuClasspath.add(file.getAbsolutePath()));
 
     List<String> classpath = new ArrayList<>();
     spec.getClasspath().forEach(file -> classpath.add(file.getAbsolutePath()));

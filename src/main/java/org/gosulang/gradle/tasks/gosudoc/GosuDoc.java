@@ -1,5 +1,6 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
+import groovy.lang.Closure;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.logging.LogLevel;
@@ -16,8 +17,8 @@ import java.io.File;
 
 public class GosuDoc extends SourceTask {
 
-  private FileCollection _gosuClasspath;
   private FileCollection _classpath;
+  private Closure<FileCollection> _gosuClasspath;
   private File _destinationDir;
   private AntGosuDoc _antGosuDoc;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
@@ -64,12 +65,12 @@ public class GosuDoc extends SourceTask {
    * @return the classpath to use to load the gosu-doc tool.
    */
   @InputFiles
-  public FileCollection getGosuClasspath() {
+  public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
 
-  public void setGosuClasspath( FileCollection gosuClasspath ) {
-    _gosuClasspath = gosuClasspath;
+  public void setGosuClasspath( Closure<FileCollection> gosuClasspathClosure ) {
+    _gosuClasspath = gosuClasspathClosure;
   }
 
   /**
@@ -117,6 +118,6 @@ public class GosuDoc extends SourceTask {
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
       options.setTitle(getTitle());
     }
-    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath(), options, getProject());
+    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath().call(), options, getProject());
   }
 }
