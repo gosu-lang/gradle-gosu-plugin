@@ -1,5 +1,7 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
+import groovy.lang.Closure;
+import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.logging.LogLevel;
@@ -14,10 +16,10 @@ import org.gradle.api.tasks.TaskAction;
 import javax.inject.Inject;
 import java.io.File;
 
-public class GosuDoc extends SourceTask {
+public class GosuDoc extends SourceTask implements InfersGosuRuntime {
 
-  private FileCollection _gosuClasspath;
   private FileCollection _classpath;
+  private Closure<FileCollection> _gosuClasspath;
   private File _destinationDir;
   private AntGosuDoc _antGosuDoc;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
@@ -63,13 +65,15 @@ public class GosuDoc extends SourceTask {
    * Returns the classpath to use to load the gosu-doc tool.
    * @return the classpath to use to load the gosu-doc tool.
    */
+  @Override
   @InputFiles
-  public FileCollection getGosuClasspath() {
+  public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
 
-  public void setGosuClasspath( FileCollection gosuClasspath ) {
-    _gosuClasspath = gosuClasspath;
+  @Override
+  public void setGosuClasspath( Closure<FileCollection> gosuClasspathClosure ) {
+    _gosuClasspath = gosuClasspathClosure;
   }
 
   /**
@@ -117,6 +121,6 @@ public class GosuDoc extends SourceTask {
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
       options.setTitle(getTitle());
     }
-    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath(), options, getProject());
+    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath().call(), options, getProject());
   }
 }

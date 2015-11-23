@@ -38,7 +38,7 @@ public class GosuPlugin implements Plugin<Project> {
         project.getConfigurations().getByName(JavaPlugin.TEST_RUNTIME_CONFIGURATION_NAME),
         gosuRuntime.inferGosuClasspath(project.getConfigurations().getByName(JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME))));
   }
-  
+
   private void configureGosuDoc( final Project project ) {
     GosuDoc gosuDoc = project.getTasks().create("gosudoc", GosuDoc.class);
     gosuDoc.setDescription("Generates Gosudoc API documentation for the main source code.");

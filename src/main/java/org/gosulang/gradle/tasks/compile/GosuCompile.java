@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import groovy.lang.Closure;
 import org.gosulang.gradle.GosuBasePlugin;
 import org.gosulang.gradle.tasks.GosuRuntime;
+import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
@@ -24,10 +25,10 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GosuCompile extends AbstractCompile {
+public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private Compiler<DefaultGosuCompileSpec> _compiler;
-  private FileCollection _gosuClasspath;
+  private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
   private final CompileOptions _compileOptions = new CompileOptions();
@@ -57,14 +58,15 @@ public class GosuCompile extends AbstractCompile {
   /**
    * @return the classpath to use to load the Gosu compiler.
    */
+  @Override
   @InputFiles
-  public FileCollection getGosuClasspath() {
+  public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
 
-  public void setGosuClasspath(FileCollection gosuClasspath) {
-    getProject().getLogger().quiet("Setting the GosuClasspath to: " + gosuClasspath.getFiles()); //TODO delete me!
-    _gosuClasspath = gosuClasspath;
+  @Override
+  public void setGosuClasspath(Closure<FileCollection> gosuClasspathClosure) {
+    _gosuClasspath = gosuClasspathClosure;
   }
 
   public Closure<FileCollection> getOrderClasspath() {
@@ -123,10 +125,11 @@ public class GosuCompile extends AbstractCompile {
       }
 
       logger.info("Gosu Compile Spec gosuClasspath is:");
-      if(!spec.getGosuClasspath().iterator().hasNext()) {
+      FileCollection gosuClasspath = spec.getGosuClasspath().call();
+      if(gosuClasspath.isEmpty()) {
         logger.info("<empty>");
       } else {
-      for(File file : spec.getGosuClasspath()) {
+      for(File file : gosuClasspath) {
         logger.info(file.getAbsolutePath());
         }
       }
@@ -142,11 +145,10 @@ public class GosuCompile extends AbstractCompile {
       CompilerDaemonManager compilerDaemonManager = getServices().get(CompilerDaemonManager.class);
       //      var inProcessCompilerDaemonFactory = getServices().getFactory(InProcessCompilerDaemonFactory);
       JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, antBuilder, javaCompilerFactory, compilerDaemonManager, getGosuClasspath()); //inProcessCompilerDaemonFactory
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, antBuilder, javaCompilerFactory, compilerDaemonManager, getGosuClasspath().call());
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
   }
-
 
 }
