@@ -4,9 +4,11 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.*
 
+@Unroll
 class CompilerLoggingTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
@@ -21,7 +23,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
  
-    def 'log quiet warning under default logging level'() {
+    def 'log quiet warning under default logging level [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
 
@@ -42,21 +44,25 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu') //intentionally using quiet/default mode here
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
         
         then:
         notThrown(UnexpectedBuildFailure)
-        !result.standardOutput.contains('Initializing Gosu compiler...') // this message requires info level and below
-        result.standardOutput.contains('Gosu compilation completed with 1 warning')
-        result.standardError.empty
+        !result.output.contains('Initializing Gosu compiler...') // this message requires info level and below
+        result.output.contains('Gosu compilation completed with 1 warning')
         result.task(':compileGosu').outcome == SUCCESS
 
         //did we actually compile anything?
         new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
     
-    def 'log compilation error under default logging level'() {
+    def 'log compilation error under default logging level [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
 
@@ -74,18 +80,23 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.buildAndFail()
 
         then:
         notThrown(UnexpectedBuildSuccess)
-        result.standardOutput.contains('BUILD FAILED')
-        result.standardOutput.contains('Gosu compilation completed with 1 error')
-        result.standardError.contains('Gosu compilation failed with errors; see compiler output for details.')
+        result.output.contains('BUILD FAILED')
+        result.output.contains('Gosu compilation completed with 1 error')
+        result.output.contains('Gosu compilation failed with errors; see compiler output for details.')
         result.task(':compileGosu').outcome == FAILED
 
         //did we actually compile anything?
         !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
     
 }

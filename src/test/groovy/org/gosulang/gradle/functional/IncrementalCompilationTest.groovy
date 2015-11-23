@@ -4,7 +4,12 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
+import spock.lang.Unroll
 
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import static org.gradle.testkit.runner.TaskOutcome.FAILED
+
+@Unroll
 class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu, A, B
@@ -19,7 +24,7 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         B = new File(srcMainGosu, 'B.gs')
     }
     
-    def 'A references B; will A be recompiled if it does not change, but B\'s API does?'() {
+    def 'A references B; will A be recompiled if it does not change, but B\'s API does? [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
         
@@ -42,11 +47,14 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
         
         then:
         notThrown(UnexpectedBuildFailure)
+        result.task(':compileGosu').outcome == SUCCESS
         String buildOutput = asPath(testProjectDir.root.absolutePath, 'build', 'classes', 'main')
         new File(buildOutput).exists()
         new File(buildOutput, 'A.class').exists()
@@ -73,11 +81,15 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         
         then:
         notThrown(UnexpectedBuildSuccess)
-        result.standardOutput.contains('Executing task \':compileGosu\'')
-        result.standardOutput.contains('/src/main/gosu/B.gs has changed.')
-        !result.standardOutput.contains('[ant:gosuc] A.gs omitted as')
-        !result.standardOutput.contains('[ant:gosuc] B.gs omitted as')
-        result.standardError.contains('src/main/gosu/A.gs:[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
+        result.task(':compileGosu').outcome == FAILED
+        result.output.contains('Executing task \':compileGosu\'')
+        result.output.contains('/src/main/gosu/B.gs has changed.')
+        !result.output.contains('[ant:gosuc] A.gs omitted as')
+        !result.output.contains('[ant:gosuc] B.gs omitted as')
+        result.output.contains('src/main/gosu/A.gs:[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
+        
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
 }

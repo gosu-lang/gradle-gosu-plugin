@@ -2,9 +2,11 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.*
 
+@Unroll
 class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
     
     File srcMainGosu
@@ -19,7 +21,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
 
-    def 'apply gosu plugin and compile'() {
+    def 'apply gosu plugin and compile [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
 
@@ -39,11 +41,13 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         BuildResult result = runner.build()
         
         then:
-        result.standardOutput.contains('Initializing Gosu compiler...')
-        result.standardError.empty
+        result.output.contains('Initializing Gosu compiler...')
         result.task(":compileGosu").outcome == SUCCESS
 
         //did we actually compile anything?
         new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 }

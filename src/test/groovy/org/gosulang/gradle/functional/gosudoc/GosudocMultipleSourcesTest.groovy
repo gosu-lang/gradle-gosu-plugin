@@ -4,7 +4,9 @@ import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
+import spock.lang.Unroll
 
+@Unroll
 class GosudocMultipleSourcesTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
@@ -54,7 +56,7 @@ class GosudocMultipleSourcesTest extends AbstractGosuPluginSpecification {
         
     }
 
-    def 'generate Gosudoc from multiple source roots'() {
+    def 'generate Gosudoc from multiple source roots [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting() +
             """
@@ -72,14 +74,16 @@ class GosudocMultipleSourcesTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('gosudoc', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
         
         then:
         notThrown(UnexpectedBuildFailure)
-        result.standardOutput.contains('Generating Documentation')
-        result.standardOutput.contains('normal.SimplePogo - document : true')
-        result.standardOutput.contains('alt.AnotherPogo - document : true')
+        result.output.contains('Generating Documentation')
+        result.output.contains('normal.SimplePogo - document : true')
+        result.output.contains('alt.AnotherPogo - document : true')
 
         File gosudocOutputRoot = new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc'))
         File simplePogoGosudoc = new File(gosudocOutputRoot, asPath('normal', 'normal.SimplePogo.html'))
@@ -91,6 +95,8 @@ class GosudocMultipleSourcesTest extends AbstractGosuPluginSpecification {
         anotherPogoGosudoc.exists()
         anotherPogoGosudoc.readLines().contains('<div class="block">This is AnotherPogo...</div>')
         
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
 }

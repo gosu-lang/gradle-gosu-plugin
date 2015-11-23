@@ -3,9 +3,11 @@ package org.gosulang.gradle.functional
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
+@Unroll
 class CompileOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
@@ -20,7 +22,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
     
-    def 'pass build even with compile errors if failOnError is true'() {
+    def 'pass build even with compile errors if failOnError is true [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
@@ -55,18 +57,23 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
         
         then:
         notThrown(UnexpectedBuildFailure)
-        result.standardOutput.contains('Initializing Gosu compiler...')
-        result.standardOutput.contains('Gosu compilation completed with 1 error')
-        result.standardOutput.contains('Gosu Compiler: Ignoring compilation failure(s) as \'failOnError\' was set to false')
-        result.standardError.contains('src/main/gosu/example/gradle/ErrantPogo.gs:[6,27] error: The type "java.lang.String" cannot be converted to "int"')
+        result.output.contains('Initializing Gosu compiler...')
+        result.output.contains('Gosu compilation completed with 1 error')
+        result.output.contains('Gosu Compiler: Ignoring compilation failure(s) as \'failOnError\' was set to false')
+        result.output.contains('src/main/gosu/example/gradle/ErrantPogo.gs:[6,27] error: The type "java.lang.String" cannot be converted to "int"')
         result.task(':compileGosu').outcome == SUCCESS
 
         new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
         !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'ErrantPogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 }

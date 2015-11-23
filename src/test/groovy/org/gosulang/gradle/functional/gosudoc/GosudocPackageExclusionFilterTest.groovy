@@ -4,10 +4,12 @@ import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
+import spock.lang.Unroll
 
+@Unroll
 class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification {
 
-    File srcMainGosu, includedPkg1, includedPkg2, excludedPkg
+    File srcMainGosu
     File simplePogo
     File anotherPogo
     File excludedPogo
@@ -63,7 +65,7 @@ class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification 
      * Gosudoc extends SourceTask, so we get includes/excludes filtering for free
      * @return
      */
-    def 'test pattern-based package exclusion'() {
+    def 'test pattern-based package exclusion [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting() +
             """
@@ -77,15 +79,17 @@ class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification 
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('gosudoc', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
         then:
         notThrown(UnexpectedBuildFailure)
-        result.standardOutput.contains('Generating Documentation')
-        result.standardOutput.contains('included1.SimplePogo - document : true')
-        result.standardOutput.contains('included2.AnotherPogo - document : true')
-        !result.standardOutput.contains('donotwant.ExcludedPogo - document : true')
+        result.output.contains('Generating Documentation')
+        result.output.contains('included1.SimplePogo - document : true')
+        result.output.contains('included2.AnotherPogo - document : true')
+        !result.output.contains('donotwant.ExcludedPogo - document : true')
 
         File gosudocOutputRoot = new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc'))
         File simplePogoGosudoc = new File(gosudocOutputRoot, asPath('included1', 'included1.SimplePogo.html'))
@@ -99,6 +103,8 @@ class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification 
         anotherPogoGosudoc.readLines().contains('<div class="block">This is AnotherPogo...</div>')
         !excludedPogoGosudoc.exists()
 
+        where:
+        gradleVersion << gradleVersionsToTest
     }
     
 }

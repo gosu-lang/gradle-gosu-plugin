@@ -2,10 +2,15 @@ package org.gosulang.gradle.functional
 
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import spock.lang.Shared
 import spock.lang.Specification
 
 class AbstractGosuPluginSpecification extends Specification {
 
+    // These are the versions of gradle to iteratively test against
+    @Shared
+    String[] gradleVersionsToTest = ['2.8', '2.9']
+    
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
 
