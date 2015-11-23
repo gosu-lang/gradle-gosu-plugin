@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
 import groovy.lang.Closure;
+import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.logging.LogLevel;
@@ -15,7 +16,7 @@ import org.gradle.api.tasks.TaskAction;
 import javax.inject.Inject;
 import java.io.File;
 
-public class GosuDoc extends SourceTask {
+public class GosuDoc extends SourceTask implements InfersGosuRuntime {
 
   private FileCollection _classpath;
   private Closure<FileCollection> _gosuClasspath;
@@ -64,11 +65,13 @@ public class GosuDoc extends SourceTask {
    * Returns the classpath to use to load the gosu-doc tool.
    * @return the classpath to use to load the gosu-doc tool.
    */
+  @Override
   @InputFiles
   public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
 
+  @Override
   public void setGosuClasspath( Closure<FileCollection> gosuClasspathClosure ) {
     _gosuClasspath = gosuClasspathClosure;
   }

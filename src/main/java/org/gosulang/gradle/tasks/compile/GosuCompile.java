@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import groovy.lang.Closure;
 import org.gosulang.gradle.GosuBasePlugin;
 import org.gosulang.gradle.tasks.GosuRuntime;
+import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
@@ -24,7 +25,7 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GosuCompile extends AbstractCompile {
+public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private Compiler<DefaultGosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
@@ -57,11 +58,13 @@ public class GosuCompile extends AbstractCompile {
   /**
    * @return the classpath to use to load the Gosu compiler.
    */
+  @Override
   @InputFiles
   public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
 
+  @Override
   public void setGosuClasspath(Closure<FileCollection> gosuClasspathClosure) {
     _gosuClasspath = gosuClasspathClosure;
   }

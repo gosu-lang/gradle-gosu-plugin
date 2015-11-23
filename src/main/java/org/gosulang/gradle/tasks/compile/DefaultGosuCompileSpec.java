@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
+import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.tasks.compile.DefaultJvmLanguageCompileSpec;
 import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
@@ -9,7 +10,7 @@ import org.gradle.api.tasks.compile.CompileOptions;
 import java.io.File;
 import java.util.Set;
 
-public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implements JavaCompileSpec, GosuCompileSpec {
+public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implements JavaCompileSpec, GosuCompileSpec, InfersGosuRuntime {
 
   private CompileOptions _compileOptions;
   private GosuCompileOptions _gosuCompileOptions;
@@ -46,11 +47,13 @@ public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implem
     _dependencyCacheDir = dependencyCacheDir;
   }
 
-  Closure<FileCollection> getGosuClasspath() {
+  @Override
+  public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
 
-  void setGosuClasspath(Closure<FileCollection> _gosuClasspathClosure) {
+  @Override
+  public void setGosuClasspath(Closure<FileCollection> _gosuClasspathClosure) {
     _gosuClasspath = _gosuClasspathClosure;
   }
 
