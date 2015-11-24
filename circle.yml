@@ -6,6 +6,7 @@ machine:
       oraclejdk8
   environment:
     TERM: dumb
+    JAVA_OPTS: "-Xmx1g"
 
 general:
   branches:
