@@ -64,7 +64,7 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification {
             """
     }
 
-    @IgnoreIf( { env.get('CIRCLECI') != null } ) // don't run on CircleCI
+    @IgnoreIf( { env.CIRCLECI } ) // don't run on CircleCI
     def 'End-to-end classpath test [Gradle #gradleVersion]'() {
         
         given:
