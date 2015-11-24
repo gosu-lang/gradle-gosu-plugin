@@ -10,14 +10,13 @@ machine:
 general:
   branches:
     only:
-      - master # only build/deploy from master
+      - gradle2.9
   artifacts:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
-  # Call './gradlew build uploadArchives' to test and upload a snapshot build
   override:
-    - ./gradlew build uploadArchives -is
+    - ./gradlew test -is
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
