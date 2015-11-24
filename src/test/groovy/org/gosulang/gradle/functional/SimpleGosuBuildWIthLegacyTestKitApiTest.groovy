@@ -5,7 +5,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.VersionNumber
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
-import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -64,7 +64,7 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification {
             """
     }
 
-    @Ignore('Must be run locally. As of Gradle 2.9, no way to prevent TestKit from spawning many daemons, which causes OOME on CircleCI')
+    @IgnoreIf( { env.get('CIRCLECI') != null } ) // don't run on CircleCI
     def 'End-to-end classpath test [Gradle #gradleVersion]'() {
         
         given:
