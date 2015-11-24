@@ -99,7 +99,7 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withArguments('build', '-is')
+                .withArguments('build', '-is', '--no-daemon')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()
 
