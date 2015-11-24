@@ -6,7 +6,6 @@ machine:
       oraclejdk8
   environment:
     TERM: dumb
-    JAVA_OPTS: "-Xmx1g"
 
 general:
   branches:
@@ -17,7 +16,7 @@ general:
 
 test:
   override:
-    - ./gradlew test -is
+    - ./gradlew test --no-daemon -is
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
