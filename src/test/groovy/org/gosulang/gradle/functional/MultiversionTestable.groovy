@@ -37,7 +37,8 @@ trait MultiversionTestable {
         return map
     }
 
-    private static String getFirstLineFromResource(URL url) {
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private String getFirstLineFromResource(URL url) {
         return new BufferedReader(new FileReader(url.file)).lines().findFirst().get()
     }
 
