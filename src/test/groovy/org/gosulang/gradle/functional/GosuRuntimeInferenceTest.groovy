@@ -6,14 +6,16 @@ import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.stream.Collectors
 
+@Unroll
 class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
 
     File simplePogo
     
-    def 'Build throws when gosu-core-api jar is not declared as a dependency'() {
+    def 'Build throws when gosu-core-api jar is not declared as a dependency [Gradle #gradleVersion]'() {
         given:
         buildScript << 
             """
@@ -43,21 +45,18 @@ class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('clean', 'compileGosu', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
         
         BuildResult result = runner.buildAndFail()
-
-        println('--- Dumping stdout ---')
-        println(result.getStandardOutput())
-        println('--- Done dumping stdout ---')
-        println()
-        println('--- Dumping stderr ---')
-        println(result.getStandardError())
-        println('--- Done dumping stderr ---')
-                
+        
         then:
         notThrown(UnexpectedBuildSuccess)
-        result.getStandardError().contains('Cannot infer Gosu classpath because the Gosu Core API Jar was not found.')
+        result.output.contains('Cannot infer Gosu classpath because the Gosu Core API Jar was not found.')
         !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'SimplePogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
 

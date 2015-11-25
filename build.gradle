@@ -1,3 +1,5 @@
+import org.gosulang.gradle.build.VersionWriterTask
+
 plugins {
     id 'com.gradle.plugin-publish' version '0.9.1'
     id 'maven'
@@ -8,7 +10,11 @@ plugins {
 
 group = 'org.gosu-lang.gosu'
 version = project.pluginVersion
-description = """Gosu language compiler for Gradle.
+description = """Gosu language compiler for Gradle.  Built with Gradle $project.gradle.gradleVersion.
+
+This has also been tested extensively with Gradle version(s): $project.fullyTestedVersions
+Less rigorous testing was also done against versions: $project.partiallyTestedVersions
+Due to Gradle API changes, the plugin is incompatible with versions: $project.knownIncompatibleVersions
 
 Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  Please include this in the depencencies closure:
 
@@ -36,7 +42,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.easytesting:fest-assert:1.3'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
-    testCompile 'org.spockframework:spock-core:0.7-groovy-2.0@jar'
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4@jar'
 }
 
 pluginBundle {
@@ -66,25 +72,34 @@ task createClasspathManifest {
     }
 }
 
-task gosuVersionHelper {
-    def outputDir = file("$buildDir/$name")
+task gradleVersionHelper(type: VersionWriterTask) {
+    propertyToRead = 'gradleVersion'
+    fallbackValue = project.gradle.gradleVersion
+}
 
-    def propsFile = new File(project.rootDir, 'gradle.properties')
+task gosuVersionHelper(type: VersionWriterTask) {
+    propertyToRead = 'gosuVersion'
+}
 
-    inputs.files propsFile
-    outputs.dir outputDir
+task fullyTestedVersionsHelper(type: VersionWriterTask) {
+    propertyToRead = 'fullyTestedVersions'
+}
 
-    doLast {
-        outputDir.mkdir()
-        def props = new Properties()
-        props.load(new BufferedReader(new FileReader(propsFile)))
-        file("$outputDir/gosuVersion.txt").text = props.getProperty('gosuVersion')
-    }
+task partiallyTestedVersionsHelper(type: VersionWriterTask) {
+    propertyToRead = 'partiallyTestedVersions'
+}
+
+task knownIncompatibleVersionsHelper(type: VersionWriterTask) {
+    propertyToRead = 'knownIncompatibleVersions'
 }
 
 dependencies {
     testRuntime files(createClasspathManifest) // Add the classpath file to the test runtime classpath
+    testRuntime files(gradleVersionHelper) // Persist a file containing the gradleVersion
     testRuntime files(gosuVersionHelper) // Persist a file containing the gosuVersion
+    testRuntime files(fullyTestedVersionsHelper) // Persist a file containing the fullyTestedVersions
+    testRuntime files(partiallyTestedVersionsHelper) // Persist a file containing the partiallyTestedVersions
+    testRuntime files(knownIncompatibleVersionsHelper) // Persist a file containing the knownIncompatibleVersions
 }
 
 task sourceJar(type: Jar) {

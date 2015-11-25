@@ -19,7 +19,7 @@ class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
         simplePogoTest = new File(testProjectDir.newFolder('src', 'test', 'gosu'), 'SimplePogoTest.gs')
     }
 
-    def 'Checked arithmetic should cause failure'() {
+    def 'Checked arithmetic should cause failure [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
             compileGosu {
@@ -57,22 +57,19 @@ class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('clean', 'test', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.buildAndFail()
 
-        println('--- Dumping stdout ---')
-        println(result.standardOutput)
-        println('--- Done dumping stdout ---')
-        println()
-        println('--- Dumping stderr ---')
-        println(result.standardError)
-        println('--- Done dumping stderr ---')
-
         then:
-        result.standardOutput.contains('java.lang.ArithmeticException: integer overflow')
+        result.output.contains('java.lang.ArithmeticException: integer overflow')
         result.task(':compileGosu').outcome == SUCCESS
         result.task(':compileTestGosu').outcome == SUCCESS
         result.task(':test').outcome == FAILED
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
 }

@@ -3,13 +3,11 @@ package org.gosulang.gradle.functional
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
-import org.junit.rules.TemporaryFolder
-import spock.lang.Specification
-
-import java.util.stream.Collectors
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
+@Unroll
 class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
 
     File simplePogo, simpleTestPogo
@@ -24,7 +22,7 @@ class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
      *    <li>The gosu-core jar is included in the testRuntime configuration - otherwise typesystem initialization will wail when executing tests, despite compiling them successfully
      *  </ol>
      */
-    def "End-to-end classpath test"() {
+    def 'End-to-end classpath test [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
         
@@ -61,24 +59,20 @@ class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('clean', 'test', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
-        println("--- Dumping stdout ---")
-        println(result.standardOutput)
-        println("--- Done dumping stdout ---")
-        println()
-        println("--- Dumping stderr ---")
-        println(result.standardError)
-        println("--- Done dumping stderr ---")
-
         then:
         notThrown(UnexpectedBuildFailure)
-        result.standardError.empty
         result.task(":test").outcome == SUCCESS
         
         new File(testProjectDir.root, asPath('build', 'classes', 'main', 'SimplePogo.class')).exists()
         new File(testProjectDir.root, asPath('build', 'classes', 'test', 'SimpleTestPogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
 

@@ -2,9 +2,11 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.*
 
+@Unroll
 class ExclusionFilterTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
@@ -18,7 +20,7 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
 
-    def 'test pattern-based exclusion'() {
+        def 'test pattern-based exclusion [Gradle #gradleVersion]'() {
         given:
         File foo = new File(srcMainGosu, 'Foo.gs')
         File bar = new File(srcMainGosu, 'Bar.gs')
@@ -55,12 +57,13 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('build', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
         then:
-        result.standardOutput.contains('Initializing Gosu compiler...')
-        result.standardError.empty
+        result.output.contains('Initializing Gosu compiler...')
         result.task(':compileGosu').outcome == SUCCESS
         result.task(':compileTestGosu').outcome == UP_TO_DATE //no tests to compile
         result.task(':test').outcome == UP_TO_DATE //no tests to compile
@@ -69,6 +72,9 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         new File(buildOutputRoot, 'Foo.class').exists()
         new File(buildOutputRoot, 'Bar.class').exists()
         !new File(buildOutputRoot, 'Errant_Class.class').exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
 }

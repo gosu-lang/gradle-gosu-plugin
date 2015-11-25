@@ -4,7 +4,9 @@ import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
+import spock.lang.Unroll
 
+@Unroll
 class GosudocOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
@@ -19,7 +21,7 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
 
-    def 'execute gosudoc with default options'() {
+    def 'execute gosudoc with default options [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
 
@@ -44,13 +46,15 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('gosudoc', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
         then:
         notThrown(UnexpectedBuildFailure)
-        result.standardOutput.contains('Generating Documentation')
-        result.standardOutput.contains('example.gradle.SimplePogo - document : true')
+        result.output.contains('Generating Documentation')
+        result.output.contains('example.gradle.SimplePogo - document : true')
         
         File gosudocOutputRoot = new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc'))
         File simplePogoGosudoc = new File(gosudocOutputRoot, asPath('example', 'gradle', 'example.gradle.SimplePogo.html'))
@@ -58,7 +62,9 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
         //validate the generated HTML
         simplePogoGosudoc.exists()
         simplePogoGosudoc.readLines().contains('<div class="block">I can has gosudoc</div>')
-        
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
     
     

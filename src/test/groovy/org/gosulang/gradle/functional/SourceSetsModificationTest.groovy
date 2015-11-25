@@ -2,9 +2,11 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.*
 
+@Unroll
 class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
     
     File srcMainGosu
@@ -18,7 +20,7 @@ class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
     
-    def 'non-standard source roots'() {
+    def 'non-standard source roots [Gradle #gradleVersion]'() {
         given:
         String[] rootOne = ['folder', 'containing', 'POGOs']
         String[] rootTwo = ['foo', 'bar']
@@ -77,12 +79,13 @@ class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('build', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
         then:
-        result.standardOutput.contains('Initializing Gosu compiler...')
-        result.standardError.empty
+        result.output.contains('Initializing Gosu compiler...')
         result.task(':compileGosu').outcome == SUCCESS
         result.task(':compileTestGosu').outcome == UP_TO_DATE //no tests to compile
         result.task(':test').outcome == UP_TO_DATE //no tests to compile
@@ -93,5 +96,7 @@ class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
         new File(buildOutputRoot, asPath('three', 'ConfiguredPogoThree.class')).exists()
         !new File(buildOutputRoot, asPath('four', 'IgnoredPogo.class')).exists()
 
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 }

@@ -5,6 +5,7 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.rules.TemporaryFolder
+import spock.lang.Unroll
 
 import java.util.regex.Matcher
 
@@ -14,6 +15,7 @@ import static org.gradle.testkit.runner.TaskOutcome.*
 /**
  * commons, base and app are three projects. On the file system, they are peers sitting at the same level on the tree
  */
+@Unroll
 class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
     TemporaryFolder rootFolder
     File baseTestFolder
@@ -133,23 +135,24 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
             """
     }
 
-    def 'test breadth-first traversal (Gradle default behavior)'() {
+    def 'test breadth-first traversal (Gradle default behavior) [Gradle #gradleVersion]'() {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(rootFolder.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
         then:
         notThrown(UnexpectedBuildFailure)
-        println(result.standardOutput)
-        result.standardError.empty
+        println(result.output)
 
         String[] expected = ['appExt.jar', 'baseTest.jar', 'app.jar']
 
-        String[] orderedClasspath = getOrderedClasspath(result.standardOutput)
+        String[] orderedClasspath = getOrderedClasspath(result.output)
 
         println('orderedClasspath is: ' + orderedClasspath)
 
@@ -161,8 +164,11 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         result.task(':appTest:printClasspath').outcome == SUCCESS
         result.task(':appTest:test').outcome == SUCCESS
 
-        result.standardOutput.contains('baseTest wins!')
-        !result.standardOutput.contains('app wins!')
+        result.output.contains('baseTest wins!')
+        !result.output.contains('app wins!')
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
     /**
@@ -172,7 +178,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
      *
      * @return
      */
-    def 'test depth-first traversal'() {
+    def 'test depth-first traversal [Gradle #gradleVersion]'() {
         given:
         appTestBuildScript <<
             """
@@ -207,17 +213,18 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(rootFolder.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
         
         BuildResult result = runner.build()
 
         then:
         notThrown(UnexpectedBuildFailure)
-        println(result.standardOutput)
-        result.standardError.empty
+        println(result.output)
 
         String[] expected = ['appExt.jar', 'app.jar', 'baseTest.jar']
 
-        String[] orderedClasspath = getOrderedClasspath(result.standardOutput)
+        String[] orderedClasspath = getOrderedClasspath(result.output)
         
         println('orderedClasspath is: ' + orderedClasspath)
 
@@ -229,8 +236,11 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         result.task(':appTest:printClasspath').outcome == SUCCESS
         result.task(':appTest:test').outcome == SUCCESS
 
-        result.standardOutput.contains('app wins!')
-        !result.standardOutput.contains('baseTest wins!')
+        result.output.contains('app wins!')
+        !result.output.contains('baseTest wins!')
+
+        where:
+        gradleVersion << gradleVersionsToTest
     }
 
     private static String[] getOrderedClasspath(String stdOut) {
