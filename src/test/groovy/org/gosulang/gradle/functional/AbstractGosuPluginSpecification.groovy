@@ -5,13 +5,11 @@ import org.junit.rules.TemporaryFolder
 import spock.lang.Shared
 import spock.lang.Specification
 
-class AbstractGosuPluginSpecification extends Specification {
+class AbstractGosuPluginSpecification extends Specification implements MultiversionTestable {
 
-    private final static String latestGradleVersion = '2.9'
-    
     // These are the versions of gradle to iteratively test against
     @Shared
-    String[] gradleVersionsToTest = [latestGradleVersion].plus(System.getenv().get('CIRCLECI') == null ? ['2.8'] : [])
+    String[] gradleVersionsToTest = System.getenv().get('CIRCLECI') == null ? getFullyTestedVersions().plus(getGradleVersion()) : [getGradleVersion()]
     
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator

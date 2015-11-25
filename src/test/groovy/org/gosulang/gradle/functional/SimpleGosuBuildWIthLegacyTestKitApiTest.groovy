@@ -24,7 +24,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
  * sanity test against many older versions of Gradle.
  */
 @Unroll
-class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification {
+class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification implements MultiversionTestable {
 
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
@@ -130,16 +130,9 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification {
 
         where:
         // These are the versions of gradle to iteratively test against
-        gradleVersion | knownBreak
-        '2.3-rc-3'    | false
-        '2.3'         | false
-        '2.4'         | false
-        '2.5'         | true    // Use of gradleTestKit() dependency causes compile failure 
-        '2.6'         | true    // FileCollection API changes break our plugin
-        '2.7'         | true    // "
-        '2.8'         | false
-        '2.9'         | false
-        
+        entry << getCompatibilityMap()
+        gradleVersion = entry.key
+        knownBreak = entry.value
     }
 
     /**
