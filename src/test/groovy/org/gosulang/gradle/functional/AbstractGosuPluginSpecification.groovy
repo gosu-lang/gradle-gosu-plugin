@@ -39,7 +39,7 @@ class AbstractGosuPluginSpecification extends Specification implements Multivers
             }
             dependencies {
                 compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-                testCompile group: 'junit', name: 'junit', version: '4.11'
+                testCompile group: 'junit', name: 'junit', version: '4.12'
             }
             """
         return buildFileContent
