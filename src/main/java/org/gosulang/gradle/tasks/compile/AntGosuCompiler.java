@@ -23,11 +23,17 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
   private final IsolatedAntBuilder _antBuilder;
   private Iterable<File> _compileClasspath;
   private Iterable<File> _gosuClasspath;
+  private final String _projectName;
   
-  public AntGosuCompiler( IsolatedAntBuilder antBuilder, Iterable<File> compileClasspath, Iterable<File> gosuClasspath) {
+  public AntGosuCompiler( IsolatedAntBuilder antBuilder, Iterable<File> compileClasspath, Iterable<File> gosuClasspath ) {
+    this( antBuilder, compileClasspath, gosuClasspath, "" );
+  }
+
+  public AntGosuCompiler( IsolatedAntBuilder antBuilder, Iterable<File> compileClasspath, Iterable<File> gosuClasspath, String projectName ) {
     _antBuilder = antBuilder;
     _compileClasspath = compileClasspath;
     _gosuClasspath = gosuClasspath;
+    _projectName = projectName;
   }
       
   @Override
@@ -85,6 +91,7 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
         optionsMap.put("destdir", destinationDir.getAbsolutePath());
         optionsMap.put("classpathref", gosuClasspathRefId);
+        optionsMap.put("projectname", _projectName);
 
         LOGGER.debug("Dumping optionsMap:");
         optionsMap.forEach(( key, value ) -> LOGGER.debug('\t' + key + '=' + value));

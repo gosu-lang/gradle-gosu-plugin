@@ -41,7 +41,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         BuildResult result = runner.build()
         
         then:
-        result.output.contains('Initializing Gosu compiler...')
+        result.output.contains('Initializing Gosu compiler')
         result.task(":compileGosu").outcome == SUCCESS
 
         //did we actually compile anything?
