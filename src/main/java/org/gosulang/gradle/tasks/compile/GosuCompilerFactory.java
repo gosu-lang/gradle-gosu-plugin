@@ -12,18 +12,20 @@ import org.gradle.language.base.internal.compile.CompilerFactory;
 public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSpec> {
 
   private final ProjectInternal _project;
+  private final String _taskPath;
   private final IsolatedAntBuilder _antBuilder;
   private final JavaCompilerFactory _javaCompilerFactory;
   private final CompilerDaemonManager _compilerDaemonManager;
   private FileCollection _gosuClasspath;
   private final InProcessCompilerDaemonFactory _inProcessCompilerDaemonFactory;
 
-  public GosuCompilerFactory(ProjectInternal project, IsolatedAntBuilder antBuilder, JavaCompilerFactory javaCompilerFactory, CompilerDaemonManager compilerDaemonManager, FileCollection gosuClasspath) {
-    this(project, antBuilder, javaCompilerFactory, compilerDaemonManager, gosuClasspath, null);
+  public GosuCompilerFactory(ProjectInternal project, String forTask, IsolatedAntBuilder antBuilder, JavaCompilerFactory javaCompilerFactory, CompilerDaemonManager compilerDaemonManager, FileCollection gosuClasspath) {
+    this(project, forTask, antBuilder, javaCompilerFactory, compilerDaemonManager, gosuClasspath, null);
   }
 
-  public GosuCompilerFactory(ProjectInternal project, IsolatedAntBuilder antBuilder, JavaCompilerFactory javaCompilerFactory, CompilerDaemonManager compilerDaemonManager, FileCollection gosuClasspath, InProcessCompilerDaemonFactory inProcessCompilerDaemonFactory) {
+  public GosuCompilerFactory(ProjectInternal project, String forTask, IsolatedAntBuilder antBuilder, JavaCompilerFactory javaCompilerFactory, CompilerDaemonManager compilerDaemonManager, FileCollection gosuClasspath, InProcessCompilerDaemonFactory inProcessCompilerDaemonFactory) {
     _project = project;
+    _taskPath = forTask;
     _antBuilder = antBuilder;
     _javaCompilerFactory = javaCompilerFactory;
     _compilerDaemonManager = compilerDaemonManager;
@@ -36,7 +38,7 @@ public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSp
     GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
     Compiler<DefaultGosuCompileSpec> gosuCompiler;
     if(gosuOptions.isUseAnt()) {
-      gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), spec.getGosuClasspath().call(), _project.getPath());
+      gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), spec.getGosuClasspath().call(), _taskPath);
     } else {
       gosuCompiler = new InProcessGosuCompiler();
     }

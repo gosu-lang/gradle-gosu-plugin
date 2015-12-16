@@ -51,8 +51,8 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         
         then:
         notThrown(UnexpectedBuildFailure)
-        !result.output.contains('Initializing Gosu compiler') // this message requires info level and below
-        result.output.contains(/*Gosu compilation completed for #### */'with 1 warning')
+        !result.output.contains('Initializing Gosu compiler for :compileGosu') // this message requires info level and below
+        result.output.contains(':compileGosu completed with 1 warning')
         result.task(':compileGosu').outcome == SUCCESS
 
         //did we actually compile anything?
@@ -88,7 +88,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildSuccess)
         result.output.contains('BUILD FAILED')
-        result.output.contains(/*Gosu compilation completed for #### */'with 1 error')
+        result.output.contains(':compileGosu completed with 1 error')
         result.output.contains('Gosu compilation failed with errors; see compiler output for details.')
         result.task(':compileGosu').outcome == FAILED
 

@@ -145,7 +145,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       CompilerDaemonManager compilerDaemonManager = getServices().get(CompilerDaemonManager.class);
       //      var inProcessCompilerDaemonFactory = getServices().getFactory(InProcessCompilerDaemonFactory);
       JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, antBuilder, javaCompilerFactory, compilerDaemonManager, getGosuClasspath().call());
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), antBuilder, javaCompilerFactory, compilerDaemonManager, getGosuClasspath().call());
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
