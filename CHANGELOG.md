@@ -1,5 +1,27 @@
 # Change Log
 
+## [0.1.3](https://github.com/gosu-lang/gradle-gosu-plugin/tree/0.1.3) (2016-01-14)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1.2-alpha...0.1.3)
+
+**Implemented enhancements:**
+
+- Add module/project name to compilation result message [\#18](https://github.com/gosu-lang/gradle-gosu-plugin/issues/18)
+- Infer gosu classpath at execution time, not configuration time [\#17](https://github.com/gosu-lang/gradle-gosu-plugin/issues/17)
+- Add an optional 'orderClasspath' property to GosuCompile task [\#13](https://github.com/gosu-lang/gradle-gosu-plugin/issues/13)
+- Log error context [\#12](https://github.com/gosu-lang/gradle-gosu-plugin/issues/12)
+
+**Fixed bugs:**
+
+- File-level exclusions not working [\#15](https://github.com/gosu-lang/gradle-gosu-plugin/issues/15)
+- Log errors under default \(quiet\) mode [\#11](https://github.com/gosu-lang/gradle-gosu-plugin/issues/11)
+- Clarify classpath vs. gosuClasspath in DefaultGosuCompileSpec and AntGosuCompile [\#10](https://github.com/gosu-lang/gradle-gosu-plugin/issues/10)
+- Support older versions of Gradle [\#8](https://github.com/gosu-lang/gradle-gosu-plugin/issues/8)
+
+**Closed issues:**
+
+- Upgrade to Gradle 2.9 [\#16](https://github.com/gosu-lang/gradle-gosu-plugin/issues/16)
+- Add GosuDoc support [\#7](https://github.com/gosu-lang/gradle-gosu-plugin/issues/7)
+
 ## [0.1.2-alpha](https://github.com/gosu-lang/gradle-gosu-plugin/tree/0.1.2-alpha) (2015-11-06)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/0.1.1-alpha...0.1.2-alpha)
 
