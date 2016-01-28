@@ -3,8 +3,8 @@ package org.gosulang.gradle.functional
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
 

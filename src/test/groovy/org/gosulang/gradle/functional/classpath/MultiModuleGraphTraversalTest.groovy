@@ -9,8 +9,8 @@ import spock.lang.Unroll
 
 import java.util.regex.Matcher
 
-import static org.fest.assertions.Assertions.*
-import static org.gradle.testkit.runner.TaskOutcome.*
+import static org.fest.assertions.Assertions.assertThat
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 /**
  * commons, base and app are three projects. On the file system, they are peers sitting at the same level on the tree

@@ -2,11 +2,8 @@ package org.gosulang.gradle.unit
 
 import org.gosulang.gradle.GosuBasePlugin
 import org.gradle.api.GradleException
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.util.VersionNumber
-import org.junit.Ignore
 import spock.lang.Specification
 
 class GosuRuntimeTest extends Specification {

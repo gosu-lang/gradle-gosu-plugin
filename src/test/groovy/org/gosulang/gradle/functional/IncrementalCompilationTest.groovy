@@ -6,8 +6,8 @@ import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
 import spock.lang.Unroll
 
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Unroll
 class IncrementalCompilationTest extends AbstractGosuPluginSpecification {

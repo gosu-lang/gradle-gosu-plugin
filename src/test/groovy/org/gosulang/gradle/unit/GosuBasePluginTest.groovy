@@ -10,10 +10,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-//import static org.gradle.api.tasks.TaskDependencyMatchers.dependsOn
 import static org.gradle.util.WrapUtil.toLinkedSet
-import static org.hamcrest.Matchers.*
-import static org.junit.Assert.assertEquals
+import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.instanceOf
 import static org.junit.Assert.assertThat
 import static org.junit.Assert.assertTrue
 
