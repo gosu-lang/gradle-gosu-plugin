@@ -11,7 +11,7 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
 
   public DefaultGosuSourceSet( String displayName, SourceDirectorySetFactory sourceDirectorySetFactory ) {
     _gosu = sourceDirectorySetFactory.create(displayName + " Gosu source");
-    _gosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst");
+    _gosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
   }
 
   @Override
