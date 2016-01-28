@@ -12,7 +12,7 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
 
   public DefaultGosuSourceSet( String displayName, FileResolver fileResolver ) {
     _gosu = new DefaultSourceDirectorySet(displayName + " Gosu source", fileResolver);
-    _gosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst");
+    _gosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
   }
 
   @Override

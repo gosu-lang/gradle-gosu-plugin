@@ -30,7 +30,7 @@ class DefaultGosuSourceSetTest extends Specification {
         sourceSet.gosu instanceof DefaultSourceDirectorySet
         expect sourceSet.gosu, emptyIterable()
         sourceSet.gosu.displayName == '<set-display-name> Gosu source'
-        expect sourceSet.gosu.filter.includes,  equalTo(['**/*.gs', '**/*.gsx', '**/*.gst'] as Set)
+        expect sourceSet.gosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
         expect sourceSet.gosu.filter.excludes, empty()
     }
     
@@ -58,6 +58,20 @@ class DefaultGosuSourceSetTest extends Specification {
 
         then:
         expect sourceSet.gosu.excludes, equalTo(['**/Errant_*'] as Set)
+    }
+
+    def 'can specify additional source extensions'() {
+        given:
+        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
+
+        when:
+        sourceSet.gosu {
+            filter.include '**/*.grs', '**/*.gr' 
+        }
+        
+        then:
+        expect sourceSet.gosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp', '**/*.grs', '**/*.gr'] as Set)
+        expect sourceSet.gosu.filter.excludes, empty()
     }
 
 }
