@@ -13,6 +13,8 @@ import org.gradle.api.tasks.SourceSet;
 
 public class GosuPlugin implements Plugin<Project> {
 
+  public static final String GOSUDOC_TASK_NAME = "gosudoc";
+
   public void apply(Project project) {
     project.getPluginManager().apply(GosuBasePlugin.class);
     project.getPluginManager().apply(JavaPlugin.class);
@@ -40,7 +42,7 @@ public class GosuPlugin implements Plugin<Project> {
   }
 
   private void configureGosuDoc( final Project project ) {
-    GosuDoc gosuDoc = project.getTasks().create("gosudoc", GosuDoc.class);
+    GosuDoc gosuDoc = project.getTasks().create(GOSUDOC_TASK_NAME, GosuDoc.class);
     gosuDoc.setDescription("Generates Gosudoc API documentation for the main source code.");
     gosuDoc.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
 
