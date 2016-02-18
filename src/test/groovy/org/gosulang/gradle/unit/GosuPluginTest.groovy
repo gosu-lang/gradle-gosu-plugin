@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 import static org.gradle.util.WrapUtil.toLinkedSet
+import static org.hamcrest.Matchers.empty
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.instanceOf
 import static org.junit.Assert.*
@@ -217,12 +218,12 @@ class GosuPluginTest {
      */
     @Test
     public void canConfigureGosuCompileOptionsForGosu() {
-        boolean isUseAnt = project.tasks.compileGosu.gosuOptions.useAnt
+        boolean isUseAnt = project.tasks.compileGosu.gosuCompileOptions.useAnt
         assertTrue(isUseAnt)
         project.compileGosu {
-            gosuOptions.useAnt = false
+            gosuCompileOptions.useAnt = false
         }
-        isUseAnt = project.tasks.compileGosu.gosuOptions.useAnt
+        isUseAnt = project.tasks.compileGosu.gosuCompileOptions.useAnt
         assertFalse(isUseAnt)
 //        project.tasks.withType(GosuCompile.class) {
 //            options.fork = !isFork
@@ -231,5 +232,5 @@ class GosuPluginTest {
 //        assertThat(project.tasks.compileGosu.options.fork, equalTo(!isFork))
 //        assertThat(project.tasks.compileGosu.options.failOnError, equalTo(false))
     }    
-    
+
 }
