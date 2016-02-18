@@ -1,21 +1,16 @@
 package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
-import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.internal.tasks.compile.DefaultJvmLanguageCompileSpec;
-import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
-import org.gradle.api.tasks.compile.CompileOptions;
+import org.gradle.api.internal.tasks.compile.DefaultJavaCompileSpec;
 
 import java.io.File;
 import java.util.Set;
 
-public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implements JavaCompileSpec, GosuCompileSpec, InfersGosuRuntime {
+public class DefaultGosuCompileSpec extends DefaultJavaCompileSpec implements GosuCompileSpec {
 
-  private CompileOptions _compileOptions;
   private GosuCompileOptions _gosuCompileOptions;
-  private Closure<FileCollection> _gosuClasspath;
-  private File _dependencyCacheDir;
+  private transient Closure<FileCollection> _gosuClasspath;
   private Set<File> _srcDirSet;
 
   @Override
@@ -26,25 +21,6 @@ public class DefaultGosuCompileSpec extends DefaultJvmLanguageCompileSpec implem
   @Override
   public void setSourceRoots( Set<File> srcDirSet ) {
     _srcDirSet = srcDirSet;
-  }
-
-  @Override
-  public CompileOptions getCompileOptions() {
-    return _compileOptions;
-  }
-
-  public void setCompileOptions(CompileOptions compileOptions) {
-    _compileOptions = compileOptions;
-  }
-  
-  @Override
-  public File getDependencyCacheDir() {
-    return _dependencyCacheDir;
-  }
-
-  @Override
-  public void setDependencyCacheDir( File dependencyCacheDir ) {
-    _dependencyCacheDir = dependencyCacheDir;
   }
 
   @Override

@@ -10,6 +10,7 @@ import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.FileSystems;
@@ -23,12 +24,12 @@ import java.util.stream.Collectors;
  * @deprecated Use AntGosuCompiler instead
  */
 @Deprecated
-public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
+public class InProcessGosuCompiler implements Compiler<GosuCompileSpec>, Serializable {
 
   private static final Logger LOGGER = Logging.getLogger(InProcessGosuCompiler.class);
 
   @Override
-  public WorkResult execute( DefaultGosuCompileSpec spec ) {
+  public WorkResult execute( GosuCompileSpec spec ) {
     LOGGER.info("Initializing Gosu compiler...");
 
     Class<?> driverIF = null;
@@ -197,7 +198,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     }
 
     if(errorsInCompilation) {
-      if(spec.getCompileOptions().isFailOnError()) {
+      if(spec.getGosuCompileOptions().isFailOnError()) {
         throw new CompilationFailedException();
       } else {
         LOGGER.info("Gosu Compiler: Ignoring compilation failure as 'failOnError' was set to false");
