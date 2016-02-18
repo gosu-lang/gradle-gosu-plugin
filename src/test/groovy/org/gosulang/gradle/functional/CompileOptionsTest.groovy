@@ -27,6 +27,19 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
             gosuCompileOptions.failOnError = false
+            gosuCompileOptions.useAnt = false
+            
+//            gosuCompileOptions.forkOptions.classpath = 'foo'
+//            gosuCompileOptions {
+//                failOnError = false
+//                useAnt = false
+//                forkOptions {
+//                    executable = 'foo'
+//                }
+//            }
+//            failOnError = false
+//            gosuCompileOptions.useAnt = false
+//            gosuOpt
         }
         """
        
@@ -56,8 +69,9 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
-                .withArguments('compileGosu', '-is')
+                .withArguments('compileGosu', '-ds')
                 .withGradleVersion(gradleVersion)
+                .withDebug(true)
                 .forwardOutput()
 
         BuildResult result = runner.build()

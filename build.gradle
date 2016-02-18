@@ -32,8 +32,12 @@ repositories {
 	jcenter()
 }
 
+apply from: "$rootDir/gradle/providedConfiguration.gradle" //introduce the 'provided' configuration
+
 dependencies {
     compile     gradleApi()
+    provided("org.gosu-lang.gosu:gosu-core-api:$project.gosuVersion")
+//    compile 'org.scala-lang:scala-compiler:2.11.7' //todo delete me
     testCompile gradleTestKit()
     testCompile 'junit:junit:4.12'
     testCompile 'org.easytesting:fest-assert:1.3'
