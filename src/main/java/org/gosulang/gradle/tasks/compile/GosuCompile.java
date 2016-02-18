@@ -1,15 +1,13 @@
 package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
-import org.gosulang.gradle.GosuBasePlugin;
-import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.JavaCompilerFactory;
+import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
@@ -21,18 +19,19 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
-  private Compiler<DefaultGosuCompileSpec> _compiler;
+  private Compiler<GosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
   private final CompileOptions _compileOptions = new CompileOptions();
-  private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
+  private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions(); //TODO move to constructor??
   
   @Override
   @TaskAction
@@ -42,11 +41,14 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     WorkResult result = _compiler.execute(spec);
   }
 
+  @Inject
+  public GosuCompile() {}
+  
   /**
    * @return Gosu-specific compilation options.
    */
   @Nested
-  public GosuCompileOptions getGosuOptions() {
+  public GosuCompileOptions getGosuCompileOptions() {
     return _gosuCompileOptions;
   }
   
@@ -138,14 +140,14 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return spec;
   }
 
-  private Compiler<DefaultGosuCompileSpec> getCompiler(DefaultGosuCompileSpec spec) {
+  private Compiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
     if(_compiler == null) {
       ProjectInternal projectInternal = (ProjectInternal) getProject();
       IsolatedAntBuilder antBuilder = getServices().get(IsolatedAntBuilder.class);
       CompilerDaemonManager compilerDaemonManager = getServices().get(CompilerDaemonManager.class);
-      //      var inProcessCompilerDaemonFactory = getServices().getFactory(InProcessCompilerDaemonFactory);
-      JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), antBuilder, javaCompilerFactory, compilerDaemonManager, getGosuClasspath().call());
+//      InProcessGosuCompilerDaemonFactory inProcessCompilerDaemonFactory = getServices().getFactory(InProcessGosuCompilerDaemonFactory.class).create().addProjectContext(projectInternal);
+//      JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), antBuilder, compilerDaemonManager);
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;

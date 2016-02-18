@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
+public class AntGosuCompiler implements Compiler<GosuCompileSpec> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AntGosuCompiler.class);
   
@@ -37,7 +37,7 @@ public class AntGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
   }
       
   @Override
-  public WorkResult execute(DefaultGosuCompileSpec spec) {
+  public WorkResult execute(GosuCompileSpec spec) {
     final String gosuClasspathRefId = "gosu.classpath";
     final File destinationDir = spec.getDestinationDir();
     final GosuCompileOptions options = spec.getGosuCompileOptions();

@@ -26,7 +26,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
-            gosuOptions.failOnError = false
+            gosuCompileOptions.failOnError = false
         }
         """
        

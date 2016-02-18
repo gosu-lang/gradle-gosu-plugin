@@ -69,6 +69,9 @@ class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification 
         given:
         buildScript << getBasicBuildScriptForTesting() +
             """
+            compileGosu {
+                gosuCompileOptions.useAnt = true
+            }
             gosudoc {
                 exclude '**/*not*/*'
             }

@@ -2,10 +2,12 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
+@Unroll
 class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
 
     File simplePogo, simplePogoTest
@@ -23,7 +25,7 @@ class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
             compileGosu {
-                gosuOptions.checkedArithmetic = true
+                gosuCompileOptions.checkedArithmetic = true
             }
         """
         
