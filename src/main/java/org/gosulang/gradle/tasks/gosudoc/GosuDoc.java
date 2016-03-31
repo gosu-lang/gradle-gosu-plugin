@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
-import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
@@ -19,7 +18,7 @@ import java.io.File;
 public class GosuDoc extends SourceTask implements InfersGosuRuntime {
 
   private FileCollection _classpath;
-  private Closure<FileCollection> _gosuClasspath;
+  private FileCollection _gosuClasspath;
   private File _destinationDir;
   private AntGosuDoc _antGosuDoc;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
@@ -67,13 +66,13 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    */
   @Override
   @InputFiles
-  public Closure<FileCollection> getGosuClasspath() {
+  public FileCollection getGosuClasspath() {
     return _gosuClasspath;
   }
 
   @Override
-  public void setGosuClasspath( Closure<FileCollection> gosuClasspathClosure ) {
-    _gosuClasspath = gosuClasspathClosure;
+  public void setGosuClasspath( FileCollection gosuClasspath ) {
+    _gosuClasspath = gosuClasspath;
   }
 
   /**
@@ -121,6 +120,6 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
       options.setTitle(getTitle());
     }
-    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath().call(), options, getProject());
+    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath(), options, getProject());
   }
 }

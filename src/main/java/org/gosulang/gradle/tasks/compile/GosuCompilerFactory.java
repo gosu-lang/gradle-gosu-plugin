@@ -1,9 +1,7 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.JavaCompilerFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
 import org.gradle.api.internal.tasks.compile.daemon.InProcessCompilerDaemonFactory;
 import org.gradle.language.base.internal.compile.Compiler;
@@ -34,7 +32,7 @@ public class GosuCompilerFactory implements CompilerFactory<GosuCompileSpec> {
     GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
     Compiler<GosuCompileSpec> gosuCompiler;
     if(gosuOptions.isUseAnt()) {
-      gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), spec.getGosuClasspath().call(), _taskPath);
+      gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), spec.getGosuClasspath(), _taskPath);
     } else {
       gosuCompiler = new InProcessGosuCompiler();
     }

@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks;
 
-import groovy.lang.Closure;
 import org.gradle.api.Buildable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
@@ -9,7 +8,6 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
 import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
-import org.gradle.internal.Cast;
 import org.gradle.util.VersionNumber;
 
 import java.io.File;
@@ -38,74 +36,63 @@ public class GosuRuntime {
    * @param classpath a classpath containing a 'gosu-core-api' Jar
    * @return a classpath containing a corresponding 'gosu-core' Jar and its dependencies
    */
-  public Closure<FileCollection> inferGosuClasspath(final Iterable<File> classpath) {
+  public FileCollection inferGosuClasspath( final Iterable<File> classpath ) {
 
-    return new Closure<FileCollection>(this, this) {
-      /**
-       *
-       * @return a classpath containing a corresponding 'gosu-core' Jar and its dependencies
-       */
-      public FileCollection doCall(Object ignore) {
+    return new LazilyInitializedFileCollection() {
+      @Override
+      public String getDisplayName() {
+        return "Gosu runtime classpath";
+      }
 
-        return new LazilyInitializedFileCollection() {
-          @Override
-          public String getDisplayName() {
-            return "Gosu runtime classpath";
-          }
+      @Override
+      public FileCollection createDelegate() {
+        if (_project.getRepositories().isEmpty()) {
+          throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
+        }
 
-          @Override
-          public FileCollection createDelegate() {
-            if (_project.getRepositories().isEmpty()) {
-              throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
-            }
+        File gosuCoreApiJar = findGosuJar(classpath, "core-api");
 
-            File gosuCoreApiJar = findGosuJar(classpath, "core-api");
+        if (gosuCoreApiJar == null) {
+          List<String> classpathAsStrings = new ArrayList<>();
+          classpath.forEach(file -> classpathAsStrings.add(file.getAbsolutePath()));
+          String flattenedClasspath = String.join(":", classpathAsStrings);
+          String errorMsg = String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
+              "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, flattenedClasspath) + LF +
+              "An example dependencies closure may resemble the following:" + LF +
+              LF +
+              "dependencies {" + LF +
+              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.10' //a newer version may be available" + LF +
+              "}" + LF;
+          _project.getLogger().quiet(errorMsg);
+          throw new GradleException(errorMsg);
+        }
 
-            if (gosuCoreApiJar == null) {
-              List<String> classpathAsStrings = new ArrayList<>();
-              classpath.forEach(file -> classpathAsStrings.add(file.getAbsolutePath()));
-              String flattenedClasspath = String.join(":", classpathAsStrings);
-              String errorMsg = String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
-                  "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, flattenedClasspath) + LF +
-                  "An example dependencies closure may resemble the following:" + LF +
-                  LF +
-                  "dependencies {" + LF +
-                  "    compile 'org.gosu-lang.gosu:gosu-core-api:1.10' //a newer version may be available" + LF +
-                  "}" + LF;
-              _project.getLogger().quiet(errorMsg);
-              throw new GradleException(errorMsg);
-            }
+        String gosuCoreApiRawVersion = getGosuVersion(gosuCoreApiJar);
 
-            String gosuCoreApiRawVersion = getGosuVersion(gosuCoreApiJar);
+        if (gosuCoreApiRawVersion == null) {
+          throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
+        }
 
-            if (gosuCoreApiRawVersion == null) {
-              throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
-            }
+        //Use Gradle's VersionNumber construct, which implements Comparable
+        VersionNumber gosuCoreApiVersion = VersionNumber.parse(gosuCoreApiRawVersion);
 
-            //Use Gradle's VersionNumber construct, which implements Comparable
-            VersionNumber gosuCoreApiVersion = VersionNumber.parse(gosuCoreApiRawVersion);
+        //Gosu >= 1.10 is required
+        if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && gosuCoreApiVersion.getBaseVersion().compareTo(VersionNumber.parse("1.10")) < 0) {
+          throw new GradleException(String.format("Please declare a dependency on Gosu version 1.10 or greater. Found: %s", gosuCoreApiRawVersion));
+        }
 
-            //Gosu >= 1.10 is required
-            if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && gosuCoreApiVersion.getBaseVersion().compareTo(VersionNumber.parse("1.10")) < 0) {
-              throw new GradleException(String.format("Please declare a dependency on Gosu version 1.10 or greater. Found: %s", gosuCoreApiRawVersion));
-            }
+        return _project.getConfigurations().detachedConfiguration(
+            new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-ant-tools", gosuCoreApiRawVersion));
+      }
 
-            return _project.getConfigurations().detachedConfiguration(
-                new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-ant-tools", gosuCoreApiRawVersion));
-          }
-
-          // let's override this so that delegate isn't created at autowiring time (which would mean on every build)
-          @Override
-          public void visitDependencies(TaskDependencyResolveContext context) {
-            if (classpath instanceof Buildable) {
-              context.add(classpath);
-            }
-          }
-        };
-
+      // let's override this so that delegate isn't created at autowiring time (which would mean on every build)
+      @Override
+      public void visitDependencies( TaskDependencyResolveContext context ) {
+        if (classpath instanceof Buildable) {
+          context.add(classpath);
+        }
       }
     };
-
   }
 
   /**

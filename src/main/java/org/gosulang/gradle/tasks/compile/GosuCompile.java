@@ -7,7 +7,6 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonFactory;
 import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
@@ -27,7 +26,7 @@ import java.util.Set;
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private Compiler<GosuCompileSpec> _compiler;
-  private Closure<FileCollection> _gosuClasspath;
+  private FileCollection _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
   private final CompileOptions _compileOptions = new CompileOptions();
@@ -62,13 +61,13 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
    */
   @Override
   @InputFiles
-  public Closure<FileCollection> getGosuClasspath() {
+  public FileCollection getGosuClasspath() {
     return _gosuClasspath;
   }
 
   @Override
-  public void setGosuClasspath(Closure<FileCollection> gosuClasspathClosure) {
-    _gosuClasspath = gosuClasspathClosure;
+  public void setGosuClasspath(FileCollection gosuClasspath) {
+    _gosuClasspath = gosuClasspath;
   }
 
   public Closure<FileCollection> getOrderClasspath() {
@@ -127,7 +126,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       }
 
       logger.info("Gosu Compile Spec gosuClasspath is:");
-      FileCollection gosuClasspath = spec.getGosuClasspath().call();
+      FileCollection gosuClasspath = spec.getGosuClasspath();
       if(gosuClasspath.isEmpty()) {
         logger.info("<empty>");
       } else {
