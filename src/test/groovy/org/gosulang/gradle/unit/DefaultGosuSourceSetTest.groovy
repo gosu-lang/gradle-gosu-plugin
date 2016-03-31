@@ -1,8 +1,12 @@
 package org.gosulang.gradle.unit
 
+import org.gosulang.gradle.functional.MultiversionTestable
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
+import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.tasks.util.internal.PatternSets
+import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.nativeintegration.services.NativeServices
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -11,22 +15,22 @@ import spock.lang.Specification
 import static org.hamcrest.Matchers.*
 import static spock.util.matcher.HamcrestSupport.expect
 
-class DefaultGosuSourceSetTest extends Specification {
+class DefaultGosuSourceSetTest extends Specification implements MultiversionTestable {
 
     private DefaultGosuSourceSet sourceSet
-
+    private FileResolver projectFiles
+    
     @Rule
     public final TemporaryFolder _testProjectDir = new TemporaryFolder()
 
     def setup() {
         NativeServices.initialize(_testProjectDir.root)
+        projectFiles = new DefaultFileLookup(NativeServices.instance.get(FileSystem.class), PatternSets.getNonCachingPatternSetFactory()).getFileResolver(_testProjectDir.root)
+        sourceSet = new DefaultGosuSourceSet("<set-display-name>", projectFiles)
     }
 
     def 'verify the default values'() {
-        when:
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
-        
-        then:
+        expect:
         sourceSet.gosu instanceof DefaultSourceDirectorySet
         expect sourceSet.gosu, emptyIterable()
         sourceSet.gosu.displayName == '<set-display-name> Gosu source'
@@ -35,22 +39,16 @@ class DefaultGosuSourceSetTest extends Specification {
     }
     
     def 'can configure Gosu source'() {
-        given:
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
-
         when:
         sourceSet.gosu {
             srcDir 'src/somepathtogosu'
         }
         
         then:
-        expect sourceSet.gosu.srcDirs, equalTo([new File('src/somepathtogosu').canonicalFile] as Set)
+        expect sourceSet.gosu.srcDirs, equalTo([new File(_testProjectDir.root, 'src/somepathtogosu').canonicalFile] as Set)
     }
 
     def 'can exclude a file pattern'() {
-        given:
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
-
         when:
         sourceSet.gosu {
             exclude '**/Errant_*'
@@ -61,9 +59,6 @@ class DefaultGosuSourceSetTest extends Specification {
     }
 
     def 'can specify additional source extensions'() {
-        given:
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
-
         when:
         sourceSet.gosu {
             filter.include '**/*.grs', '**/*.gr' 
