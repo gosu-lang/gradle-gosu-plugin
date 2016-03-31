@@ -9,7 +9,7 @@ class AbstractGosuPluginSpecification extends Specification implements Multivers
 
     // These are the versions of gradle to iteratively test against
     @Shared
-    String[] gradleVersionsToTest = System.getenv().get('CIRCLECI') == null ? getFullyTestedVersions().plus(getGradleVersion()) : [getGradleVersion()]
+    String[] gradleVersionsToTest = System.getenv().get('CI') == null ? getFullyTestedVersions().plus(getGradleVersion()) : [getGradleVersion()]
     
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
