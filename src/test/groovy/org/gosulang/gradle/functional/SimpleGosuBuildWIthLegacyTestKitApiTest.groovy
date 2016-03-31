@@ -64,7 +64,7 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification implements M
             """
     }
 
-    @IgnoreIf( { env.CIRCLECI } ) // don't run on CircleCI
+    @IgnoreIf( { env.CI } ) // don't run on CI
     def 'End-to-end classpath test [Gradle #gradleVersion]'() {
         
         given:
