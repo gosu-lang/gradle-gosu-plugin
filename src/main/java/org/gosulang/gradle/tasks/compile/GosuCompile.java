@@ -2,6 +2,7 @@ package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
@@ -140,16 +141,21 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   private Compiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
+    assertGosuClasspathIsNonEmpty();
     if(_compiler == null) {
       ProjectInternal projectInternal = (ProjectInternal) getProject();
       IsolatedAntBuilder antBuilder = getServices().get(IsolatedAntBuilder.class);
       CompilerDaemonManager compilerDaemonManager = getServices().get(CompilerDaemonManager.class);
-//      InProcessGosuCompilerDaemonFactory inProcessCompilerDaemonFactory = getServices().getFactory(InProcessGosuCompilerDaemonFactory.class).create().addProjectContext(projectInternal);
-//      JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), antBuilder, compilerDaemonManager);
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(this.getPath(), projectInternal.getRootProject().getProjectDir(), antBuilder, compilerDaemonManager, getGosuClasspath(), getProject().getGradle().getGradleUserHomeDir());
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
   }
 
+    private void assertGosuClasspathIsNonEmpty() {
+        if (getGosuClasspath().isEmpty()) {
+            throw new InvalidUserDataException("'" + getName() + ".gosuClasspath' must not be empty. If a Gosu compile dependency is provided, "
+                + "the 'gosu-base' plugin will attempt to configure 'gosuClasspath' automatically. Alternatively, you may configure 'gosuClasspath' explicitly.");
+        }
+    }
 }

@@ -3,12 +3,18 @@ package org.gosulang.gradle.tasks.compile;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.compile.AbstractOptions;
 
+import java.util.Collections;
+
 public class GosuCompileOptions extends AbstractOptions {
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
   private boolean failOnError = true;
+  private boolean listFiles;
   private boolean checkedArithmetic = false;
   private boolean useAnt = true;
+  private boolean fork = false;
+  private GosuForkOptions forkOptions = new GosuForkOptions();
+  private Iterable<String> additionalScriptExtensions = Collections.emptyList();
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -27,19 +33,32 @@ public class GosuCompileOptions extends AbstractOptions {
     this.failOnError = failOnError;
   }
 
-//  /**
-//   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
-//   */
-//  public boolean isFork() {
-//    return fork;
-//  }
-//
-//  /**
-//   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
-//   */
-//  public void setFork(boolean fork) {
-//    this.fork = fork;
-//  }
+  /**
+   * List files to be compiled.
+   */
+  public boolean isListFiles() {
+    return listFiles;
+  }
+
+  public void setListFiles(boolean listFiles) {
+    this.listFiles = listFiles;
+  }  
+  
+  /**
+   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code false}.
+   * <br>***Currently this is a placeholder and forked process compilation is not possible in the current year***
+   */
+  public boolean isFork() {
+    return fork;
+  }
+
+  /**
+   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code false}.
+   * <br>***Currently this is a placeholder and forked process compilation is not possible in the current year***
+   */
+  public void setFork(boolean fork) {
+    this.fork = fork;
+  }
 
   public boolean isCheckedArithmetic() {
     return checkedArithmetic;
@@ -74,6 +93,26 @@ public class GosuCompileOptions extends AbstractOptions {
 //    }
   }
 
+  public Iterable<String> getAdditionalScriptExtensions() {
+    return this.additionalScriptExtensions;
+  }
+
+  public void setAdditionalScriptExtensions(Iterable<String> extensions) {
+    this.additionalScriptExtensions = extensions;
+  }
+
+  /**
+   * Options for running the Gosu compiler in a separate process. These options only take effect
+   * if {@code fork} is set to {@code true}.
+   */
+  public GosuForkOptions getForkOptions() {
+    return forkOptions;
+  }
+
+  public void setForkOptions(GosuForkOptions forkOptions) {
+    this.forkOptions = forkOptions;
+  }
+
   /**
    * Some compiler options are not recognizable by the gosuc ant task; 
    * this method prevents incompatible values from being passed to the ant configuration closure
@@ -82,7 +121,10 @@ public class GosuCompileOptions extends AbstractOptions {
    */
   @Override
   protected boolean excludeFromAntProperties(String fieldName) {
-    return fieldName.equals("useAnt");
+    return fieldName.equals("useAnt") ||
+        fieldName.equals("listFiles") ||
+        fieldName.equals("fork") ||
+        fieldName.equals("forkOptions");
   }
 
 }

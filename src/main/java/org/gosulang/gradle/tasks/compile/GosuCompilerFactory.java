@@ -1,41 +1,59 @@
 package org.gosulang.gradle.tasks.compile;
 
+import org.gradle.api.GradleException;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.IsolatedAntBuilder;
-import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
-import org.gradle.api.internal.tasks.compile.daemon.InProcessCompilerDaemonFactory;
+import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonFactory;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.CompilerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 public class GosuCompilerFactory implements CompilerFactory<GosuCompileSpec> {
 
-  private final ProjectInternal _project;
   private final String _taskPath;
   private final IsolatedAntBuilder _antBuilder;
-  private final CompilerDaemonManager _compilerDaemonManager;
-  private final InProcessCompilerDaemonFactory _inProcessCompilerDaemonFactory;
+  private final CompilerDaemonFactory _compilerDaemonFactory;
+  private FileCollection _gosuClasspath;
+  private final File _rootProjectDirectory;
+  private final File _gradleUserHomeDir;
 
-  public GosuCompilerFactory(ProjectInternal project, String forTask, IsolatedAntBuilder antBuilder, CompilerDaemonManager compilerDaemonManager) {
-    this(project, forTask, antBuilder, compilerDaemonManager, null);
-  }
-
-  public GosuCompilerFactory(ProjectInternal project, String forTask, IsolatedAntBuilder antBuilder, CompilerDaemonManager compilerDaemonManager, InProcessCompilerDaemonFactory inProcessCompilerDaemonFactory) {
-    _project = project;
-    _taskPath = forTask;
+  public GosuCompilerFactory(String taskPath, File rootProjectDirectory, IsolatedAntBuilder antBuilder, CompilerDaemonFactory compilerDaemonFactory, FileCollection gosuClasspath, File gradleUserHomeDir) {
+    _taskPath = taskPath;
+    _rootProjectDirectory = rootProjectDirectory;
     _antBuilder = antBuilder;
-    _compilerDaemonManager = compilerDaemonManager;
-    _inProcessCompilerDaemonFactory = inProcessCompilerDaemonFactory;
+    _compilerDaemonFactory = compilerDaemonFactory;
+    _gosuClasspath = gosuClasspath;
+    _gradleUserHomeDir = gradleUserHomeDir;
   }
 
   @Override
-  public Compiler<GosuCompileSpec> newCompiler( GosuCompileSpec spec ) {
-    GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
-    Compiler<GosuCompileSpec> gosuCompiler;
-    if(gosuOptions.isUseAnt()) {
-      gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), spec.getGosuClasspath(), _taskPath);
-    } else {
-      gosuCompiler = new InProcessGosuCompiler();
+  public Compiler<GosuCompileSpec> newCompiler(GosuCompileSpec spec) {
+    GosuCompileOptions gosuCompileOptions = (GosuCompileOptions) spec.getGosuCompileOptions();
+
+    if(gosuCompileOptions.isUseAnt()) {
+      if(gosuCompileOptions.isFork()) {
+        throw new GradleException("Ant-based Gosu compilation does not support forking. "
+            + "The combination of 'gosuCompileOptions.useAnt=false' and 'gosuCompileOptions.fork=true' is invalid.");
+      }
+      Compiler<GosuCompileSpec> gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), _gosuClasspath, _taskPath);
+      return gosuCompiler;
+      //return new NormalizingGosuCompiler(gosuCompiler);
     }
-    return gosuCompiler;
+
+    //TODO:KM FGC constructor cannot take spec.getClasspath() or similar runtime-resolved iterable; must pass a resolved Set<File>
+    Set<File> gosuClasspathFiles = _gosuClasspath.getFiles();
+    Iterable<File> classpath = spec.getClasspath();
+    List<File> fullClasspath = new ArrayList<File>();
+    fullClasspath.addAll(gosuClasspathFiles);
+    for(File file : classpath) {
+      fullClasspath.add(file);
+    }
+
+    Compiler<GosuCompileSpec> gosuCompiler = new DaemonGosuCompiler<GosuCompileSpec>(_rootProjectDirectory, new ForkingGosuCompiler(gosuClasspathFiles, _gradleUserHomeDir, _taskPath), _compilerDaemonFactory, gosuClasspathFiles);
+    return new NormalizingGosuCompiler(gosuCompiler);
   }
 }
