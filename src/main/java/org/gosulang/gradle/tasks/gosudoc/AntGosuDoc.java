@@ -9,6 +9,7 @@ import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.tasks.WorkResult;
+import org.gradle.internal.jvm.Jvm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public class AntGosuDoc {
     LOGGER.info("Ant gosudoc task options: {}", optionsMap);
    
     List<File> jointClasspath = new ArrayList<>();
-    jointClasspath.add(getToolsJar());
+    jointClasspath.add(Jvm.current().getToolsJar());
     classpathFiles.forEach(jointClasspath::add);
     gosuClasspath.forEach(jointClasspath::add);
     LOGGER.info("Ant gosudoc jointClasspath: {}", jointClasspath);
@@ -112,15 +113,5 @@ public class AntGosuDoc {
 
     return new SimpleWorkResult(true);
   }
-
-  /**
-   * Get all tools.jar from the lib directory of the System's java.home property
-   * @return File reference to tools.jar
-   */
-  private File getToolsJar() {
-    String javaHome = System.getProperty("java.home");
-    java.nio.file.Path libsDir = FileSystems.getDefault().getPath(javaHome, "/lib");
-    return new File(libsDir.toFile(), "tools.jar");
-  }
-
+  
 }
