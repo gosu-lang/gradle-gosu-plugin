@@ -39,9 +39,10 @@ public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSp
     Compiler<DefaultGosuCompileSpec> gosuCompiler;
     if(gosuOptions.isUseAnt()) {
       gosuCompiler = new AntGosuCompiler(_antBuilder, spec.getClasspath(), spec.getGosuClasspath().call(), _taskPath);
-    } else {
+    } else if(gosuOptions.isFork()){
+      gosuCompiler = new CommandLineGosuCompiler(_project, spec, _taskPath); 
+    } else 
       gosuCompiler = new InProcessGosuCompiler();
-    }
     return gosuCompiler;
   }
 }
