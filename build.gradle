@@ -102,6 +102,19 @@ dependencies {
     testRuntime files(knownIncompatibleVersionsHelper) // Persist a file containing the knownIncompatibleVersions
 }
 
+//constrain memory usage when running on CI server
+if(System.getenv('CI') != null) {
+    tasks.withType(JavaCompile) {
+        options.fork = false
+    }
+    tasks.withType(GroovyCompile) {
+        options.fork = false
+    }
+    test {
+        maxHeapSize = "1g"
+    }
+}
+
 task sourceJar(type: Jar) {
     classifier = 'sources'
     description 'generate sources'
