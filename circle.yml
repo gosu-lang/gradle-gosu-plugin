@@ -9,8 +9,8 @@ machine:
 
 general:
   branches:
-    only:
-      - master # only build/deploy from master
+    ignore:
+      - /rel\/.*/
   artifacts:
     - "build/reports/tests" # preserve the generated HTML test reports
 
