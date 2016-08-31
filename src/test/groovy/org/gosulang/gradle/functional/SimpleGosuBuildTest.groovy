@@ -55,6 +55,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
+            options.warnings = false
             gosuOptions.useAnt = false // or set 'gosuOptions.fork = true' 
             gosuOptions.forkOptions.with {
                 memoryInitialSize = '128m'

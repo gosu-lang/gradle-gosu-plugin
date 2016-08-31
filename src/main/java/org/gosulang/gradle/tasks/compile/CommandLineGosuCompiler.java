@@ -155,9 +155,9 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     fileOutput.add("-sourcepath");
     fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getSourceRoots())));
 
-//    if(!spec.isShowWarnings()) { //TODO enhance DSL
-//      fileOutput.add("-nowarn");
-//    }
+    if(!spec.getCompileOptions().isWarnings()) {
+      fileOutput.add("-nowarn");
+    }
 
 //    if(spec.isVerbose()) { //TODO enhance DSL
 //      fileOutput.add("-verbose");
