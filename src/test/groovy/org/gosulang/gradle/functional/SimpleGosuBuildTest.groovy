@@ -2,6 +2,7 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Requires
 import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.*
@@ -52,6 +53,9 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         gradleVersion << gradleVersionsToTest
     }
 
+/*    @Requires({ 
+        Boolean.valueOf(System.getProperty('gosuc.available')) //properties['gosuc.available']) 
+    })
     def 'apply gosu plugin and compile using gosuc [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
@@ -94,5 +98,5 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
 
         where:
         gradleVersion << gradleVersionsToTest
-    }
+    }*/
 }
