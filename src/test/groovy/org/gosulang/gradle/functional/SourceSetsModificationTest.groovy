@@ -80,6 +80,7 @@ class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('build', '-is')
                 .withGradleVersion(gradleVersion)
+                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.build()

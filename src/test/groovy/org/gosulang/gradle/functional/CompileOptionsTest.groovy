@@ -58,6 +58,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu', '-is')
                 .withGradleVersion(gradleVersion)
+                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.build()

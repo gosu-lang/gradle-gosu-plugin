@@ -37,6 +37,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu', '-is')
+                .withDebug(System.getenv('CI') != null) //disables daemon on CI
 
         BuildResult result = runner.build()
         

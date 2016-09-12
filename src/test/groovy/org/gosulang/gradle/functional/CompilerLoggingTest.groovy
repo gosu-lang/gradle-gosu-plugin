@@ -45,6 +45,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu') //intentionally using quiet/default mode here
                 .withGradleVersion(gradleVersion)
+                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.build()
@@ -81,6 +82,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath(pluginClasspath)
                 .withArguments('compileGosu')
                 .withGradleVersion(gradleVersion)
+                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.buildAndFail()

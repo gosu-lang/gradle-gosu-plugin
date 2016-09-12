@@ -5,7 +5,6 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.VersionNumber
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
-import spock.lang.IgnoreIf
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -64,7 +63,6 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification implements M
             """
     }
 
-    @IgnoreIf( { env.CIRCLECI } ) // don't run on CircleCI
     def 'End-to-end classpath test [Gradle #gradleVersion]'() {
         
         given:
@@ -103,6 +101,7 @@ class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification implements M
                 .withProjectDir(testProjectDir.root)
                 .withArguments('build', '-is')
                 .withGradleVersion(gradleVersion)
+                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result

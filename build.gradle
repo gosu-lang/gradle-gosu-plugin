@@ -111,7 +111,7 @@ if(System.getenv('CI') != null) {
         options.fork = false
     }
     test {
-        maxHeapSize = "1g"
+        maxHeapSize = '1g'
     }
 }
 
