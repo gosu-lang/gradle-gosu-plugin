@@ -23,7 +23,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
  * sanity test against many older versions of Gradle.
  */
 @Unroll
-class SimpleGosuBuildWIthLegacyTestKitApiTest extends Specification implements MultiversionTestable {
+class SimpleGosuBuildWithLegacyTestKitApiTest extends Specification implements MultiversionTestable {
 
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
