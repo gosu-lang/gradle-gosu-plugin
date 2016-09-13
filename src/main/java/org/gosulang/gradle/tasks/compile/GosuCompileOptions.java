@@ -7,11 +7,12 @@ import org.gradle.api.tasks.compile.ForkOptions;
 public class GosuCompileOptions extends AbstractOptions {
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
-  private boolean failOnError = true;
   private boolean checkedArithmetic = false;
+  private boolean failOnError = true;
   private boolean useAnt = true;
   private boolean fork = false;
   private ForkOptions forkOptions = new ForkOptions();
+  private boolean verbose = false;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -104,6 +105,21 @@ public class GosuCompileOptions extends AbstractOptions {
     return fieldName.equals("useAnt") ||
            fieldName.equals("fork") ||
            fieldName.equals("forkOptions");
+  }  
+  
+  /**
+   * Sets whether the compilation task should use verbose logging. Defaults to {@code false}.
+   * @param verbose Use verbose logging
+   */
+  public void setVerbose(boolean verbose) {
+    this.verbose = verbose;
   }
 
+  /**
+   * Tells whether to use verbose logging. Defaults to {@code false}.
+   */
+  public boolean isVerbose() {
+    return verbose;
+  }
+  
 }

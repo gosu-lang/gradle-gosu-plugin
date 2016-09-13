@@ -145,6 +145,10 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
 
     List<String> fileOutput = new ArrayList<>();
 
+    if(spec.getGosuCompileOptions().isCheckedArithmetic()) {
+      fileOutput.add("-checkedArithmetic");
+    }
+    
     // The classpath used to initialize Gosu; CommandLineCompiler will supplement this with the JRE jars
     fileOutput.add("-classpath");
     fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getClasspath())));
@@ -159,9 +163,9 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       fileOutput.add("-nowarn");
     }
 
-//    if(spec.isVerbose()) { //TODO enhance DSL
-//      fileOutput.add("-verbose");
-//    }
+    if(spec.getGosuCompileOptions().isVerbose()) {
+      fileOutput.add("-verbose");
+    }
 
     for(File sourceFile : spec.getSource()) {
       fileOutput.add(sourceFile.getPath());
