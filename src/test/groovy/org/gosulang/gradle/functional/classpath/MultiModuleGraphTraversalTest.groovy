@@ -139,7 +139,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(rootFolder.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
                 .withGradleVersion(gradleVersion)
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI
@@ -212,7 +212,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(rootFolder.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
                 .withGradleVersion(gradleVersion)
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI

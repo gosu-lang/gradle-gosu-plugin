@@ -36,7 +36,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('compileGosu', '-is')
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI
 
@@ -61,7 +61,6 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
             options.warnings = false
-            gosuOptions.useAnt = false // or set 'gosuOptions.fork = true' 
             gosuOptions.forkOptions.with {
                 memoryInitialSize = '128m'
                 memoryMaximumSize = '1g'
@@ -81,7 +80,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('compileGosu', '-is')
                 .withDebug(true)
                 .forwardOutput()

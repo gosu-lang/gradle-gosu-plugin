@@ -45,7 +45,7 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('clean', 'compileGosu', '-i')
                 .withGradleVersion(gradleVersion)
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI

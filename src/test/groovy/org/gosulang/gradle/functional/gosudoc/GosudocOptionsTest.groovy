@@ -44,7 +44,7 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('gosudoc', '-is')
                 .withGradleVersion(gradleVersion)
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI

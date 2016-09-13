@@ -42,7 +42,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('compileGosu') //intentionally using quiet/default mode here
                 .withGradleVersion(gradleVersion)
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI
@@ -79,7 +79,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('compileGosu')
                 .withGradleVersion(gradleVersion)
                 .withDebug(System.getenv('CI') != null) //disables daemon on CI
