@@ -3,6 +3,7 @@ package org.gosulang.gradle.functional
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.VersionNumber
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
@@ -22,6 +23,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
  * into the buildscript, this test will use the Gradle 2.7-style GradleRunner, which should allow us to run a basic
  * sanity test against many older versions of Gradle.
  */
+@Ignore('Delete this? Do we care about 2.7 and prior?')
 @Unroll
 class SimpleGosuBuildWithLegacyTestKitApiTest extends Specification implements MultiversionTestable {
 
@@ -101,7 +103,6 @@ class SimpleGosuBuildWithLegacyTestKitApiTest extends Specification implements M
                 .withProjectDir(testProjectDir.root)
                 .withArguments('build', '-is')
                 .withGradleVersion(gradleVersion)
-                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result

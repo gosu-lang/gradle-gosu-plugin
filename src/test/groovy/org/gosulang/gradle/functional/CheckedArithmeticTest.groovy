@@ -2,10 +2,12 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 
+@Unroll
 class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
 
     File simplePogo, simplePogoTest
@@ -58,7 +60,6 @@ class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments('clean', 'test', '-is')
                 .withGradleVersion(gradleVersion)
-                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.buildAndFail()

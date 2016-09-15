@@ -2,7 +2,6 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
-import spock.lang.Requires
 import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.*
@@ -38,12 +37,11 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath()
                 .withArguments('compileGosu', '-is')
-                .withDebug(System.getenv('CI') != null) //disables daemon on CI
 
         BuildResult result = runner.build()
         
         then:
-        result.output.contains('Initializing Gosu compiler')
+        result.output.contains('Initializing gosuc compiler')
         result.task(":compileGosu").outcome == SUCCESS
 
         //did we actually compile anything?

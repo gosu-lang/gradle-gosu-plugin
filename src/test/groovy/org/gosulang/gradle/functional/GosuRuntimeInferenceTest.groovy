@@ -46,7 +46,6 @@ class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments('clean', 'compileGosu', '-is')
                 .withGradleVersion(gradleVersion)
-                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
         
         BuildResult result = runner.buildAndFail()

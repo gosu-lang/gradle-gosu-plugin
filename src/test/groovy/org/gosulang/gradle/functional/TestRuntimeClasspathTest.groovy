@@ -60,7 +60,6 @@ class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments('clean', 'test', '-is')
                 .withGradleVersion(gradleVersion)
-                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.build()

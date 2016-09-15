@@ -48,7 +48,6 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments('clean', 'compileGosu', '-i')
                 .withGradleVersion(gradleVersion)
-                .withDebug(System.getenv('CI') != null) //disables daemon on CI
                 .forwardOutput()
 
         BuildResult result = runner.build()
@@ -85,8 +84,6 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         result.task(':compileGosu').outcome == FAILED
         result.output.contains('Executing task \':compileGosu\'')
         result.output.contains('/src/main/gosu/B.gs has changed.')
-        !result.output.contains('[ant:gosuc] A.gs omitted as')
-        !result.output.contains('[ant:gosuc] B.gs omitted as')
         result.output.contains('src/main/gosu/A.gs:[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
         
         where:
