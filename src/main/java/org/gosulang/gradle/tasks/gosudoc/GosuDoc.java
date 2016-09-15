@@ -3,7 +3,6 @@ package org.gosulang.gradle.tasks.gosudoc;
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -13,7 +12,6 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
 
-import javax.inject.Inject;
 import java.io.File;
 
 public class GosuDoc extends SourceTask implements InfersGosuRuntime {
@@ -21,7 +19,6 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   private FileCollection _classpath;
   private Closure<FileCollection> _gosuClasspath;
   private File _destinationDir;
-  private AntGosuDoc _antGosuDoc;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
   private String _title;
 
@@ -29,11 +26,6 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
     getLogging().captureStandardOutput(LogLevel.INFO);
   }
   
-  @Inject
-  protected IsolatedAntBuilder getAntBuilder() {
-    throw new UnsupportedOperationException();
-  }
-
   /**
    * Returns the target directory to generate the API documentation.
    * @return the target directory to generate the API documentation.
@@ -62,8 +54,8 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   }
 
   /**
-   * Returns the classpath to use to load the gosu-doc tool.
-   * @return the classpath to use to load the gosu-doc tool.
+   * Returns the classpath to use to load the gosudoc tool.
+   * @return the classpath to use to load the gosudoc tool.
    */
   @Override
   @InputFiles
@@ -77,8 +69,8 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   }
 
   /**
-   * Returns the gosu-doc generation options.
-   * @return the gosu-doc options
+   * Returns the gosudoc generation options.
+   * @return the gosudoc options
    */
   @Nested
   public GosuDocOptions getGosuDocOptions() {
@@ -103,24 +95,12 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
     this._title = title;
   }
 
-  public AntGosuDoc getAntGosuDoc() {
-    if (_antGosuDoc == null) {
-      IsolatedAntBuilder antBuilder = getServices().get(IsolatedAntBuilder.class);
-      _antGosuDoc = new AntGosuDoc(antBuilder);
-    }
-    return _antGosuDoc;
-  }
-
-  public void setAntGosuDoc(AntGosuDoc antGosuDoc) {
-    _antGosuDoc = antGosuDoc;
-  }
-
   @TaskAction
   protected void generate() {
     GosuDocOptions options = getGosuDocOptions();
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
       options.setTitle(getTitle());
     }
-    getAntGosuDoc().execute(getSource(), getDestinationDir(), getClasspath(), getGosuClasspath().call(), options, getProject());
+    new CommandLineGosuDoc(getSource(), getDestinationDir(), getGosuClasspath().call(), getClasspath(), options, getProject()).execute();
   }
 }

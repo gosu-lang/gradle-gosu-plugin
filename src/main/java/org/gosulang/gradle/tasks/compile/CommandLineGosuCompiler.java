@@ -23,7 +23,6 @@ import java.util.List;
 
 public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuCompiler.class);
-
   
   private final ProjectInternal _project;
   private final DefaultGosuCompileSpec _spec;

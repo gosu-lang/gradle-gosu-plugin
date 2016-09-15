@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @deprecated Use AntGosuCompiler instead
+ * @deprecated Use CommandLineGosuCompiler instead
  */
 @Deprecated
 public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
