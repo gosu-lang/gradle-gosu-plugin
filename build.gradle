@@ -106,6 +106,7 @@ if(System.getenv('CI') != null) {
     }
     test {
         maxHeapSize = '1g'
+        systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit spawning daemons and running out of memory
     }
 }
 
