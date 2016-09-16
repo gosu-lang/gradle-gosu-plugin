@@ -6,6 +6,7 @@ machine:
       oraclejdk8
   environment:
     TERM: dumb
+    GRADLE_OPTS: -Dorg.gradle.daemon=false
 
 general:
   branches:
