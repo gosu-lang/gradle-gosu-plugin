@@ -14,10 +14,15 @@ general:
   artifacts:
     - "build/reports/tests" # preserve the generated HTML test reports
 
-test:
-  # Call './gradlew build uploadArchives' to test and upload a snapshot build
+dependencies:
   override:
-    - ./gradlew build uploadArchives -is
+    # cache the multiple Gradle distributions used by testkit at execution time
+    - ./gradlew build install
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+test:
+  # Call './gradlew uploadArchives' to upload a snapshot build
+  override:
+    - ./gradlew uploadArchives
