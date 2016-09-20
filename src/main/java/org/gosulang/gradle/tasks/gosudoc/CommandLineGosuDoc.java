@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
@@ -15,6 +16,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.Attributes;
@@ -58,13 +61,24 @@ public class CommandLineGosuDoc {
 
     List<String> gosudocArgs = new ArrayList<>();
 
-    gosudocArgs.add("-inputDirs");
-    gosudocArgs.add(tmpDir.getAbsolutePath());
+    File argFile;
+    try {
+      argFile = createArgFile(tmpDir);
+      gosudocArgs.add("@" + argFile.getCanonicalPath().replace(File.separatorChar, '/'));
+    } catch (IOException e) {
+      throw new BuildException("Error creating argfile with gosudoc arguments", e);
+    }
     
-    gosudocArgs.add("-output");
-    gosudocArgs.add(_targetDir.getAbsolutePath());
-    
-    gosudocArgs.add("-verbose"); //TODO parameterize
+//    gosudocArgs.add("-classpath");
+//    gosudocArgs.add(_projectClasspath.getAsPath());
+//    
+//    gosudocArgs.add("-inputDirs");
+//    gosudocArgs.add(tmpDir.getAbsolutePath());
+//    
+//    gosudocArgs.add("-output");
+//    gosudocArgs.add(_targetDir.getAbsolutePath());
+//    
+//    gosudocArgs.add("-verbose"); //TODO parameterize
 
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
@@ -72,20 +86,21 @@ public class CommandLineGosuDoc {
     FileCollection jointClasspath = _project.files(Jvm.current().getToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
 
     // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
-    File classpathJar;
-    try {
-      classpathJar = createClasspathJarFromFileCollection(jointClasspath);
-    } catch (IOException e) {
-      throw new BuildException("Error creating classpath JAR for gosudoc generation", e);
-    }
-    
-    LOGGER.info("Created classpathJar at " + classpathJar.getAbsolutePath());
+//    File classpathJar;
+//    try {
+//      classpathJar = createClasspathJarFromFileCollection(jointClasspath);
+//    } catch (IOException e) {
+//      throw new BuildException("Error creating classpath JAR for gosudoc generation", e);
+//    }
+//    
+//    LOGGER.info("Created classpathJar at " + classpathJar.getAbsolutePath());
     
     ExecResult result = _project.javaexec(javaExecSpec -> {
       javaExecSpec.setWorkingDir(_project.getProjectDir());
       setJvmArgs(javaExecSpec, _options.getForkOptions());
       javaExecSpec.setMain("gw.gosudoc.cli.Gosudoc")
-          .setClasspath(_project.files(classpathJar))
+//          .setClasspath(_project.files(classpathJar))
+          .setClasspath(_project.files(Jvm.current().getToolsJar(), _gosuClasspath, _project.files(tmpDir.getAbsolutePath())))
           .setArgs(gosudocArgs);
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
@@ -96,10 +111,11 @@ public class CommandLineGosuDoc {
     LOGGER.info(stdout.toString());
     LOGGER.info("Done dumping stdout");
 
-    LOGGER.info("Dumping stderr");
-    LOGGER.info(stderr.toString());
-    LOGGER.info("Done dumping stderr");
-    
+    String errorContent = stderr.toString();
+    if(errorContent != null && !errorContent.isEmpty()) {
+      throw new GradleException("gosudoc failed with errors: \n" + errorContent);
+    }
+
     result.assertNormalExitValue();
   }
 
@@ -138,7 +154,7 @@ public class CommandLineGosuDoc {
     return String.join(" ", entries);
   }
 
-  private void setJvmArgs( JavaExecSpec spec, ForkOptions forkOptions) {
+  private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
     if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
       spec.setMinHeapSize(forkOptions.getMemoryInitialSize());
     }
@@ -163,4 +179,33 @@ public class CommandLineGosuDoc {
     spec.setJvmArgs(args);
   }
 
+  private File createArgFile(File tmpDir) throws IOException {
+    File tempFile;
+    if (LOGGER.isDebugEnabled()) {
+      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "arguments", new File(_targetDir.getAbsolutePath()));
+    } else {
+      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "arguments");
+      tempFile.deleteOnExit();
+    }
+
+    List<String> fileOutput = new ArrayList<>();
+
+    fileOutput.add("-classpath");
+    fileOutput.add(_projectClasspath.getAsPath());
+
+    fileOutput.add("-inputDirs");
+    fileOutput.add(tmpDir.getAbsolutePath());
+
+    fileOutput.add("-output");
+    fileOutput.add(_targetDir.getAbsolutePath());
+
+    if(_options.isVerbose()) {
+      fileOutput.add("-verbose"); //TODO parameterize
+    }
+    
+    Files.write(tempFile.toPath(), fileOutput, StandardCharsets.UTF_8);
+
+    return tempFile;
+  }  
+  
 }

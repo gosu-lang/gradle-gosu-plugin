@@ -39,6 +39,9 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
                 compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
                 testCompile group: 'junit', name: 'junit', version: '4.12'
             }
+            gosudoc {
+                gosuDocOptions.verbose = true
+            }
             """
         return buildFileContent
     }
