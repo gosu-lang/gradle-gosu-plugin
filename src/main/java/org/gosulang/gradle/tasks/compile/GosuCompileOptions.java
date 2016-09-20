@@ -31,14 +31,14 @@ public class GosuCompileOptions extends AbstractOptions {
   }
 
   /**
-   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code false}.
+   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
    */
   public boolean isFork() {
     return fork;
   }
 
   /**
-   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code false}.
+   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
    */
   public void setFork(boolean fork) {
     this.fork = fork;

@@ -1,7 +1,7 @@
 import org.gosulang.gradle.build.VersionWriterTask
 
 plugins {
-    id 'com.gradle.plugin-publish' version '0.9.5'
+    id 'com.gradle.plugin-publish' version '0.9.6'
     id 'maven'
     id 'signing'
     id 'groovy'
@@ -82,15 +82,6 @@ task testedVersionsHelper(type: VersionWriterTask) {
     propertyToRead = 'testedVersions'
 }
 
-//TODO die
-task partiallyTestedVersionsHelper(type: VersionWriterTask) {
-    propertyToRead = 'partiallyTestedVersions'
-}
-//TODO die
-task knownIncompatibleVersionsHelper(type: VersionWriterTask) {
-    propertyToRead = 'knownIncompatibleVersions'
-}
-
 dependencies {
     testRuntime files(gradleVersionHelper) // Persist a file containing the gradleVersion
     testRuntime files(gosuVersionHelper) // Persist a file containing the gosuVersion
@@ -107,7 +98,7 @@ if(System.getenv('CI') != null) {
     }
     test {
         maxHeapSize = '1g'
-        systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit spawning daemons and running out of memory
+        systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit from spawning daemons and running out of memory
     }
 }
 
@@ -199,8 +190,8 @@ task setupPluginUpload {
             throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
         }
 
-        System.properties.setProperty('gradle.publish.key', key)
-        System.properties.setProperty('gradle.publish.secret', secret)
+        System.setProperty('gradle.publish.key', key)
+        System.setProperty('gradle.publish.secret', secret)
     }
 
 }
