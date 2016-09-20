@@ -15,16 +15,20 @@ general:
   artifacts:
     - "build/reports/tests" # preserve the generated HTML test reports
 
-dependencies:
-  override:
-    # cache the multiple Gradle distributions used by testkit at execution time
-    - ./gradlew build install:
-        timeout: 1800
-        post:
-          - mkdir -p $CIRCLE_TEST_REPORTS/junit/
-          - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
-
 test:
-  # Call './gradlew uploadArchives' to upload a snapshot build
   override:
-    - ./gradlew uploadArchives
+    - ./gradlew test:
+        timeout: 1800
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+deployment:
+  all:
+    # Applies to all branches
+    branch: /.*/
+    owner: circleci
+    commands:
+      # 'deploy' ordinarily ensured everything is up-to-date, but mvn's incremental compiler doesn't work well with Gosu
+      # therefore we skip test compilation entirely and rely on the JARs built by 'mvn install' 
+      - ./gradlew uploadArchives -is
