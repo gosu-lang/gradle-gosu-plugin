@@ -4,13 +4,10 @@ import org.gosulang.gradle.functional.MultiversionTestable
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
-import org.gradle.api.internal.file.DefaultSourceDirectorySetFactory
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.api.internal.file.SourceDirectorySetFactory
-import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
 import org.gradle.api.tasks.util.internal.PatternSets
+import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.nativeintegration.services.NativeServices
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
@@ -18,23 +15,17 @@ import spock.lang.Specification
 import static org.hamcrest.Matchers.*
 import static spock.util.matcher.HamcrestSupport.expect
 
-@Ignore("API changes prevent this test from accessing the SourceDirectorySetFactory; see o.g.api.internal.file.TestFiles#sourceDirectorySetFactory")
 class DefaultGosuSourceSetTest extends Specification implements MultiversionTestable {
 
     private DefaultGosuSourceSet sourceSet
     private FileResolver projectFiles
-    private SourceDirectorySetFactory factory
     
     @Rule
     public final TemporaryFolder _testProjectDir = new TemporaryFolder()
 
     def setup() {
         NativeServices.initialize(_testProjectDir.root)
-//        FileSystem fileSystem = NativeServices.instance.get(FileSystem.class)
-//        DefaultFileLookup defaultFileLookup = new DefaultFileLookup(fileSystem, PatternSets.getNonCachingPatternSetFactory())
-//        FileResolver fileResolver = defaultFileLookup.getFileResolver(_testProjectDir.root)
         projectFiles = new DefaultFileLookup(NativeServices.instance.get(FileSystem.class), PatternSets.getNonCachingPatternSetFactory()).getFileResolver(_testProjectDir.root)
-        factory = new DefaultSourceDirectorySetFactory(fileResolver, new DefaultDirectoryFileTreeFactory());
         sourceSet = new DefaultGosuSourceSet("<set-display-name>", projectFiles)
     }
 
