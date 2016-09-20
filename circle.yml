@@ -20,9 +20,9 @@ dependencies:
     # cache the multiple Gradle distributions used by testkit at execution time
     - ./gradlew build install:
         timeout: 1800
-  post:
-    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
-    - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+        post:
+          - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+          - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
 
 test:
   # Call './gradlew uploadArchives' to upload a snapshot build
