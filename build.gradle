@@ -12,11 +12,13 @@ group = 'org.gosu-lang.gosu'
 version = project.pluginVersion
 description = """Gosu language compiler for Gradle.  Built with Gradle $project.gradle.gradleVersion.
 
-This has also been tested extensively with Gradle version(s): $project.fullyTestedVersions
-Less rigorous testing was also done against versions: $project.partiallyTestedVersions
-Due to Gradle API changes, the plugin is incompatible with versions: $project.knownIncompatibleVersions
+This has also been tested extensively with Gradle version(s): $project.testedVersions
 
-Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  Please include this in the depencencies closure:
+Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  
+
+This version requires Gosu 1.13.9 or greater, or 1.14.2 or greater. 
+
+Please include this in the depencencies closure:
 
 dependencies {
     compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$project.gosuVersion'
@@ -76,14 +78,15 @@ task gosuVersionHelper(type: VersionWriterTask) {
     propertyToRead = 'gosuVersion'
 }
 
-task fullyTestedVersionsHelper(type: VersionWriterTask) {
-    propertyToRead = 'fullyTestedVersions'
+task testedVersionsHelper(type: VersionWriterTask) {
+    propertyToRead = 'testedVersions'
 }
 
+//TODO die
 task partiallyTestedVersionsHelper(type: VersionWriterTask) {
     propertyToRead = 'partiallyTestedVersions'
 }
-
+//TODO die
 task knownIncompatibleVersionsHelper(type: VersionWriterTask) {
     propertyToRead = 'knownIncompatibleVersions'
 }
@@ -91,9 +94,7 @@ task knownIncompatibleVersionsHelper(type: VersionWriterTask) {
 dependencies {
     testRuntime files(gradleVersionHelper) // Persist a file containing the gradleVersion
     testRuntime files(gosuVersionHelper) // Persist a file containing the gosuVersion
-    testRuntime files(fullyTestedVersionsHelper) // Persist a file containing the fullyTestedVersions
-    testRuntime files(partiallyTestedVersionsHelper) // Persist a file containing the partiallyTestedVersions
-    testRuntime files(knownIncompatibleVersionsHelper) // Persist a file containing the knownIncompatibleVersions
+    testRuntime files(testedVersionsHelper) // Persist a file containing the testedVersions
 }
 
 //constrain memory usage when running on CI server
