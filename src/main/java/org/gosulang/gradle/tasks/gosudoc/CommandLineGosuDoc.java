@@ -79,9 +79,7 @@ public class CommandLineGosuDoc {
       javaExecSpec.setIgnoreExitValue(true); //otherwise fails immediately before displaying output
     });
 
-    LOGGER.info("Dumping stdout");
     LOGGER.info(stdout.toString());
-    LOGGER.info("Done dumping stdout");
 
     String errorContent = stderr.toString();
     if(errorContent != null && !errorContent.isEmpty()) {
