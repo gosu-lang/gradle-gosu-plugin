@@ -1,6 +1,5 @@
 package org.gosulang.gradle.unit
 
-import org.gosulang.gradle.functional.MultiversionTestable
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
@@ -15,7 +14,7 @@ import spock.lang.Specification
 import static org.hamcrest.Matchers.*
 import static spock.util.matcher.HamcrestSupport.expect
 
-class DefaultGosuSourceSetTest extends Specification implements MultiversionTestable {
+class DefaultGosuSourceSetTest extends Specification {
 
     private DefaultGosuSourceSet sourceSet
     private FileResolver projectFiles
@@ -59,9 +58,6 @@ class DefaultGosuSourceSetTest extends Specification implements MultiversionTest
     }
 
     def 'can specify additional source extensions'() {
-        given:
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", [resolve: { it as File }] as FileResolver)
-
         when:
         sourceSet.gosu {
             filter.include '**/*.grs', '**/*.gr' 
