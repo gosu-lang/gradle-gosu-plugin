@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
+import org.gradle.api.GradleException;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
@@ -8,14 +9,14 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.ForkOptions;
-import org.gradle.internal.jvm.Jvm;
 import org.gradle.language.base.internal.compile.Compiler;
+import org.gradle.process.ExecResult;
+import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -42,83 +43,41 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     }
     LOGGER.info(startupMsg);
 
-    Process gosuc;
-    int exitCode;
-    String javaExecutable = Jvm.current().getJavaExecutable().getAbsolutePath();
+    List<String> gosucArgs = new ArrayList<>();
 
-    List<String> args = new ArrayList<>();
-    
-    args.add(javaExecutable);
-    
-    //todo custom compiler args, debug etc. from fork options
-    ForkOptions forkOptions = spec.getGosuCompileOptions().getForkOptions();
-
-    //respect JAVA_OPTS, if it exists
-    String JAVA_OPTS = System.getenv("JAVA_OPTS");
-    if(JAVA_OPTS != null) {
-      args.add(JAVA_OPTS);
-    }
-    
-    if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
-      args.add("-Xms" + forkOptions.getMemoryInitialSize());
-    }
-
-    if(forkOptions.getMemoryMaximumSize() != null && !forkOptions.getMemoryMaximumSize().isEmpty()) {
-      args.add("-Xmx" + forkOptions.getMemoryMaximumSize());
-    }
-    
-    args.addAll(forkOptions.getJvmArgs());
-    
-    if(Os.isFamily(Os.FAMILY_MAC)) {
-      args.add("-Xdock:name=Gosuc");
-    }
-
-    args.add("-classpath");
-    args.add(spec.getGosuClasspath().call().getAsPath());
-
-    args.add("gw.lang.gosuc.cli.CommandLineCompiler");
-    
     File argFile;
     try {
       argFile = createArgFile(_spec);
-      args.add("@" + argFile.getCanonicalPath().replace(File.separatorChar, '/'));
+      gosucArgs.add("@" + argFile.getCanonicalPath().replace(File.separatorChar, '/'));
     } catch (IOException e) {
       LOGGER.error("Error creating argfile with gosuc arguments");
       throw new CompilationFailedException(e);
     }
     
-    try {
-      LOGGER.quiet(String.format("About to execute gosuc from working directory: %s", _project.getProjectDir()));
-      LOGGER.quiet(String.format("Executing command %s", String.join(" ", args)));
-      
-      gosuc = new ProcessBuilder()
-          .directory(_project.getProjectDir())
-          .command(args)
-          .start();
+    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+    ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-      exitCode = gosuc.waitFor();
-          
-    } catch (InterruptedException | IOException e) {
-      throw new RuntimeException("gosuc execution failed", e);
+    ExecResult result = _project.javaexec(javaExecSpec -> {
+      javaExecSpec.setWorkingDir(_project.getProjectDir());
+      setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
+      javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
+          .setClasspath(spec.getGosuClasspath().call())
+          .setArgs(gosucArgs);
+      javaExecSpec.setStandardOutput(stdout);
+      javaExecSpec.setErrorOutput(stderr);
+      javaExecSpec.setIgnoreExitValue(true); //otherwise fails immediately before displaying output
+    });
+
+    LOGGER.info("Dumping stdout");
+    LOGGER.info(stdout.toString());
+    LOGGER.info("Done dumping stdout");
+
+    String errorContent = stderr.toString();
+    if(errorContent != null && !errorContent.isEmpty()) {
+      throw new GradleException("gosuc failed with errors: \n" + errorContent);
     }
-    
-    //List<String> compilerMessages;
-    
-    try (BufferedReader stdout = new BufferedReader(new InputStreamReader(gosuc.getInputStream())); 
-         BufferedReader stderr = new BufferedReader(new InputStreamReader(gosuc.getErrorStream()))) {
-        LOGGER.quiet("Dumping stdout");
-        stdout.lines().forEach(LOGGER::quiet);
-        LOGGER.quiet("Done dumping stdout");
-  
-        LOGGER.quiet("Dumping stderr");
-        stderr.lines().forEach(LOGGER::quiet);
-        LOGGER.quiet("Done dumping stderr");      
-      
-        //TODO compilerMessages parsing?
-      
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+
+    int exitCode = result.getExitValue();
 
     if(exitCode != 0 ) {
       if(!_spec.getGosuCompileOptions().isFailOnError()) {
@@ -133,6 +92,31 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     return new SimpleWorkResult(true);
   }
 
+  private void setJvmArgs( JavaExecSpec spec, ForkOptions forkOptions) {
+    if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
+      spec.setMinHeapSize(forkOptions.getMemoryInitialSize());
+    }
+    if(forkOptions.getMemoryMaximumSize() != null && !forkOptions.getMemoryMaximumSize().isEmpty()) {
+      spec.setMaxHeapSize(forkOptions.getMemoryMaximumSize());
+    }
+
+    List<String> args = new ArrayList<>();
+
+    //respect JAVA_OPTS, if it exists
+    String JAVA_OPTS = System.getenv("JAVA_OPTS");
+    if(JAVA_OPTS != null) {
+      args.add(JAVA_OPTS);
+    }
+
+    args.addAll(forkOptions.getJvmArgs());
+
+    if(Os.isFamily(Os.FAMILY_MAC)) {
+      args.add("-Xdock:name=gosudoc");
+    }
+
+    spec.setJvmArgs(args);
+  }  
+  
   private File createArgFile(DefaultGosuCompileSpec spec) throws IOException {
     File tempFile;
     if (LOGGER.isDebugEnabled()) {
@@ -173,7 +157,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     Files.write(tempFile.toPath(), fileOutput, StandardCharsets.UTF_8);
 
     return tempFile;
-  }  
+  }
   
 }
 
