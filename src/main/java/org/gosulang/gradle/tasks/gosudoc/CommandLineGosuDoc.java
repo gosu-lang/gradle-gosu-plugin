@@ -14,11 +14,13 @@ import org.gradle.tooling.BuildException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 public class CommandLineGosuDoc {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuDoc.class);
@@ -57,22 +59,36 @@ public class CommandLineGosuDoc {
 
     List<String> gosudocArgs = new ArrayList<>();
 
-    File argFile;
-    try {
-      argFile = createArgFile(tmpDir);
-      gosudocArgs.add("@" + argFile.getCanonicalPath().replace(File.separatorChar, '/'));
-    } catch (IOException e) {
-      throw new BuildException("Error creating argfile with gosudoc arguments", e);
+    gosudocArgs.add("-inputDirs");
+    gosudocArgs.add(tmpDir.getAbsolutePath());
+    
+    gosudocArgs.add("-output");
+    gosudocArgs.add(_targetDir.getAbsolutePath());
+    
+    if(_options.isVerbose()) {
+      gosudocArgs.add("-verbose");
     }
 
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+
+    FileCollection jointClasspath = _project.files(Jvm.current().getToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
+
+    // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
+    File classpathJar;
+    try {
+      classpathJar = createClasspathJarFromFileCollection(jointClasspath);
+    } catch (IOException e) {
+      throw new BuildException("Error creating classpath JAR for gosudoc generation", e);
+    }
+    
+    LOGGER.info("Created classpathJar at " + classpathJar.getAbsolutePath());
     
     ExecResult result = _project.javaexec(javaExecSpec -> {
       javaExecSpec.setWorkingDir(_project.getProjectDir());
       setJvmArgs(javaExecSpec, _options.getForkOptions());
       javaExecSpec.setMain("gw.gosudoc.cli.Gosudoc")
-          .setClasspath(_project.files(Jvm.current().getToolsJar(), _gosuClasspath, _project.files(tmpDir.getAbsolutePath())))
+          .setClasspath(_project.files(classpathJar))
           .setArgs(gosudocArgs);
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
@@ -89,7 +105,47 @@ public class CommandLineGosuDoc {
     result.assertNormalExitValue();
   }
 
-  private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
+  private File createClasspathJarFromFileCollection(FileCollection classpath) throws IOException {
+    File tempFile;
+    if (LOGGER.isDebugEnabled()) {
+      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar", new File(_targetDir.getAbsolutePath()));
+    } else {
+      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar");
+      tempFile.deleteOnExit();
+    }    
+    
+    LOGGER.info("Creating classpath JAR at " + tempFile.getAbsolutePath());
+    
+    Manifest man = new Manifest();
+    man.getMainAttributes().putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0");
+    man.getMainAttributes().putValue(Attributes.Name.CLASS_PATH.toString(), convertFileCollectionToURIs(classpath));
+
+    //noinspection EmptyTryBlock
+    try(FileOutputStream fos = new FileOutputStream(tempFile); 
+        JarOutputStream jarOut = new JarOutputStream(fos, man)) {
+        //This is a bit silly.
+        //The try-with-resources construct with two autoclosable resources saves us 
+        //from having to deal with a boilerplate finally block to close the streams.
+        //Further, the JarOutputStream constructor with Manifest attribute does all the work we need,
+        //which is why the try block is intentionally empty.
+    }
+    
+    return tempFile;
+  }
+  
+  private String convertFileCollectionToURIs(FileCollection files) {
+    List<String> entries = new ArrayList<>();
+
+    //noinspection Convert2streamapi
+    for(File entry : files) {
+      LOGGER.info("Encoding " + entry.getAbsolutePath());
+        entries.add(entry.toURI().toString());
+    }
+    
+    return String.join(" ", entries);
+  }
+
+  private void setJvmArgs( JavaExecSpec spec, ForkOptions forkOptions) {
     if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
       spec.setMinHeapSize(forkOptions.getMemoryInitialSize());
     }
@@ -114,33 +170,4 @@ public class CommandLineGosuDoc {
     spec.setJvmArgs(args);
   }
 
-  private File createArgFile(File tmpDir) throws IOException {
-    File tempFile;
-    if (LOGGER.isDebugEnabled()) {
-      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "arguments", new File(_targetDir.getAbsolutePath()));
-    } else {
-      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "arguments");
-      tempFile.deleteOnExit();
-    }
-
-    List<String> fileOutput = new ArrayList<>();
-
-    fileOutput.add("-classpath");
-    fileOutput.add(_projectClasspath.getAsPath());
-
-    fileOutput.add("-inputDirs");
-    fileOutput.add(tmpDir.getAbsolutePath());
-
-    fileOutput.add("-output");
-    fileOutput.add(_targetDir.getAbsolutePath());
-
-    if(_options.isVerbose()) {
-      fileOutput.add("-verbose"); //TODO parameterize
-    }
-    
-    Files.write(tempFile.toPath(), fileOutput, StandardCharsets.UTF_8);
-
-    return tempFile;
-  }  
-  
 }
