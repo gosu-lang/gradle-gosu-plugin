@@ -99,7 +99,9 @@ public class CommandLineGosuDoc {
 
     String errorContent = stderr.toString();
     if(errorContent != null && !errorContent.isEmpty()) {
-      throw new GradleException("gosudoc failed with errors: \n" + errorContent);
+      if(errorContent.matches("(?m)^ERROR")) {
+        throw new GradleException("gosudoc failed with errors: \n" + errorContent);
+      } else LOGGER.warn(errorContent);
     }
 
     result.assertNormalExitValue();
