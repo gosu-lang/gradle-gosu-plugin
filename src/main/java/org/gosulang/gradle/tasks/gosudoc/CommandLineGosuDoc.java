@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 
 public class CommandLineGosuDoc {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuDoc.class);
@@ -99,7 +100,9 @@ public class CommandLineGosuDoc {
 
     String errorContent = stderr.toString();
     if(errorContent != null && !errorContent.isEmpty()) {
-      if(errorContent.matches("(?m)^ERROR")) {
+      String regex = "^ERROR:\\s";
+      Pattern p = Pattern.compile(regex, Pattern.MULTILINE);
+      if(p.matcher(errorContent).find()) {
         throw new GradleException("gosudoc failed with errors: \n" + errorContent);
       } else LOGGER.warn(errorContent);
     }
