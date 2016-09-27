@@ -127,7 +127,7 @@ artifacts {
 release {
     tagTemplate = 'v${version}'
     git {
-        requireBranch = ''
+        requireBranch = 'rel/.*'
     }
 }
 
