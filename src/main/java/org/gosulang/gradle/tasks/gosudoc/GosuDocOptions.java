@@ -32,7 +32,7 @@ public class GosuDocOptions extends AbstractOptions {
   }
 
   /**
-   * Returns options for running the gosudoc generator in a separate process.
+   * @return Options for running the gosudoc generator in a separate process.
    */
   @Nested
   public ForkOptions getForkOptions() {
@@ -40,7 +40,7 @@ public class GosuDocOptions extends AbstractOptions {
   }
 
   /**
-   * Sets options for running the gosudoc generator in a separate process.
+   * @param forkOptions Options for running the gosudoc generator in a separate process.
    */
   public void setForkOptions(ForkOptions forkOptions) {
     this.forkOptions = forkOptions;
