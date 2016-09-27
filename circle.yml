@@ -6,6 +6,7 @@ machine:
       oraclejdk8
   environment:
     TERM: dumb
+    GRADLE_OPTS: -Dorg.gradle.daemon=false
 
 general:
   branches:
@@ -15,9 +16,16 @@ general:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
-  # Call './gradlew build uploadArchives' to test and upload a snapshot build
-  override:
-    - ./gradlew build uploadArchives -is
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+deployment:
+  all:
+    # Applies to all branches
+    branch: /.*/
+    owner: gosu-lang
+    commands:
+      # 'deploy' ordinarily ensured everything is up-to-date, but mvn's incremental compiler doesn't work well with Gosu
+      # therefore we skip test compilation entirely and rely on the JARs built by 'mvn install' 
+      - ./gradlew uploadArchives -is

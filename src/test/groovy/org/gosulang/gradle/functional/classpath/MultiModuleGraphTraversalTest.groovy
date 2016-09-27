@@ -139,7 +139,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(rootFolder.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()
@@ -211,7 +211,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(rootFolder.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()

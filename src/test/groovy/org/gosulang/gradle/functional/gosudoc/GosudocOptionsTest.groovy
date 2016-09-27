@@ -48,7 +48,7 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('gosudoc', '-is')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()

@@ -43,7 +43,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('compileGosu') //intentionally using quiet/default mode here
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()
@@ -53,7 +53,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildFailure)
         !result.output.contains('Initializing Gosu compiler for :compileGosu') // this message requires info level and below
-        result.output.contains(':compileGosu completed with 1 warning')
+        result.output.contains('gosuc completed with 1 warnings and 0 errors.')
         result.task(':compileGosu').outcome == SUCCESS
 
         //did we actually compile anything?
@@ -79,7 +79,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('compileGosu')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()
@@ -89,8 +89,8 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildSuccess)
         result.output.contains('BUILD FAILED')
-        result.output.contains(':compileGosu completed with 1 error')
-        result.output.contains('Gosu compilation failed with errors; see compiler output for details.')
+        result.output.contains('gosuc completed with 0 warnings and 1 errors.')
+        result.output.contains('Compilation failed; see the compiler error output for details.')
         result.task(':compileGosu').outcome == FAILED
 
         //did we actually compile anything?

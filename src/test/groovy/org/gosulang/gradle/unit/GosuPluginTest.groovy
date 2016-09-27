@@ -213,24 +213,4 @@ class GosuPluginTest {
         assertThat(project.tasks.compileGosu.options.failOnError, equalTo(false))
     }
 
-    /**
-     * Verify useAnt defaults to true, then reverse it
-     */
-    @Test
-    public void canConfigureGosuCompileOptionsForGosu() {
-        boolean isUseAnt = project.tasks.compileGosu.gosuCompileOptions.useAnt
-        assertTrue(isUseAnt)
-        project.compileGosu {
-            gosuCompileOptions.useAnt = false
-        }
-        isUseAnt = project.tasks.compileGosu.gosuCompileOptions.useAnt
-        assertFalse(isUseAnt)
-//        project.tasks.withType(GosuCompile.class) {
-//            options.fork = !isFork
-//            options.failOnError = false
-//        }
-//        assertThat(project.tasks.compileGosu.options.fork, equalTo(!isFork))
-//        assertThat(project.tasks.compileGosu.options.failOnError, equalTo(false))
-    }    
-
 }

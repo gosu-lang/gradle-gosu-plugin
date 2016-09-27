@@ -74,13 +74,19 @@ class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification 
             }
             gosudoc {
                 exclude '**/*not*/*'
+                gosuDocOptions.forkOptions.with {
+                    memoryInitialSize = '128m'
+                    memoryMaximumSize = '1g'
+                    //jvmArgs += ['-Xdebug', '-Xrunjdwp:transport=dt_shmem,address=gosudoc,server=y,suspend=y'] //debug on windows
+                    //jvmArgs += ['-Xdebug', '-Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y'] //debug on linux/OS X
+                }
             }
             """
 
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('gosudoc', '-is')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()

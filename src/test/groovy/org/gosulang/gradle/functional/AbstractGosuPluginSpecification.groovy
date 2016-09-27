@@ -5,22 +5,21 @@ import org.junit.rules.TemporaryFolder
 import spock.lang.Shared
 import spock.lang.Specification
 
-class AbstractGosuPluginSpecification extends Specification implements MultiversionTestable {
+abstract class AbstractGosuPluginSpecification extends Specification implements MultiversionTestable {
 
     // These are the versions of gradle to iteratively test against
+    // Locally, only test the latest.
     @Shared
-    String[] gradleVersionsToTest = System.getenv().get('CIRCLECI') == null ? getFullyTestedVersions().plus(getGradleVersion()) : [getGradleVersion()]
-    
+    String[] gradleVersionsToTest = System.getenv().get('CI') != null ? getTestedVersions().plus(getGradleVersion()) : [getGradleVersion()]
+
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
 
     @Rule
     final TemporaryFolder testProjectDir = new TemporaryFolder()
 
-    protected final URL _pluginClasspathResource = this.class.classLoader.getResource("plugin-classpath.txt")
     protected final URL _gosuVersionResource = this.class.classLoader.getResource("gosuVersion.txt")
 
-    List<File> pluginClasspath
     File buildScript
     
     protected String getBasicBuildScriptForTesting() {
@@ -41,6 +40,9 @@ class AbstractGosuPluginSpecification extends Specification implements Multivers
                 compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
                 testCompile group: 'junit', name: 'junit', version: '4.12'
             }
+            gosudoc {
+                gosuDocOptions.verbose = true
+            }
             """
         return buildFileContent
     }
@@ -48,15 +50,6 @@ class AbstractGosuPluginSpecification extends Specification implements Multivers
     def setup() {
         testProjectDir.create()
         buildScript = testProjectDir.newFile('build.gradle')
-        pluginClasspath = getClasspath()
-    }
-
-    protected List<File> getClasspath() throws IOException {
-        return getClasspath(_pluginClasspathResource)
-    }
-
-    protected List<File> getClasspath(URL url) throws IOException {
-        return url.readLines().collect { new File( it ) }
     }
 
     protected String getGosuVersion() {

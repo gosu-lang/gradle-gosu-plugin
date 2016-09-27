@@ -5,10 +5,7 @@ import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
-import org.gradle.api.internal.project.IsolatedAntBuilder;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonFactory;
-import org.gradle.api.internal.tasks.compile.daemon.CompilerDaemonManager;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.InputFiles;
@@ -143,11 +140,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   private Compiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
     if(_compiler == null) {
       ProjectInternal projectInternal = (ProjectInternal) getProject();
-      IsolatedAntBuilder antBuilder = getServices().get(IsolatedAntBuilder.class);
-      CompilerDaemonManager compilerDaemonManager = getServices().get(CompilerDaemonManager.class);
-//      InProcessGosuCompilerDaemonFactory inProcessCompilerDaemonFactory = getServices().getFactory(InProcessGosuCompilerDaemonFactory.class).create().addProjectContext(projectInternal);
-//      JavaCompilerFactory javaCompilerFactory = getServices().get(JavaCompilerFactory.class);
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), antBuilder, compilerDaemonManager);
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath());
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;

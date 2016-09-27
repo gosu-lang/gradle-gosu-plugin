@@ -38,7 +38,7 @@ class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('clean', 'compileGosu', '-is')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()

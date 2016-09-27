@@ -2,13 +2,16 @@ package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.compile.AbstractOptions;
+import org.gradle.api.tasks.compile.ForkOptions;
 
 public class GosuCompileOptions extends AbstractOptions {
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
-  private boolean failOnError = true;
   private boolean checkedArithmetic = false;
-  private boolean useAnt = true;
+  private boolean failOnError = true;
+  private boolean fork = true;
+  private ForkOptions forkOptions = new ForkOptions();
+  private boolean verbose = false;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -27,20 +30,39 @@ public class GosuCompileOptions extends AbstractOptions {
     this.failOnError = failOnError;
   }
 
-//  /**
-//   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
-//   */
-//  public boolean isFork() {
-//    return fork;
-//  }
-//
-//  /**
-//   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
-//   */
-//  public void setFork(boolean fork) {
-//    this.fork = fork;
-//  }
+  /**
+   * @return Whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
+   */
+  public boolean isFork() {
+    return fork;
+  }
 
+  /**
+   * @param fork Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
+   */
+  public void setFork(boolean fork) {
+    this.fork = fork;
+  }
+
+  /**
+   * @return options for running the Gosu compiler in a separate process. These options only take effect
+   * if {@code fork} is set to {@code true}.
+   */
+  public ForkOptions getForkOptions() {
+    return forkOptions;
+  }
+
+  /**
+   * @param forkOptions Set these options for running the Gosu compiler in a separate process. These options only take effect
+   * if {@code fork} is set to {@code true}.
+   */
+  public void setForkOptions(ForkOptions forkOptions) {
+    this.forkOptions = forkOptions;
+  }
+
+  /**
+   * @return Whether compilation with checked arithmetic operations is enabled or not. 
+   */
   public boolean isCheckedArithmetic() {
     return checkedArithmetic;
   }
@@ -54,35 +76,18 @@ public class GosuCompileOptions extends AbstractOptions {
   }
   
   /**
-   * Tells whether to use Ant for compilation. If {@code true}, the standard Ant gosuc task will be used for
-   * Gosu compilation. {@code false} is currently not supported.
-   * <p>
-   * Defaults to {@code true}.
-   * @return true if the Ant-based compiler should be used, false otherwise
+   * Sets whether the compilation task should use verbose logging. Defaults to {@code false}.
+   * @param verbose Use verbose logging
    */
-  public boolean isUseAnt() {
-    return useAnt;
+  public void setVerbose(boolean verbose) {
+    this.verbose = verbose;
   }
 
   /**
-   * @param useAnt true if the Ant-based compiler should be used, false otherwise
+   * @return Whether to use verbose logging. Defaults to {@code false}.
    */
-  public void setUseAnt(boolean useAnt) {
-    this.useAnt = useAnt;
-//    if (!useAnt) {
-//      setFork(true);
-//    }
+  public boolean isVerbose() {
+    return verbose;
   }
-
-  /**
-   * Some compiler options are not recognizable by the gosuc ant task; 
-   * this method prevents incompatible values from being passed to the ant configuration closure
-   * @param fieldName name of field to exclude from the dynamically generated ant script 
-   * @return true if the given fieldName should be excluded
-   */
-  @Override
-  protected boolean excludeFromAntProperties(String fieldName) {
-    return fieldName.equals("useAnt");
-  }
-
+  
 }

@@ -56,7 +56,7 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('build', '-is')
                 .withGradleVersion(gradleVersion)
                 .forwardOutput()
@@ -64,7 +64,7 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         BuildResult result = runner.build()
 
         then:
-        result.output.contains('Initializing Gosu compiler')
+        result.output.contains('Initializing gosuc compiler')
         result.task(':compileGosu').outcome == SUCCESS
         result.task(':compileTestGosu').outcome == UP_TO_DATE //no tests to compile
         result.task(':test').outcome == UP_TO_DATE //no tests to compile
