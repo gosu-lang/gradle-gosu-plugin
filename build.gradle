@@ -1,6 +1,7 @@
 import org.gosulang.gradle.build.VersionWriterTask
 
 plugins {
+    id 'net.researchgate.release' version '2.4.1'
     id 'com.gradle.plugin-publish' version '0.9.6'
     id 'maven'
     id 'signing'
@@ -122,6 +123,13 @@ task javadocJar(type: Jar) {
 
 artifacts {
     archives sourceJar, javadocJar
+}
+
+release {
+    tagTemplate = 'v${version}'
+    git {
+        requireBranch = ''
+    }
 }
 
 /**
