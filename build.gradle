@@ -88,6 +88,12 @@ dependencies {
     testRuntime files(testedVersionsHelper) // Persist a file containing the testedVersions
 }
 
+test {
+  testLogging {
+      events 'passed', 'failed', 'skipped'
+  }
+}
+
 //constrain memory usage when running on CI server
 if(System.getenv('CI') != null) {
     tasks.withType(JavaCompile) {
