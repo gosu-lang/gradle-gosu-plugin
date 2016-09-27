@@ -31,21 +31,21 @@ public class GosuCompileOptions extends AbstractOptions {
   }
 
   /**
-   * Tells whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
+   * @return Whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
    */
   public boolean isFork() {
     return fork;
   }
 
   /**
-   * Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
+   * @param fork Sets whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
    */
   public void setFork(boolean fork) {
     this.fork = fork;
   }
 
   /**
-   * Returns options for running the Gosu compiler in a separate process. These options only take effect
+   * @return options for running the Gosu compiler in a separate process. These options only take effect
    * if {@code fork} is set to {@code true}.
    */
   public ForkOptions getForkOptions() {
@@ -53,13 +53,16 @@ public class GosuCompileOptions extends AbstractOptions {
   }
 
   /**
-   * Sets options for running the Gosu compiler in a separate process. These options only take effect
+   * @param forkOptions Set these options for running the Gosu compiler in a separate process. These options only take effect
    * if {@code fork} is set to {@code true}.
    */
   public void setForkOptions(ForkOptions forkOptions) {
     this.forkOptions = forkOptions;
-  }  
-  
+  }
+
+  /**
+   * @return Whether compilation with checked arithmetic operations is enabled or not. 
+   */
   public boolean isCheckedArithmetic() {
     return checkedArithmetic;
   }
@@ -81,7 +84,7 @@ public class GosuCompileOptions extends AbstractOptions {
   }
 
   /**
-   * Tells whether to use verbose logging. Defaults to {@code false}.
+   * @return Whether to use verbose logging. Defaults to {@code false}.
    */
   public boolean isVerbose() {
     return verbose;

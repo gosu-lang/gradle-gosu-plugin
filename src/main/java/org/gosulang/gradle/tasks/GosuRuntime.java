@@ -144,8 +144,8 @@ public class GosuRuntime {
   }
 
   /**
-   * @param gosuVersion
-   * @return
+   * @param gosuVersion The VersionNumber of the provided Gosu dependency
+   * @return True if the Gosu version contains the gosuc command-line executable (Gosu 1.13.9+, or 1.14.2+); false otherwise
    */
   public boolean hasGosuc(VersionNumber gosuVersion) {
     VersionNumber gosu = gosuVersion.getBaseVersion();
