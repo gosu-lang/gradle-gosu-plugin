@@ -10,7 +10,6 @@ plugins {
 }
 
 group = 'org.gosu-lang.gosu'
-version = project.pluginVersion
 description = """Gosu language compiler for Gradle.  Built with Gradle $project.gradle.gradleVersion.
 
 This has also been tested extensively with Gradle version(s): $project.testedVersions
