@@ -85,7 +85,7 @@ public class GosuRuntime {
             VersionNumber gosuCoreApiVersion = VersionNumber.parse(gosuCoreApiRawVersion);
 
             //Gosu dist with gosuc executable is required
-            if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && hasGosuc(gosuCoreApiVersion)) {
+            if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && !hasGosuc(gosuCoreApiVersion)) {
               throw new GradleException(String.format("Please declare a dependency on Gosu version 1.13.9, 1.14.2 or greater. Found: %s", gosuCoreApiRawVersion));
             }
 
@@ -150,8 +150,8 @@ public class GosuRuntime {
   public boolean hasGosuc(VersionNumber gosuVersion) {
     VersionNumber gosu = gosuVersion.getBaseVersion();
     return gosu.compareTo(VersionNumber.parse("1.13.8")) > 0 &&
-        gosu != VersionNumber.parse("1.14.0") && 
-        gosu != VersionNumber.parse("1.14.1");
+        !gosu.equals(VersionNumber.parse("1.14.0")) &&
+        !gosu.equals(VersionNumber.parse("1.14.1"));
   }
 
 }
