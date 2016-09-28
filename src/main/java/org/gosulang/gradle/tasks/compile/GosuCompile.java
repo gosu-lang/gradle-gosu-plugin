@@ -8,6 +8,7 @@ import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.TaskAction;
@@ -63,7 +64,8 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   public void setGosuClasspath(Closure<FileCollection> gosuClasspathClosure) {
     _gosuClasspath = gosuClasspathClosure;
   }
-
+  
+  @InputFiles
   public Closure<FileCollection> getOrderClasspath() {
     return _orderClasspath;
   }
@@ -79,6 +81,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     _orderClasspath = orderClasspath;
   }
 
+  @InputFiles
   public Set<File> getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     for(Object obj : this.source) {

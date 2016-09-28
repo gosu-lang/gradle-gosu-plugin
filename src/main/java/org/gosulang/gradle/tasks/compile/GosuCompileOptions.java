@@ -1,6 +1,8 @@
 package org.gosulang.gradle.tasks.compile;
 
+import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.compile.AbstractOptions;
 import org.gradle.api.tasks.compile.ForkOptions;
 
@@ -33,6 +35,7 @@ public class GosuCompileOptions extends AbstractOptions {
   /**
    * @return Whether to run the Gosu compiler in a separate process. Defaults to {@code true}.
    */
+  @Input
   public boolean isFork() {
     return fork;
   }
@@ -48,6 +51,7 @@ public class GosuCompileOptions extends AbstractOptions {
    * @return options for running the Gosu compiler in a separate process. These options only take effect
    * if {@code fork} is set to {@code true}.
    */
+  @Nested
   public ForkOptions getForkOptions() {
     return forkOptions;
   }
@@ -63,6 +67,7 @@ public class GosuCompileOptions extends AbstractOptions {
   /**
    * @return Whether compilation with checked arithmetic operations is enabled or not. 
    */
+  @Input
   public boolean isCheckedArithmetic() {
     return checkedArithmetic;
   }
@@ -86,6 +91,7 @@ public class GosuCompileOptions extends AbstractOptions {
   /**
    * @return Whether to use verbose logging. Defaults to {@code false}.
    */
+  @Console
   public boolean isVerbose() {
     return verbose;
   }
