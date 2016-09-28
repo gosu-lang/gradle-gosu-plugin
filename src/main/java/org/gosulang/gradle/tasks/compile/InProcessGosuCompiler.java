@@ -10,7 +10,6 @@ import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.FileSystems;
@@ -24,12 +23,12 @@ import java.util.stream.Collectors;
  * @deprecated Use CommandLineGosuCompiler instead
  */
 @Deprecated
-public class InProcessGosuCompiler implements Compiler<GosuCompileSpec>, Serializable {
+public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
   private static final Logger LOGGER = Logging.getLogger(InProcessGosuCompiler.class);
 
   @Override
-  public WorkResult execute( GosuCompileSpec spec ) {
+  public WorkResult execute( DefaultGosuCompileSpec spec ) {
     LOGGER.info("Initializing Gosu compiler...");
 
     Class<?> driverIF = null;
@@ -110,7 +109,7 @@ public class InProcessGosuCompiler implements Compiler<GosuCompileSpec>, Seriali
 //      LOGGER.error(cause.getMessage());
       LOGGER.error(e.getMessage());
     }
-      for(File sourceFile : allSourceFiles) {
+    for(File sourceFile : allSourceFiles) {
       if (isDebug) {
         LOGGER.debug("Compiling Gosu source file: " + sourceFile.getAbsolutePath());
       }
@@ -164,7 +163,7 @@ public class InProcessGosuCompiler implements Compiler<GosuCompileSpec>, Seriali
 
     int numErrors = 0;
     if(errorsInCompilation) {
-     errors.forEach(error -> errorMessages.add("[ERROR] " + error));
+      errors.forEach(error -> errorMessages.add("[ERROR] " + error));
       numErrors = errorMessages.size();
     }
 
@@ -184,12 +183,12 @@ public class InProcessGosuCompiler implements Compiler<GosuCompileSpec>, Seriali
     } else {
       sb.append(" successfully.");
     }
-    
+
     if(LOGGER.isInfoEnabled()) {
-        sb.append(hasWarningsOrErrors ? ':' : "");
-        LOGGER.info(sb.toString());
-        warningMessages.forEach(LOGGER::info);
-        errorMessages.forEach(LOGGER::info);
+      sb.append(hasWarningsOrErrors ? ':' : "");
+      LOGGER.info(sb.toString());
+      warningMessages.forEach(LOGGER::info);
+      errorMessages.forEach(LOGGER::info);
     } else {
       if(hasWarningsOrErrors) {
         sb.append("; rerun with INFO level logging to display details.");
@@ -198,7 +197,7 @@ public class InProcessGosuCompiler implements Compiler<GosuCompileSpec>, Seriali
     }
 
     if(errorsInCompilation) {
-      if(spec.getGosuCompileOptions().isFailOnError()) {
+      if(spec.getCompileOptions().isFailOnError()) {
         throw new CompilationFailedException();
       } else {
         LOGGER.info("Gosu Compiler: Ignoring compilation failure as 'failOnError' was set to false");

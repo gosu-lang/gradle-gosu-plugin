@@ -25,7 +25,7 @@ class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
             compileGosu {
-                gosuCompileOptions.checkedArithmetic = true
+                gosuOptions.checkedArithmetic = true
             }
         """
         

@@ -84,7 +84,7 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
-                .withPluginClasspath(pluginClasspath)
+                .withPluginClasspath()
                 .withArguments('clean', 'classes', '-is')
                 .withGradleVersion(gradleVersion)
 //                .withDebug(true)
@@ -93,7 +93,7 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
         BuildResult result = runner.build()
 
         then:
-        result.output.contains('Initializing Gosu compiler')
+        result.output.contains('Initializing gosuc compiler')
         result.task(':compileGosu').outcome == SUCCESS
         result.task(':copyRuleMetadata').outcome == SUCCESS
         result.task(':classes').outcome == SUCCESS

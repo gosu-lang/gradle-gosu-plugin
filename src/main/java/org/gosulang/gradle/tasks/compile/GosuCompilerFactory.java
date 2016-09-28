@@ -4,7 +4,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.CompilerFactory;
 
-public class GosuCompilerFactory implements CompilerFactory<GosuCompileSpec> {
+public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSpec> {
 
   private final ProjectInternal _project;
   private final String _taskPath;
@@ -15,11 +15,11 @@ public class GosuCompilerFactory implements CompilerFactory<GosuCompileSpec> {
   }
 
   @Override
-  public Compiler<GosuCompileSpec> newCompiler( GosuCompileSpec spec ) {
+  public Compiler<DefaultGosuCompileSpec> newCompiler( DefaultGosuCompileSpec spec ) {
     GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
-    Compiler<GosuCompileSpec> gosuCompiler;
+    Compiler<DefaultGosuCompileSpec> gosuCompiler;
     if(gosuOptions.isFork()) {
-      gosuCompiler = new CommandLineGosuCompiler(_project, spec, _taskPath); 
+      gosuCompiler = new CommandLineGosuCompiler(_project, spec, _taskPath);
     } else {
       gosuCompiler = new InProcessGosuCompiler();
     }

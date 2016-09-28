@@ -16,20 +16,19 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
-  private Compiler<GosuCompileSpec> _compiler;
+  private Compiler<DefaultGosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
   private final CompileOptions _compileOptions = new CompileOptions();
-  private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions(); //TODO move to constructor??
-  
+  private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
+
   @Override
   @TaskAction
   protected void compile() {
@@ -38,17 +37,14 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     WorkResult result = _compiler.execute(spec);
   }
 
-  @Inject
-  public GosuCompile() {}
-  
   /**
    * @return Gosu-specific compilation options.
    */
   @Nested
-  public GosuCompileOptions getGosuCompileOptions() {
+  public GosuCompileOptions getGosuOptions() {
     return _gosuCompileOptions;
   }
-  
+
   @Nested
   public CompileOptions getOptions() {
     return _compileOptions;
@@ -137,7 +133,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return spec;
   }
 
-  private Compiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
+  private Compiler<DefaultGosuCompileSpec> getCompiler(DefaultGosuCompileSpec spec) {
     if(_compiler == null) {
       ProjectInternal projectInternal = (ProjectInternal) getProject();
       GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath());

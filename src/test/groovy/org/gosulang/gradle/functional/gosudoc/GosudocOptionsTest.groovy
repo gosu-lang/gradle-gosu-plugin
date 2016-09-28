@@ -23,11 +23,7 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
 
     def 'execute gosudoc with default options [Gradle #gradleVersion]'() {
         given:
-        buildScript << getBasicBuildScriptForTesting() +"""
-        compileGosu {
-            gosuCompileOptions.useAnt = true
-        }
-        """
+        buildScript << getBasicBuildScriptForTesting()
 
         simplePogo = new File(srcMainGosu, asPath('example', 'gradle', 'SimplePogo.gs'))
         simplePogo.getParentFile().mkdirs()
