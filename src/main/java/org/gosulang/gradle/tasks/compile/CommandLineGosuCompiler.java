@@ -1,7 +1,6 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
-import org.gradle.api.GradleException;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
@@ -70,20 +69,18 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
 
     LOGGER.quiet(stdout.toString());
 
-    String errorContent = stderr.toString();
-    if(errorContent != null && !errorContent.isEmpty()) {
-      throw new GradleException("gosuc failed with errors: \n" + errorContent);
-    }
-
     int exitCode = result.getExitValue();
 
     if(exitCode != 0 ) {
       if(!_spec.getGosuCompileOptions().isFailOnError()) {
+        LOGGER.warn(stderr.toString());
         LOGGER.warn(String.format("%s completed with errors, but ignoring as 'gosuOptions.failOnError = false' was specified.", _projectName.isEmpty() ? "gosuc" : _projectName));
       } else {
-        throw new CompilationFailedException();
+        LOGGER.error(stderr.toString());
+        throw new CompilationFailedException(exitCode);
       }
     } else {
+      LOGGER.warn(stderr.toString());
       LOGGER.warn(String.format("%s completed successfully.", _projectName.isEmpty() ? "gosuc" : _projectName));
     }
     

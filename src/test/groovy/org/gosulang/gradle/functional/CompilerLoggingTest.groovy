@@ -90,7 +90,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         notThrown(UnexpectedBuildSuccess)
         result.output.contains('BUILD FAILED')
         result.output.contains('gosuc completed with 0 warnings and 1 errors.')
-        result.output.contains('Compilation failed; see the compiler error output for details.')
+        result.output.contains('Compilation failed with exit code 1; see the compiler error output for details.')
         result.task(':compileGosu').outcome == FAILED
 
         //did we actually compile anything?
