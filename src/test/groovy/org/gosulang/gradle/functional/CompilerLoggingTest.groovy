@@ -24,7 +24,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
  
-    def 'log quiet warning under default logging level [Gradle #gradleVersion]'() {
+    def 'does not log warning under default logging level [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
 
@@ -53,7 +53,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildFailure)
         !result.output.contains('Initializing Gosu compiler for :compileGosu') // this message requires info level and below
-        result.output.contains('gosuc completed with 1 warnings and 0 errors.')
+        !result.output.contains('gosuc completed with 1 warnings and 0 errors.')
         result.task(':compileGosu').outcome == SUCCESS
 
         //did we actually compile anything?
@@ -62,6 +62,45 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         where:
         gradleVersion << gradleVersionsToTest
     }
+
+    def 'log warning under info logging level [Gradle #gradleVersion]'() {
+        given:
+        buildScript << getBasicBuildScriptForTesting()
+
+        simplePogo = new File(srcMainGosu, asPath('example', 'gradle', 'SimplePogo.gs'))
+        simplePogo.getParentFile().mkdirs()
+        simplePogo << """
+            package example.gradle
+            
+            public class SimplePogo {
+              function doIt() {
+                var x = 1
+                x = x //this line should generate a compiler warning
+              }
+            }"""
+
+        when:
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('compileGosu', '-i') //intentionally using info mode here
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        then:
+        notThrown(UnexpectedBuildFailure)
+        result.output.contains('Initializing gosuc compiler') // this message requires info level and below
+        result.output.contains('gosuc completed with 1 warnings and 0 errors.')
+        result.task(':compileGosu').outcome == SUCCESS
+
+        //did we actually compile anything?
+        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }    
     
     def 'log compilation error under default logging level [Gradle #gradleVersion]'() {
         given:

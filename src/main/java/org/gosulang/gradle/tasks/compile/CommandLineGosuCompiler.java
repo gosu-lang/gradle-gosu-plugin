@@ -67,27 +67,26 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       javaExecSpec.setIgnoreExitValue(true); //otherwise fails immediately before displaying output
     });
 
-    LOGGER.quiet(stdout.toString());
-
     int exitCode = result.getExitValue();
 
     if(exitCode != 0 ) {
+      LOGGER.quiet(stdout.toString());
+      LOGGER.quiet(stderr.toString());
       if(!_spec.getGosuCompileOptions().isFailOnError()) {
-        LOGGER.warn(stderr.toString());
-        LOGGER.warn(String.format("%s completed with errors, but ignoring as 'gosuOptions.failOnError = false' was specified.", _projectName.isEmpty() ? "gosuc" : _projectName));
+        LOGGER.quiet(String.format("%s completed with errors, but ignoring as 'gosuOptions.failOnError = false' was specified.", _projectName.isEmpty() ? "gosuc" : _projectName));
       } else {
-        LOGGER.error(stderr.toString());
         throw new CompilationFailedException(exitCode);
       }
     } else {
-      LOGGER.warn(stderr.toString());
-      LOGGER.warn(String.format("%s completed successfully.", _projectName.isEmpty() ? "gosuc" : _projectName));
+      LOGGER.info(stdout.toString());
+      LOGGER.info(stderr.toString());
+      LOGGER.info(String.format("%s completed successfully.", _projectName.isEmpty() ? "gosuc" : _projectName));
     }
     
     return new SimpleWorkResult(true);
   }
 
-  private void setJvmArgs( JavaExecSpec spec, ForkOptions forkOptions) {
+  private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
     if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
       spec.setMinHeapSize(forkOptions.getMemoryInitialSize());
     }
