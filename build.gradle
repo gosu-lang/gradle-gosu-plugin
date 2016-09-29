@@ -89,6 +89,7 @@ test {
   testLogging {
       events 'passed', 'failed', 'skipped'
   }
+  environment('JAVA_TOOL_OPTIONS', '-Duser.language=en')
 }
 
 //constrain memory usage when running on CI server
