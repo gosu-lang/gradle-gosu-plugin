@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.compile.AbstractOptions;
 import org.gradle.api.tasks.compile.ForkOptions;
 
@@ -14,6 +15,8 @@ public class GosuCompileOptions extends AbstractOptions {
   private boolean fork = true;
   private ForkOptions forkOptions = new ForkOptions();
   private boolean verbose = false;
+  private Integer maxwarns;
+  private Integer maxerrs;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -94,6 +97,32 @@ public class GosuCompileOptions extends AbstractOptions {
   @Console
   public boolean isVerbose() {
     return verbose;
+  }
+
+  public void setMaxWarns(int maxwarns) {
+    this.maxwarns = maxwarns;
+  }
+
+  /**
+   * @return Max error threshold, if specified. May be null.
+   */
+  @Input
+  @Optional
+  public Integer getMaxWarns() {
+    return maxwarns;
+  }
+
+  public void setMaxErrs(int maxerrs) {
+    this.maxerrs = maxerrs;
+  }
+
+  /**
+   * @return Max error threshold, if specified. May be null.
+   */
+  @Input
+  @Optional
+  public Integer getMaxErrs() {
+    return maxerrs;
   }
   
 }

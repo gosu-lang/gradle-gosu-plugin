@@ -144,6 +144,16 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       fileOutput.add("-verbose");
     }
 
+    if(spec.getGosuCompileOptions().getMaxWarns() != null) {
+      fileOutput.add("-maxwarns");
+      fileOutput.add(spec.getGosuCompileOptions().getMaxWarns().toString());
+    }
+
+    if(spec.getGosuCompileOptions().getMaxErrs() != null) {
+      fileOutput.add("-maxerrs");
+      fileOutput.add(spec.getGosuCompileOptions().getMaxErrs().toString());
+    }
+    
     for(File sourceFile : spec.getSource()) {
       fileOutput.add(sourceFile.getPath());
     }
