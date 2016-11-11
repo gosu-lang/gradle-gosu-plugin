@@ -13,6 +13,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
     File errantPogo, simplePogo
+    File foo, bar
     
     /**
      * super#setup is invoked automatically
@@ -87,28 +88,27 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         }
         """
 
-        errantPogo = new File(srcMainGosu, asPath('example', 'gradle', 'ErrantPogo.gs'))
-        errantPogo.getParentFile().mkdirs()
-        errantPogo << """
+        foo = new File(srcMainGosu, asPath('example', 'gradle', 'Foo.gs'))
+        foo.getParentFile().mkdirs()
+        foo << """
         package example.gradle
         
-        class ErrantPogo {
+        class Foo {
           function doIt() {
             var x : int = 42
             var y : int = 74
             var z : int
             x = x //silly assignment warning 1
             y = y //silly assignment warning 2, exceeding threshold
-            z = z //silly assignment warning 3
           }
         }"""
 
-        simplePogo = new File(srcMainGosu, asPath('example', 'gradle', 'SimplePogo.gs'))
-        simplePogo.getParentFile().mkdirs()
-        simplePogo << """
+        bar = new File(srcMainGosu, asPath('example', 'gradle', 'Bar.gs'))
+        bar.getParentFile().mkdirs()
+        bar << """
         package example.gradle
         
-        class SimplePogo {
+        class Bar {
           function doIt() {
             var x = 1
             var y = 2
@@ -135,8 +135,13 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         result.output.contains('warning: An unnecessary assignment from x to itself occurs here.')
         result.task(':compileGosu').outcome == FAILED
 
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists() //SimplePogo is successfully compiled, but warnings exceed the threshold
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'ErrantPogo.class')).exists() //Compilation aborts before attempting to compile ErrantPogo 
+        //compiler ordering is non-deterministic, so we should end up with only one class file produced before the threshold is reached
+        File fooClass = new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Foo.class'))
+        File barClass = new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Bar.class'))
+
+        //One file is successfully compiled, but warnings exceed the threshold
+        //Compilation aborts before attempting to compile the second file
+        (fooClass.exists() && !barClass.exists()) || (barClass.exists() && !fooClass.exists())
 
         where:
         gradleVersion << gradleVersionsToTest
@@ -151,23 +156,23 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         }
         """
 
-        errantPogo = new File(srcMainGosu, asPath('example', 'gradle', 'ErrantPogo.gs'))
-        errantPogo.getParentFile().mkdirs()
-        errantPogo << """
+        foo = new File(srcMainGosu, asPath('example', 'gradle', 'Foo.gs'))
+        foo.getParentFile().mkdirs()
+        foo << """
         package example.gradle
-        
-        class ErrantPogo {
+
+        class Foo {
           function doIt() {
             fail // Intentional error
           }
         }"""
 
-        simplePogo = new File(srcMainGosu, asPath('example', 'gradle', 'SimplePogo.gs'))
-        simplePogo.getParentFile().mkdirs()
-        simplePogo << """
+        bar = new File(srcMainGosu, asPath('example', 'gradle', 'Bar.gs'))
+        bar.getParentFile().mkdirs()
+        bar << """
         package example.gradle
-        
-        class SimplePogo {
+
+        class Bar {
           function doIt() {
             fail // Intentional error
           }
@@ -187,12 +192,15 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         result.output.contains('Initializing gosuc compiler')
         result.output.contains('Error threshold exceeded; aborting compilation.')
         result.output.contains('gosuc completed with 0 warnings and 2 errors.')
-        result.output.contains('src/main/gosu/example/gradle/SimplePogo.gs:[6,13] error: Not a statement.')
-        result.output.contains('src/main/gosu/example/gradle/SimplePogo.gs:[6,13] error: Could not resolve symbol for : fail')
+        result.output.contains('error: Not a statement.')
+        result.output.contains('error: Could not resolve symbol for : fail')
         result.task(':compileGosu').outcome == FAILED
 
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists() //SimplePogo compilation is attempted and has errors exceeding the threshold
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'ErrantPogo.class')).exists() //Compilation aborts before attempting to compile ErrantPogo 
+
+        //One file is attempted to be compiled, but errors exceed the threshold
+        //Compilation aborts before attempting to compile the second file
+        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Foo.class')).exists()
+        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Bar.class')).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
