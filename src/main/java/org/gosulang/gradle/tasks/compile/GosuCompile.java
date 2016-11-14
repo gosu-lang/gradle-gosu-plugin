@@ -4,12 +4,12 @@ import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.internal.file.DefaultSourceDirectorySet;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
@@ -65,9 +65,14 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   public void setGosuClasspath(Closure<FileCollection> gosuClasspathClosure) {
     _gosuClasspath = gosuClasspathClosure;
   }
-  
-  @InputFiles
-  @Optional
+
+  /**
+   * Annotating as @Input or @InputFiles causes errors in Guidewire applications, even when paired with @Optional.
+   * Marking as @Internal instead to skip warning thrown by :validateTaskProperties (org.gradle.plugin.devel.tasks.ValidateTaskProperties)
+   * TODO Post Gradle 3.1, investigate applying the @Classpath annotation
+   * @return a Closure returning a classpath to be passed to the GosuCompile task
+   */
+  @Internal
   public Closure<FileCollection> getOrderClasspath() {
     return _orderClasspath;
   }
@@ -84,11 +89,13 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   @InputFiles
+  @Optional
   public Set<File> getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
+    //noinspection Convert2streamapi
     for(Object obj : this.source) {
-      if(obj instanceof DefaultSourceDirectorySet) {
-        returnValues.addAll(((DefaultSourceDirectorySet) obj).getSrcDirs());
+      if(obj instanceof SourceDirectorySet) {
+        returnValues.addAll(((SourceDirectorySet) obj).getSrcDirs());
       }
     }
     return returnValues;
