@@ -25,8 +25,8 @@ sourceSets {
 }
 
 compileGosu {
-    gosuCompileOptions.checkedArithmetic = true
-    gosuCompileOptions.failOnError = false
+    gosuOptions.checkedArithmetic = true
+    gosuOptions.failOnError = false
 }
 ```
 
