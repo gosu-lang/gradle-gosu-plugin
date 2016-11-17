@@ -14,6 +14,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
     File srcMainGosu
     File errantPogo, simplePogo
     File foo, bar
+    int customThreshold = 1
     
     /**
      * super#setup is invoked automatically
@@ -83,7 +84,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
-            gosuOptions.maxWarns = 1
+            gosuOptions.maxWarns = ${customThreshold}
             //gosuOptions.forkOptions.jvmArgs += ['-Xdebug', '-Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y']
         }
         """
@@ -130,7 +131,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
 
         then:
         result.output.contains('Initializing gosuc compiler')
-        result.output.contains('Warning threshold exceeded; aborting compilation.')
+        result.output.contains("Warning threshold of ${customThreshold} exceeded; aborting compilation.")
         result.output.contains('gosuc completed with 2 warnings and 0 errors.')
         result.output.contains('warning: An unnecessary assignment from x to itself occurs here.')
         result.task(':compileGosu').outcome == FAILED
@@ -151,7 +152,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         given:
         buildScript << getBasicBuildScriptForTesting() + """
         compileGosu {
-            gosuOptions.maxErrs = 1
+            gosuOptions.maxErrs = ${customThreshold}
             //gosuOptions.forkOptions.jvmArgs += ['-Xdebug', '-Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y']
         }
         """
@@ -190,7 +191,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
 
         then:
         result.output.contains('Initializing gosuc compiler')
-        result.output.contains('Error threshold exceeded; aborting compilation.')
+        result.output.contains("Error threshold of ${customThreshold} exceeded; aborting compilation.")
         result.output.contains('gosuc completed with 0 warnings and 2 errors.')
         result.output.contains('error: Not a statement.')
         result.output.contains('error: Could not resolve symbol for : fail')
