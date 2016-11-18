@@ -71,6 +71,8 @@ compileGosu { //Task type: org.gosulang.gradle.tasks.compile.GosuCompile
   options.warning = true
   gosuOptions.checkedArithmetic = false
   gosuOptions.failOnError = true
+  gosuOptions.maxErrs = 100
+  gosuOptions.maxWarns = Integer.MAX_VALUE
   gosuOptions.verbose = false
   gosuOptions.fork = true
   gosuOptions.forkOptions.with {
