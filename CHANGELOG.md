@@ -1,15 +1,27 @@
 # Change Log
 
-## [v0.2.0](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.0) (2016-09-27)
-[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.1.3...v0.2.0)
+## [Unreleased](https://github.com/gosu-lang/gradle-gosu-plugin/tree/HEAD)
 
-***Important Notice*** Gosu 1.13.9+ or 1.14.2+ are now required. 
+n/a
+
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.1...HEAD)
+
+## [v0.2.1](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.1) (2016-11-18)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.0...v0.2.1)
+
+**Implemented enhancements:**
+
+- Add configurable threshold for errors and warnings [\#25](https://github.com/gosu-lang/gradle-gosu-plugin/issues/25)
 
 **Fixed bugs:**
 
+- JAVA\_TOOL\_OPTIONS, sent to stderr, causes task failure [\#23](https://github.com/gosu-lang/gradle-gosu-plugin/issues/23)
 - tools.jar might be missing from gosudoc classpath [\#22](https://github.com/gosu-lang/gradle-gosu-plugin/issues/22)
 - Gosu fails under Gradle 2.12 [\#21](https://github.com/gosu-lang/gradle-gosu-plugin/issues/21)
 - .gsp not included in default inclusion filter [\#20](https://github.com/gosu-lang/gradle-gosu-plugin/issues/20)
+
+## [v0.2.0](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.0) (2016-09-27)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.1.3...v0.2.0)
 
 **Implemented enhancements:**
 
