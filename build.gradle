@@ -92,12 +92,15 @@ test {
   environment('JAVA_TOOL_OPTIONS', '-Duser.language=en')
 }
 
+tasks.withType(AbstractCompile) {
+    options.compilerArgs += ['-Xlint:unchecked']
+    options.deprecation = true
+    options.encoding = java.nio.charset.StandardCharsets.UTF_8
+}
+
 //constrain memory usage when running on CI server
 if(System.getenv('CI') != null) {
-    tasks.withType(JavaCompile) {
-        options.fork = false
-    }
-    tasks.withType(GroovyCompile) {
+    tasks.withType(AbstractCompile) { //covers JavaCompile and GroovyCompile
         options.fork = false
     }
     test {
