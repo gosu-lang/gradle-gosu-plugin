@@ -3,7 +3,10 @@ package org.gosulang.gradle.unit
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
+import org.gradle.api.internal.file.DefaultSourceDirectorySetFactory
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.internal.file.SourceDirectorySetFactory
+import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
 import org.gradle.api.tasks.util.internal.PatternSets
 import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.nativeintegration.services.NativeServices
@@ -17,15 +20,15 @@ import static spock.util.matcher.HamcrestSupport.expect
 class DefaultGosuSourceSetTest extends Specification {
 
     private DefaultGosuSourceSet sourceSet
-    private FileResolver projectFiles
     
     @Rule
     public final TemporaryFolder _testProjectDir = new TemporaryFolder()
 
     def setup() {
         NativeServices.initialize(_testProjectDir.root)
-        projectFiles = new DefaultFileLookup(NativeServices.instance.get(FileSystem.class), PatternSets.getNonCachingPatternSetFactory()).getFileResolver(_testProjectDir.root)
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", projectFiles)
+        FileResolver projectFiles = new DefaultFileLookup(NativeServices.instance.get(FileSystem.class), PatternSets.getNonCachingPatternSetFactory()).getFileResolver(_testProjectDir.root)
+        SourceDirectorySetFactory factory = new DefaultSourceDirectorySetFactory(projectFiles, new DefaultDirectoryFileTreeFactory())
+        sourceSet = new DefaultGosuSourceSet("<set-display-name>", factory)
     }
 
     def 'verify the default values'() {
