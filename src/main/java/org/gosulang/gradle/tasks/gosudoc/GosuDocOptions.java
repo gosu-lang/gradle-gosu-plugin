@@ -1,5 +1,6 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
+import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -46,8 +47,7 @@ public class GosuDocOptions extends AbstractOptions {
     this.forkOptions = forkOptions;
   }
 
-  @Input
-  @Optional
+  @Console
   public boolean isVerbose() {
     return _verbose;
   }
