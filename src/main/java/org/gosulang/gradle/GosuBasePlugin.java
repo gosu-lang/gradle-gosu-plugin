@@ -53,11 +53,8 @@ public class GosuBasePlugin implements Plugin<Project> {
    */
   private void configureCompileDefaults() {
 
-    _project.getTasks().withType(GosuCompile.class, gosuCompile -> {
-      gosuCompile.getConventionMapping().map("gosuClasspath", () -> {
-        return _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath());
-      });
-    });
+    _project.getTasks().withType(GosuCompile.class, gosuCompile -> 
+        gosuCompile.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath())));
   }
 
   private void configureSourceSetDefaults(final JavaBasePlugin javaBasePlugin) {
@@ -67,9 +64,7 @@ public class GosuBasePlugin implements Plugin<Project> {
 
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
 
-      sourceSet.getResources().getFilter().exclude(element -> {
-        return gosuSourceSet.getGosu().contains(element.getFile());
-      });
+      sourceSet.getResources().getFilter().exclude(element -> gosuSourceSet.getGosu().contains(element.getFile()));
 
       sourceSet.getAllSource().source(gosuSourceSet.getGosu());
 

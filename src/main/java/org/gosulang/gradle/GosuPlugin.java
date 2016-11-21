@@ -13,6 +13,7 @@ import org.gradle.api.tasks.SourceSet;
 
 public class GosuPlugin implements Plugin<Project> {
 
+  @SuppressWarnings("WeakerAccess")
   public static final String GOSUDOC_TASK_NAME = "gosudoc";
 
   public void apply(Project project) {
@@ -25,7 +26,6 @@ public class GosuPlugin implements Plugin<Project> {
 
   /**
    * Ensures that the runtime dependency on gosu-core is included the testRuntime's classpath
-   * @param project
    */
   private void refreshTestRuntimeClasspath( final Project project ) {
     final JavaPluginConvention pluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
