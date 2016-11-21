@@ -7,7 +7,7 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.internal.file.SourceDirectorySetFactory;
+import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -21,15 +21,23 @@ import java.io.File;
 public class GosuBasePlugin implements Plugin<Project> {
   public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
 
-  private final SourceDirectorySetFactory sourceDirectorySetFactory;
+  private final FileResolver _fileResolver;
+  //private final SourceDirectorySetFactory sourceDirectorySetFactory;
 
   private Project _project;
   private GosuRuntime _gosuRuntime;
 
   @Inject
-  GosuBasePlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
-    this.sourceDirectorySetFactory = sourceDirectorySetFactory;
+  GosuBasePlugin(FileResolver fileResolver) {
+    _fileResolver = fileResolver;
   }
+  
+// Below is incompatible with Gradle versions prior to 2.12
+// TODO introduce along with Gradle 4.0
+//  @Inject
+//  GosuBasePlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
+//    this.sourceDirectorySetFactory = sourceDirectorySetFactory;
+//  }
 
   @Override
   public void apply(Project project) {
@@ -59,7 +67,8 @@ public class GosuBasePlugin implements Plugin<Project> {
 
   private void configureSourceSetDefaults(final JavaBasePlugin javaBasePlugin) {
     _project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().all(sourceSet -> {
-      DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), sourceDirectorySetFactory);
+      DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), _fileResolver);
+//      DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), sourceDirectorySetFactory);
       new DslObject(sourceSet).getConvention().getPlugins().put("gosu", gosuSourceSet);
 
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
