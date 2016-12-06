@@ -1,17 +1,15 @@
 # Change Log
 
-## [Unreleased](https://github.com/gosu-lang/gradle-gosu-plugin/tree/HEAD)
-
-n/a
-
-[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.1...HEAD)
-
-## [v0.2.1](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.1) (2016-11-18)
-[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.0...v0.2.1)
+## [v0.2.2](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.2) (2016-12-06)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.1...v0.2.2)
 
 **Implemented enhancements:**
 
+- Remove deprecated constructor [\#26](https://github.com/gosu-lang/gradle-gosu-plugin/issues/26)
 - Add configurable threshold for errors and warnings [\#25](https://github.com/gosu-lang/gradle-gosu-plugin/issues/25)
+
+## [v0.2.1](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.1) (2016-11-18)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.0...v0.2.1)
 
 **Fixed bugs:**
 
