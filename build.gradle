@@ -25,6 +25,10 @@ dependencies {
 }
 """
 
+wrapper {
+    gradleVersion = '3.3'
+}
+
 final boolean isSnapshot = project.version.endsWith('-SNAPSHOT')
 
 repositories {

@@ -1,8 +1,8 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.file.FileTree;
+import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
-import org.gradle.api.internal.tasks.compile.daemon.CompileResult;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
@@ -204,7 +204,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
       }
     }
 
-    return new CompileResult(didWork, null);
+    return new SimpleWorkResult(didWork);
   }
 
   /**
