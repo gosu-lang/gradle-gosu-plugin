@@ -1,7 +1,7 @@
 import org.gosulang.gradle.build.VersionWriterTask
 
 plugins {
-    id 'net.researchgate.release' version '2.4.1'
+    id 'net.researchgate.release' version '2.5.0'
     id 'com.gradle.plugin-publish' version '0.9.7'
     id 'maven'
     id 'signing'
