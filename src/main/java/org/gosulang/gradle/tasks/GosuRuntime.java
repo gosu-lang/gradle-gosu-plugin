@@ -7,8 +7,11 @@ import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
+import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency;
 import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
+import org.gradle.api.internal.file.collections.SimpleFileCollection;
 import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
+import org.gradle.internal.jvm.Jvm;
 import org.gradle.util.VersionNumber;
 
 import java.io.File;
@@ -29,13 +32,15 @@ public class GosuRuntime {
   }
 
   /**
-   * Searches the specified classpath for a 'gosu-core-api' Jar, and returns a classpath
-   * containing a corresponding (same version) 'gosu-ant-tools' Jar and its dependencies.
+   * Searches the specified classpath for a 'gosu-core-api' Jar, and returns a classpath 
+   * containing a corresponding (same version) 'gosu-doc' Jar and its dependencies, which includes 'gosu-core'. 
+   *
+   * <p>As of v0.2.3, also includes tools.jar in the returned FileCollection.
    * 
    * <p>The returned class path may be empty, or may fail to resolve when asked for its contents.
    *
    * @param classpath a classpath containing a 'gosu-core-api' Jar
-   * @return a classpath containing a corresponding 'gosu-core' Jar and its dependencies
+   * @return a classpath containing a corresponding 'gosu-doc' Jar and its dependencies, and tools.jar
    */
   public Closure<FileCollection> inferGosuClasspath(final Iterable<File> classpath) {
 
@@ -90,7 +95,8 @@ public class GosuRuntime {
             }
 
             return _project.getConfigurations().detachedConfiguration(
-                new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-doc", gosuCoreApiRawVersion));
+                new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-doc", gosuCoreApiRawVersion),
+                new DefaultSelfResolvingDependency(new SimpleFileCollection(Jvm.current().getToolsJar())));
           }
 
           // let's override this so that delegate isn't created at autowiring time (which would mean on every build)
