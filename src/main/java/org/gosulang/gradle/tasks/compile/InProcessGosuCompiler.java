@@ -2,11 +2,11 @@ package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
-import org.gradle.api.internal.tasks.compile.daemon.CompileResult;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.language.base.internal.compile.Compiler;
+import org.gradle.process.internal.daemon.WorkerDaemonResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -204,7 +204,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
       }
     }
 
-    return new CompileResult(didWork, null);
+    return new WorkerDaemonResult(didWork, null);
   }
 
   /**

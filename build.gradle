@@ -9,6 +9,10 @@ plugins {
     id 'java-gradle-plugin'
 }
 
+wrapper {
+    gradleVersion '3.4.1'
+}
+
 group = 'org.gosu-lang.gosu'
 description = """Gosu language compiler for Gradle.  Built with Gradle $project.gradle.gradleVersion.
 
