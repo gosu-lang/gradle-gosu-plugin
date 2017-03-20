@@ -2,8 +2,10 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.VersionNumber
 import spock.lang.Unroll
 
+import static org.gradle.testkit.runner.TaskOutcome.NO_SOURCE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
@@ -66,8 +68,15 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         then:
         result.output.contains('Initializing gosuc compiler')
         result.task(':compileGosu').outcome == SUCCESS
-        result.task(':compileTestGosu').outcome == UP_TO_DATE //no tests to compile
-        result.task(':test').outcome == UP_TO_DATE //no tests to compile
+        
+        if(VersionNumber.parse(gradleVersion) < VersionNumber.parse('3.4.0')) {
+            result.task(':compileTestGosu').outcome == UP_TO_DATE //no tests to compile
+            result.task(':test').outcome == UP_TO_DATE //no tests to run
+        } else {
+            result.task(':compileTestGosu').outcome == NO_SOURCE //no tests to compile
+            result.task(':test').outcome == NO_SOURCE //no tests to run
+        }
+
 
         File buildOutputRoot = new File(testProjectDir.root, asPath('build', 'classes', 'main'))
         new File(buildOutputRoot, 'Foo.class').exists()
