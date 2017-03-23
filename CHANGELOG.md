@@ -1,5 +1,13 @@
 # Change Log
 
+## [v0.3.0](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.0) (2017-03-23)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.2...v0.3.0)
+
+**Implemented enhancements:**
+
+- Use Gradle 3.4.1 [\#28](https://github.com/gosu-lang/gradle-gosu-plugin/issues/28)
+- Include tools.jar on CommandLineCompiler's classpath [\#27](https://github.com/gosu-lang/gradle-gosu-plugin/issues/27)
+
 ## [v0.2.2](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.2.2) (2016-12-06)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.1...v0.2.2)
 
