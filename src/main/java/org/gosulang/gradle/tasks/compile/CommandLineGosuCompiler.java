@@ -105,7 +105,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     args.addAll(forkOptions.getJvmArgs());
 
     if(Os.isFamily(Os.FAMILY_MAC)) {
-      args.add("-Xdock:name=gosudoc");
+      args.add("-Xdock:name=gosuc");
     }
 
     spec.setJvmArgs(args);
