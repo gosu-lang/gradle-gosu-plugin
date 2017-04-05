@@ -2,20 +2,21 @@ package org.gosulang.gradle.functional
 
 trait MultiversionTestable {
 
-    private final ClassLoader classLoader = this.class.classLoader
-    private final URL _gradleVersionResource = classLoader.getResource("gradleVersion.txt")
-    private final URL _testedVersionsResource = classLoader.getResource("testedVersions.txt")
     private final String DELIMITER = ','
 
+    private ClassLoader getClassLoader() {
+        return this.class.classLoader
+    }
+    
     String getGradleVersion() {
-        return getFirstLineFromResource(_gradleVersionResource)
+        return getFirstLineFromResource(getClassLoader().getResource('gradleVersion.txt'))
     }
 
     String[] getTestedVersions() {
-        return getFirstLineFromResource(_testedVersionsResource).split(DELIMITER).collect { it.trim() }
+        return getFirstLineFromResource(getClassLoader().getResource('testedVersions.txt')).split(DELIMITER).collect { it.trim() }
     }
 
-    @SuppressWarnings("GrMethodMayBeStatic")
+    @SuppressWarnings('GrMethodMayBeStatic')
     private String getFirstLineFromResource(URL url) {
         return new BufferedReader(new FileReader(url.file)).lines().findFirst().get()
     }
