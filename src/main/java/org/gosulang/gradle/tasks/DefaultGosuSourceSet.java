@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks;
 
 import groovy.lang.Closure;
+import org.gradle.api.Action;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.internal.file.FileResolver;
@@ -11,10 +12,14 @@ import java.lang.reflect.Constructor;
 public class DefaultGosuSourceSet implements GosuSourceSet {
 
   private final SourceDirectorySet _gosu;
+  private final SourceDirectorySet _allGosu;
 
   public DefaultGosuSourceSet( String displayName, FileResolver fileResolver ) {
     _gosu = createSourceDirectorySet(displayName + " Gosu source", fileResolver);
-    _gosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
+    _gosu.getFilter().include("**/*.java", "**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
+    _allGosu = createSourceDirectorySet(displayName + " Gosu source", fileResolver);
+    _allGosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
+    _allGosu.source(_gosu);
   }
 
 // Below is incompatible with Gradle versions prior to 2.12
@@ -35,6 +40,17 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
     return this;
   }
 
+  @Override
+  public GosuSourceSet gosu( Action<? super SourceDirectorySet> configureAction) {
+    configureAction.execute(getGosu());
+    return this;
+  }
+  
+  @Override
+  public SourceDirectorySet getAllGosu() {
+    return _allGosu;
+  }
+  
   /**
    * <p>Gradle's APIs are very fluid.  Of course, we are using something in a package labeled "internal"
    * which is always risky.
