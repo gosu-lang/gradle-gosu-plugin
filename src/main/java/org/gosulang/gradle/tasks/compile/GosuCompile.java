@@ -4,14 +4,20 @@ import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.AbstractCompile;
@@ -22,6 +28,8 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+@ParallelizableTask
+@CacheableTask
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private Compiler<DefaultGosuCompileSpec> _compiler;
@@ -36,9 +44,18 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   protected void compile() {
     DefaultGosuCompileSpec spec = createSpec();
     _compiler = getCompiler(spec);
-    WorkResult result = _compiler.execute(spec);
+    _compiler.execute(spec);
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @PathSensitive(PathSensitivity.NAME_ONLY)
+  public FileTree getSource() {
+    return super.getSource();
+  }  
+  
   /**
    * @return Gosu-specific compilation options.
    */
@@ -56,7 +73,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
    * @return the classpath to use to load the Gosu compiler.
    */
   @Override
-  @InputFiles
+  @Classpath
   public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
@@ -69,7 +86,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   /**
    * Annotating as @Input or @InputFiles causes errors in Guidewire applications, even when paired with @Optional.
    * Marking as @Internal instead to skip warning thrown by :validateTaskProperties (org.gradle.plugin.devel.tasks.ValidateTaskProperties)
-   * TODO Post Gradle 3.1, investigate applying the @Classpath annotation
    * @return a Closure returning a classpath to be passed to the GosuCompile task
    */
   @Internal
