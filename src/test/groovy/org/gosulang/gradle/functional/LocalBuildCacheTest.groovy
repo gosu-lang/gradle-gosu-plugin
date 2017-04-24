@@ -3,6 +3,8 @@ package org.gosulang.gradle.functional
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.VersionNumber
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
@@ -10,6 +12,13 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Unroll
 class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
+
+    /**
+     * For this test only, we override GradleRunner's TestKitDir property with a randomly generated folder.
+     * This ensures the local cache does not linger for subsequent test runs.
+     */
+    @Rule
+    TemporaryFolder testKitDir = new TemporaryFolder()
 
     File srcMainGosu
     File simplePogo
@@ -37,6 +46,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         when:
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
+                .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
                 .withArguments('gosudoc', '--build-cache')
 
@@ -58,6 +68,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         when:
         runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
+                .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
                 .withArguments('clean', 'gosudoc', '--build-cache')
 

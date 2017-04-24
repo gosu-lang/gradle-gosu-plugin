@@ -19,7 +19,6 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
@@ -106,6 +105,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   @InputFiles
   @Optional
+  @PathSensitive(PathSensitivity.RELATIVE)
   public Set<File> getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
