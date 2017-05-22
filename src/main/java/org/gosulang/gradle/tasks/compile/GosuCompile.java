@@ -11,21 +11,24 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
-import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.PathSensitive;
-import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
 @ParallelizableTask
 @CacheableTask
@@ -50,11 +53,11 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
    * {@inheritDoc}
    */
   @Override
-  @PathSensitive(PathSensitivity.NAME_ONLY)
+  @PathSensitive(NAME_ONLY)
   public FileTree getSource() {
     return super.getSource();
-  }  
-  
+  }
+
   /**
    * @return Gosu-specific compilation options.
    */
@@ -66,6 +69,14 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   @Nested
   public CompileOptions getOptions() {
     return _compileOptions;
+  }
+
+  /**
+   * We override in order to apply the {@link org.gradle.api.tasks.CompileClasspath}, in order to ignore changes in JAR'd resources.
+   */
+  @CompileClasspath
+  public FileCollection getClasspath() {
+    return super.getClasspath();
   }
 
   /**
@@ -103,10 +114,9 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     _orderClasspath = orderClasspath;
   }
 
-  @InputFiles
+  @Internal
   @Optional
-  @PathSensitive(PathSensitivity.RELATIVE)
-  public Set<File> getSourceRoots() {
+  public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
     for(Object obj : this.source) {
@@ -114,7 +124,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
         returnValues.addAll(((SourceDirectorySet) obj).getSrcDirs());
       }
     }
-    return returnValues;
+    return getProject().files(returnValues);
   }
 
   private DefaultGosuCompileSpec createSpec() {
@@ -124,30 +134,39 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
-    spec.setClasspath(getClasspath());
+    spec.setTempDir(getTemporaryDir());
     spec.setGosuClasspath(getGosuClasspath());
     spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
 
     if (_orderClasspath == null) {
-      spec.setClasspath(getClasspath());
+      spec.setCompileClasspath(asList(getClasspath()));
     } else {
-      spec.setClasspath(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)));
+      spec.setCompileClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
     }
 
     Logger logger = project.getLogger();
 
     if(logger.isInfoEnabled()) {
-      logger.info("Gosu Compiler Spec classpath is:");
-      if(!spec.getClasspath().iterator().hasNext()) {
+      logger.info("Gosu Compiler source roots for {} are:", project.getName());
+      if(spec.getSourceRoots().isEmpty()) {
         logger.info("<empty>");
       } else {
-        for(File file : spec.getClasspath()) {
+        for(File file : spec.getSourceRoots()) {
           logger.info(file.getAbsolutePath());
         }
       }
 
-      logger.info("Gosu Compile Spec gosuClasspath is:");
+      logger.info("Gosu Compiler Spec compile classpath for {} is:", project.getName());
+      if(spec.getCompileClasspath().isEmpty()) {
+        logger.info("<empty>");
+      } else {
+        for(File file : spec.getCompileClasspath()) {
+          logger.info(file.getAbsolutePath());
+        }
+      }
+
+      logger.info("Gosu Compile Spec gosuClasspath for {} is:", project.getName());
       FileCollection gosuClasspath = spec.getGosuClasspath().call();
       if(gosuClasspath.isEmpty()) {
         logger.info("<empty>");
@@ -168,6 +187,12 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
+  }
+
+  private List<File> asList(final FileCollection files) {
+    List<File> list = new ArrayList<>();
+    files.forEach(list::add);
+    return list;
   }
 
 }
