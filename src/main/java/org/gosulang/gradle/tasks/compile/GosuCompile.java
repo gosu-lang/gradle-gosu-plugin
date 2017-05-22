@@ -157,11 +157,11 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
         }
       }
 
-      logger.info("Gosu Compiler Spec compile classpath for {} is:", project.getName());
-      if(spec.getCompileClasspath().isEmpty()) {
+      logger.info("Gosu Compiler Spec classpath for {} is:", project.getName());
+      if(!spec.getClasspath().iterator().hasNext()) {
         logger.info("<empty>");
       } else {
-        for(File file : spec.getCompileClasspath()) {
+        for(File file : spec.getClasspath()) {
           logger.info(file.getAbsolutePath());
         }
       }

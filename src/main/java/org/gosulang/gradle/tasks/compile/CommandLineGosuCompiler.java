@@ -123,7 +123,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     
     // The classpath used to initialize Gosu; CommandLineCompiler will supplement this with the JRE jars
     fileOutput.add("-classpath");
-    fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getCompileClasspath())));
+    fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getClasspath())));
 
     fileOutput.add("-d");
     fileOutput.add(spec.getDestinationDir().getAbsolutePath());
