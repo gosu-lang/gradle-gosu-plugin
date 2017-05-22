@@ -140,9 +140,9 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     spec.setGosuCompileOptions(_gosuCompileOptions);
 
     if (_orderClasspath == null) {
-      spec.setCompileClasspath(asList(getClasspath()));
+      spec.setClasspath(asList(getClasspath()));
     } else {
-      spec.setCompileClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
+      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
     }
 
     Logger logger = project.getLogger();
