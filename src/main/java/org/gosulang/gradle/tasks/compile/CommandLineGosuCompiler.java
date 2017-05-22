@@ -8,6 +8,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.ForkOptions;
+import org.gradle.internal.jvm.Jvm;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
@@ -60,7 +61,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       javaExecSpec.setWorkingDir(_project.getProjectDir());
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
-          .setClasspath(spec.getGosuClasspath().call())
+          .setClasspath(spec.getGosuClasspath().call().plus(_project.files(Jvm.current().getToolsJar())))
           .setArgs(gosucArgs);
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
@@ -112,13 +113,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
   }  
   
   private File createArgFile(DefaultGosuCompileSpec spec) throws IOException {
-    File tempFile;
-    if (LOGGER.isDebugEnabled()) {
-      tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments", new File(spec.getDestinationDir().getAbsolutePath()));
-    } else {
-      tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments");
-      tempFile.deleteOnExit();
-    }
+    File tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments", spec.getTempDir());
 
     List<String> fileOutput = new ArrayList<>();
 
@@ -128,7 +123,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     
     // The classpath used to initialize Gosu; CommandLineCompiler will supplement this with the JRE jars
     fileOutput.add("-classpath");
-    fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getClasspath())));
+    fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getCompileClasspath())));
 
     fileOutput.add("-d");
     fileOutput.add(spec.getDestinationDir().getAbsolutePath());

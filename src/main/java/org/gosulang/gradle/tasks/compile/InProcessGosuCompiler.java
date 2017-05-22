@@ -49,7 +49,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 //    final IGosuCompiler gosuc = new GosuCompiler();
     boolean didWork = false;
 
-    List<String> sourceRoots = spec.getSourceRoots().stream()
+    List<String> sourceRoots = spec.getSourceRoots().getFiles().stream()
         .map(File::getAbsolutePath)
         .collect(Collectors.toList());
 

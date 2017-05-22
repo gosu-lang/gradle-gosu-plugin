@@ -4,22 +4,19 @@ import groovy.lang.Closure;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.tasks.compile.DefaultJavaCompileSpec;
 
-import java.io.File;
-import java.util.Set;
-
 public class DefaultGosuCompileSpec extends DefaultJavaCompileSpec implements GosuCompileSpec {
 
   private GosuCompileOptions _gosuCompileOptions;
   private transient Closure<FileCollection> _gosuClasspath;
-  private Set<File> _srcDirSet;
+  private FileCollection _srcDirSet;
 
   @Override
-  public Set<File> getSourceRoots() {
+  public FileCollection getSourceRoots() {
     return _srcDirSet;
   }
 
   @Override
-  public void setSourceRoots( Set<File> srcDirSet ) {
+  public void setSourceRoots( FileCollection srcDirSet ) {
     _srcDirSet = srcDirSet;
   }
 
