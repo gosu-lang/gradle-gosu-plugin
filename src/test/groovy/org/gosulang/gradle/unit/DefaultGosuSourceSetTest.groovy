@@ -1,6 +1,8 @@
 package org.gosulang.gradle.unit
 
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
+import org.gradle.api.Action
+import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.FileResolver
@@ -32,8 +34,15 @@ class DefaultGosuSourceSetTest extends Specification {
         sourceSet.gosu instanceof DefaultSourceDirectorySet
         expect sourceSet.gosu, emptyIterable()
         sourceSet.gosu.displayName == '<set-display-name> Gosu source'
-        expect sourceSet.gosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
+        expect sourceSet.gosu.filter.includes, equalTo(['**/*.java', '**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
         expect sourceSet.gosu.filter.excludes, empty()
+
+        sourceSet.allGosu instanceof DefaultSourceDirectorySet
+        expect sourceSet.allGosu, emptyIterable()
+        sourceSet.allGosu.displayName == '<set-display-name> Gosu source'
+        sourceSet.allGosu.source.contains(sourceSet.gosu)
+        expect sourceSet.allGosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
+        expect sourceSet.allGosu.filter.excludes, empty()
     }
     
     def 'can configure Gosu source'() {
@@ -46,6 +55,14 @@ class DefaultGosuSourceSetTest extends Specification {
         expect sourceSet.gosu.srcDirs, equalTo([new File(_testProjectDir.root, 'src/somepathtogosu').canonicalFile] as Set)
     }
 
+    def 'can configure Gosu source using an action'() {
+        when:
+        sourceSet.gosu({ set -> set.srcDir 'src/somepathtogosu' } as Action<SourceDirectorySet>)
+        
+        then:
+        expect sourceSet.gosu.srcDirs, equalTo([new File(_testProjectDir.root, 'src/somepathtogosu').canonicalFile] as Set)
+    }
+    
     def 'can exclude a file pattern'() {
         when:
         sourceSet.gosu {
@@ -63,11 +80,11 @@ class DefaultGosuSourceSetTest extends Specification {
         }
         
         then:
-        expect sourceSet.gosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp', '**/*.grs', '**/*.gr'] as Set)
+        expect sourceSet.gosu.filter.includes, equalTo(['**/*.java','**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp', '**/*.grs', '**/*.gr'] as Set)
         expect sourceSet.gosu.filter.excludes, empty()
-        then:
-        expect sourceSet.gosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp', '**/*.grs', '**/*.gr'] as Set)
-        expect sourceSet.gosu.filter.excludes, empty()
+        then: // allGosu is unmodified
+        expect sourceSet.allGosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
+        expect sourceSet.allGosu.filter.excludes, empty()
     }
 
 }

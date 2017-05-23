@@ -6,7 +6,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.language.base.internal.compile.Compiler;
-import org.gradle.process.internal.daemon.WorkerDaemonResult;
+import org.gradle.workers.internal.DefaultWorkResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 //    final IGosuCompiler gosuc = new GosuCompiler();
     boolean didWork = false;
 
-    List<String> sourceRoots = spec.getSourceRoots().stream()
+    List<String> sourceRoots = spec.getSourceRoots().getFiles().stream()
         .map(File::getAbsolutePath)
         .collect(Collectors.toList());
 
@@ -204,7 +204,7 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
       }
     }
 
-    return new WorkerDaemonResult(didWork, null);
+    return new DefaultWorkResult(didWork, null);
   }
 
   /**

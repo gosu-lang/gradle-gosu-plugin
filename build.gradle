@@ -10,7 +10,7 @@ plugins {
 }
 
 wrapper {
-    gradleVersion '3.4.1'
+    gradleVersion '3.5'
 }
 
 group = 'org.gosu-lang.gosu'
@@ -143,7 +143,7 @@ afterReleaseBuild.dependsOn publishPlugins, uploadArchives
  * Store keyId, password, secretKeyRingFile in ~/.gradle/gradle.properties
  */
 signing {
-    required { !isSnapshot && gradle.taskGraph.hasTask('uploadArchives') }
+    required { !isSnapshot && gradle.taskGraph.hasTask(':uploadArchives') }
     sign configurations.archives
 }
 
