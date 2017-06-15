@@ -5,7 +5,6 @@ machine:
     version:
       oraclejdk8
   environment:
-    TERM: dumb
     GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
 
 general:
@@ -16,6 +15,8 @@ general:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
+  override:
+    - ./gradlew check --console=plain
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
@@ -26,6 +27,4 @@ deployment:
     branch: /.*/
     owner: gosu-lang
     commands:
-      # 'deploy' ordinarily ensured everything is up-to-date, but mvn's incremental compiler doesn't work well with Gosu
-      # therefore we skip test compilation entirely and rely on the JARs built by 'mvn install' 
-      - ./gradlew uploadArchives -is
+      - ./gradlew uploadArchives -is --console=plain
