@@ -14,10 +14,10 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
   private final SourceDirectorySet _gosu;
   private final SourceDirectorySet _allGosu;
 
-  public DefaultGosuSourceSet( String displayName, FileResolver fileResolver ) {
-    _gosu = createSourceDirectorySet(displayName + " Gosu source", fileResolver);
+  public DefaultGosuSourceSet( String name, FileResolver fileResolver ) {
+    _gosu = createSourceDirectorySet("gosu", name + " Gosu source", fileResolver);
     _gosu.getFilter().include("**/*.java", "**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
-    _allGosu = createSourceDirectorySet(displayName + " Gosu source", fileResolver);
+    _allGosu = createSourceDirectorySet("gosu", name + " Gosu source", fileResolver); //TODO 2 args only?
     _allGosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
     _allGosu.source(_gosu);
   }
@@ -58,14 +58,14 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
    * 
    * @return API-appropriate instance of a DefaultSourceDirectorySet
    */
-  private DefaultSourceDirectorySet createSourceDirectorySet(String name, FileResolver fileResolver) {
+  private DefaultSourceDirectorySet createSourceDirectorySet(String name, String displayName, FileResolver fileResolver) {
     Constructor<DefaultSourceDirectorySet> ctor;
     try {
       Class<?> dftfInterface = Class.forName("org.gradle.api.internal.file.collections.DirectoryFileTreeFactory");
       Class<?> fileTreeFactory = Class.forName("org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory");
       Object fileTreeFactoryInstance = fileTreeFactory.newInstance();
-      ctor = DefaultSourceDirectorySet.class.getConstructor(String.class, FileResolver.class, dftfInterface);
-      return ctor.newInstance(name, fileResolver, fileTreeFactoryInstance);
+      ctor = DefaultSourceDirectorySet.class.getConstructor(String.class, String.class, FileResolver.class, dftfInterface);
+      return ctor.newInstance(name, displayName, fileResolver, fileTreeFactoryInstance);
     } catch (Exception e) {
       //We're probably using a Gradle version lower than 2.12 now, but we need to reflectively check for new interfaces first
       // Prefer DefaultSourceDirectorySetFactory(

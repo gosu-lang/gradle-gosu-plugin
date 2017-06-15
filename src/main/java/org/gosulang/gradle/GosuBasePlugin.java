@@ -12,6 +12,7 @@ import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.internal.SourceSetUtil;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 
@@ -77,16 +78,16 @@ public class GosuBasePlugin implements Plugin<Project> {
 
       sourceSet.getAllSource().source(gosuSourceSet.getGosu());
 
-      configureGosuCompile(javaBasePlugin, sourceSet, gosuSourceSet);
+      configureGosuCompile(sourceSet, gosuSourceSet);
     });
   }
 
-  private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
+  private void configureGosuCompile(SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
     GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
-    javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
+    SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
     gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
-    gosuCompile.setDescription("Compiles the " + sourceSet.getName() + " Gosu source");
+    gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     gosuCompile.setSource(gosuSourceSet.getGosu());
 
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);

@@ -49,7 +49,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         result.output.contains('Picked up JAVA_TOOL_OPTIONS: -Duser.language=en') 
         
         //did we actually compile anything?
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+        new File(testProjectDir.root, asPath('build', 'classes', 'gosu', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
