@@ -85,7 +85,7 @@ public class GosuBasePlugin implements Plugin<Project> {
   private void configureGosuCompile(SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
     GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
-    SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
+    SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project); //FIXME SourceSetUtil is not only internal, it's not available in < 4.0. `_project.getGradle().getGradleVersion()`... 
     gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
     gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     gosuCompile.setSource(gosuSourceSet.getGosu());
