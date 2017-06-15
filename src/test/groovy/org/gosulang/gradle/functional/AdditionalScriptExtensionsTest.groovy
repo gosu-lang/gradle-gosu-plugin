@@ -36,7 +36,7 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
             }
             task copyRuleMetadata(type: Copy) {
               from 'src/main/config'
-              into sourceSets.main.output.classesDir
+              into sourceSets.main.gosu.outputDir
               include 'rules/**/order.txt'
             }
             tasks.processResources.dependsOn(tasks.copyRuleMetadata)
@@ -99,10 +99,10 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
         result.task(':classes').outcome == SUCCESS
 
         //did we actually compile anything?
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'SimplePogo.class')).exists()
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'rules', 'DummyRuleSet.class')).exists()
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'rules', 'DummyRuleSet_dir', 'DummyRule.class')).exists()
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'rules', 'DummyRuleSet_dir', 'order.txt')).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'SimplePogo.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'rules', 'DummyRuleSet.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'rules', 'DummyRuleSet_dir', 'DummyRule.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'rules', 'DummyRuleSet_dir', 'order.txt'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
