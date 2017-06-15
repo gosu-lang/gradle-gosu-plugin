@@ -24,9 +24,9 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
 
 // Below is incompatible with Gradle versions prior to 2.12
 // TODO Introduce this constructor along with Gradle 4.0, at which point we can do away with the reflection below and stop supporting Gradle 2.x
-//  public DefaultGosuSourceSet( String displayName, SourceDirectorySetFactory sourceDirectorySetFactory ) {
-//    _gosu = sourceDirectorySetFactory.create(displayName + " Gosu source");
-//    _gosu.getFilter().include("**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
+//  public DefaultGosuSourceSet( String name, SourceDirectorySetFactory sourceDirectorySetFactory ) {
+//    _gosu = sourceDirectorySetFactory.create("gosu", name + " Gosu source");
+//    _gosu.getFilter().include("**/*.java", "**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
 //  }
   
   @Override
