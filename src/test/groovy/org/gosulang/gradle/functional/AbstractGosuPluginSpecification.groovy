@@ -67,7 +67,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     protected List<String> expectedOutputDir() {
         List<String> retval = ['build', 'classes']
         if(VersionNumber.parse(getGradleVersion()) >= VersionNumber.parse('4.0')) {
-            retval.add('gosu')
+            retval += 'gosu'
         }
         return retval
     }
