@@ -1,5 +1,6 @@
 package org.gosulang.gradle.functional
 
+import org.gradle.util.VersionNumber
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Shared
@@ -15,6 +16,8 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
 
+    
+    
     @Rule
     final TemporaryFolder testProjectDir = new TemporaryFolder()
 
@@ -40,6 +43,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
                 compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
                 testCompile group: 'junit', name: 'junit', version: '4.12'
             }
+            //compileGosu.gosuOptions.forkOptions.jvmArgs += ['-Xdebug', '-Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y'] //debug on linux/OS X
             gosudoc {
                 gosuDocOptions.verbose = true
             }
@@ -60,20 +64,32 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
         return new BufferedReader(new FileReader(url.file)).lines().findFirst().get()
     }
 
+    protected List<String> expectedOutputDir() {
+        List<String> retval = ['build', 'classes']
+        if(VersionNumber.parse(getGradleVersion()) >= VersionNumber.parse('4.0')) {
+            retval.add('gosu')
+        }
+        return retval
+    }
+    
     /**
      * @param An iterable of files and directories
      * @return Delimited String of the values, joined as suitable for use in a classpath statement
      */
     protected String asPath(String... values) {
-        return String.join(FS, values);
+        return String.join(FS, values)
     }
 
+    protected String asPath(List<String> values) {
+        return String.join(FS, values)
+    }    
+    
     /**
      * 
      * @param An iterable of directories
      * @return Delimited String of the values, joined as suitable for use in a package statement
      */
     protected String asPackage(String... values) {
-        return String.join(".", values);
+        return String.join(".", values)
     }
 }
