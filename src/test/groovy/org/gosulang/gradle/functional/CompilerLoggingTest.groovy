@@ -57,7 +57,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         result.task(':compileGosu').outcome == SUCCESS
 
         //did we actually compile anything?
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
@@ -96,7 +96,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         result.task(':compileGosu').outcome == SUCCESS
 
         //did we actually compile anything?
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
@@ -133,7 +133,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         result.task(':compileGosu').outcome == FAILED
 
         //did we actually compile anything?
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+        !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest

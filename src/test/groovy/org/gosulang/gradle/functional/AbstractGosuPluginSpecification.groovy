@@ -16,14 +16,19 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator
 
-    
-    
     @Rule
     final TemporaryFolder testProjectDir = new TemporaryFolder()
 
     protected final URL _gosuVersionResource = this.class.classLoader.getResource("gosuVersion.txt")
 
     File buildScript
+    Closure<List<String>> expectedOutputDir = { String gradleVersion ->
+        List<String> retval = ['build', 'classes']
+        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
+            retval += 'gosu'
+        }
+        return retval
+    }
     
     protected String getBasicBuildScriptForTesting() {
         String gosuVersion = this.gosuVersion
@@ -63,26 +68,22 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     protected String getGosuVersion(URL url) {
         return new BufferedReader(new FileReader(url.file)).lines().findFirst().get()
     }
-
-    protected List<String> expectedOutputDir() {
-        List<String> retval = ['build', 'classes']
-        if(VersionNumber.parse(getGradleVersion()) >= VersionNumber.parse('4.0')) {
-            retval += 'gosu'
-        }
-        return retval
-    }
     
     /**
-     * @param An iterable of files and directories
+     * @param An array of files and directories
      * @return Delimited String of the values, joined as suitable for use in a classpath statement
      */
     protected String asPath(String... values) {
         return String.join(FS, values)
     }
 
+    /**
+     * @param An iterable of files and directories
+     * @return Delimited String of the values, joined as suitable for use in a classpath statement
+     */
     protected String asPath(List<String> values) {
-        return String.join(FS, values)
-    }    
+        return asPath(values.toArray(new String[0]))
+    }
     
     /**
      * 

@@ -2,6 +2,7 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.VersionNumber
 import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -10,6 +11,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
 
     File simplePogo, dummyRuleSet, dummyRule, orderFile, shouldBeIgnored
+    String apiAwareOutputDir
 
     /**
      * super#setup is invoked automatically
@@ -36,7 +38,7 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
             }
             task copyRuleMetadata(type: Copy) {
               from 'src/main/config'
-              into sourceSets.main.gosu.outputDir
+              into $apiAwareOutputDir
               include 'rules/**/order.txt'
             }
             tasks.processResources.dependsOn(tasks.copyRuleMetadata)
@@ -87,8 +89,6 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments('clean', 'classes', '-is')
                 .withGradleVersion(gradleVersion)
-//                .withDebug(true)
-                .forwardOutput() //TODO remove me; too verbose?
 
         BuildResult result = runner.build()
 
@@ -99,14 +99,15 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
         result.task(':classes').outcome == SUCCESS
 
         //did we actually compile anything?
-        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'SimplePogo.class'])).exists()
-        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'rules', 'DummyRuleSet.class'])).exists()
-        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'rules', 'DummyRuleSet_dir', 'DummyRule.class'])).exists()
-        new File(testProjectDir.root, asPath(expectedOutputDir() + ['main', 'rules', 'DummyRuleSet_dir', 'order.txt'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'SimplePogo.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'rules', 'DummyRuleSet.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'rules', 'DummyRuleSet_dir', 'DummyRule.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'rules', 'DummyRuleSet_dir', 'order.txt'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
-        
+        apiAwareOutputDir = VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0') ? 'sourceSets.main.gosu.outputDir' : 'sourceSets.main.output.classesDir'
+
     }
 
 }

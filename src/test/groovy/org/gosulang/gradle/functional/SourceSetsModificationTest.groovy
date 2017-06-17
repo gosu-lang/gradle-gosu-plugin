@@ -99,7 +99,7 @@ class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
             result.task(':test').outcome == NO_SOURCE //no tests to run
         }
 
-        File buildOutputRoot = new File(testProjectDir.root, asPath('build', 'classes', 'main'))
+        File buildOutputRoot = new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + 'main'))
         new File(buildOutputRoot, asPath('one', 'ConfiguredPogoOne.class')).exists()
         new File(buildOutputRoot, asPath('two', 'ConfiguredPogoTwo.class')).exists()
         new File(buildOutputRoot, asPath('three', 'ConfiguredPogoThree.class')).exists()
