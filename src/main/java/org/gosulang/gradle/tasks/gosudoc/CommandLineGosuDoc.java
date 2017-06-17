@@ -86,11 +86,11 @@ public class CommandLineGosuDoc {
     LOGGER.info("Created classpathJar at " + classpathJar.getAbsolutePath());
     
     ExecResult result = _project.javaexec(javaExecSpec -> {
-      javaExecSpec.setWorkingDir(_project.getProjectDir());
+      javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _options.getForkOptions());
       javaExecSpec.setMain("gw.gosudoc.cli.Gosudoc")
           .setClasspath(_project.files(classpathJar))
-          .setArgs(gosudocArgs);
+          .setArgs((Iterable<?>) gosudocArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
       javaExecSpec.setIgnoreExitValue(true); //otherwise fails immediately before displaying output
@@ -172,7 +172,7 @@ public class CommandLineGosuDoc {
       args.add("-Xdock:name=gosudoc");
     }
     
-    spec.setJvmArgs(args);
+    spec.setJvmArgs((Iterable<?>) args); // Gradle 4.0 overloads JavaForkOptions#setJvmArgs; must upcast to Iterable<?> for backwards compatibility
   }
 
 }
