@@ -78,12 +78,12 @@ class GosuPluginTest {
     public void addsCompileTaskForEachSourceSet() {
         def task = project.tasks['compileGosu']
         assertThat(task, instanceOf(GosuCompile))
-        assertThat(task.description, equalTo('Compiles the main Gosu source'))
+        assertThat(task.description, equalTo('Compiles the main Gosu source.'))
         assertTrue(task.dependsOn.contains(JavaPlugin.COMPILE_JAVA_TASK_NAME))
 
         task = project.tasks['compileTestGosu']
         assertThat(task, instanceOf(GosuCompile))
-        assertThat(task.description, equalTo('Compiles the test Gosu source'))
+        assertThat(task.description, equalTo('Compiles the test Gosu source.'))
         assertTrue(task.dependsOn.contains(JavaPlugin.COMPILE_TEST_JAVA_TASK_NAME))
         //assertTrue(task.dependsOn.contains(JavaPlugin.CLASSES_TASK_NAME)) //TODO failing; do we care?
     }

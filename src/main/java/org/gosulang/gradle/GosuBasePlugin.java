@@ -98,9 +98,9 @@ public class GosuBasePlugin implements Plugin<Project> {
       }
     } else {
       javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
+      gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     }
     gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
-    gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     gosuCompile.setSource((Object) gosuSourceSet.getGosu()); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
 
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);

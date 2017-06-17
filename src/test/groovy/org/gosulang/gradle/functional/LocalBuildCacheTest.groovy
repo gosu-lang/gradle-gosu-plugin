@@ -56,14 +56,18 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         result.task(":compileGosu").outcome == SUCCESS
         result.task(":gosudoc").outcome == SUCCESS
 
-        result.output.contains("""
+        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
+            result.output.contains('2 actionable tasks: 2 executed')
+        } else {
+            result.output.contains("""
 5 tasks in build, out of which 3 (60%) were executed
 2  (40%) no-source
 2  (40%) cache miss
 1  (20%) not cacheable
 """)
-        
-        assertOutputs()
+        }
+
+        assertTaskOutputs()
         
         when:
         runner = GradleRunner.create()
@@ -78,21 +82,25 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         result.task(":compileGosu").outcome == FROM_CACHE
         result.task(":gosudoc").outcome == FROM_CACHE
 
-        result.output.contains("""
+        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
+            result.output.contains('2 actionable tasks: 0 executed')
+        } else {
+            result.output.contains("""
 6 tasks in build, out of which 1 (17%) were executed
 1  (17%) up-to-date
 2  (33%) no-source
 2  (33%) loaded from cache
 1  (17%) not cacheable
 """)
+        }
 
-        assertOutputs()        
+        assertTaskOutputs()
         
         where:
         gradleVersion << gradleVersionsToTest.findAll { VersionNumber.parse(it) >= VersionNumber.parse('3.5') } // build caching only available since Gradle 3.5
     }
 
-    private boolean assertOutputs() {
+    private boolean assertTaskOutputs() {
         //did we actually compile anything?
         return new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists() &&
         //did we actually doc anything?
