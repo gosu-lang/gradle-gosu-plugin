@@ -18,6 +18,8 @@ description = """Gosu language compiler for Gradle.  Built with Gradle $project.
 
 This has also been tested extensively with Gradle version(s): $project.testedVersions
 
+** Gradle versions below 2.12 are no longer supported **
+
 Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  
 
 This version requires Gosu 1.13.9 or greater, or 1.14.2 or greater. 
