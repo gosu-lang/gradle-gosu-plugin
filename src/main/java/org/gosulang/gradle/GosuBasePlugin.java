@@ -5,10 +5,8 @@ import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
-import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
@@ -16,7 +14,6 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.util.VersionNumber;
 
 import javax.inject.Inject;
@@ -89,13 +86,7 @@ public class GosuBasePlugin implements Plugin<Project> {
     VersionNumber gradleVersion = VersionNumber.parse(_project.getGradle().getGradleVersion());
     if(gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0) {
       //Gradle 4.0+
-      try {
-        Class<?> sourceSetUtil = Class.forName("org.gradle.api.plugins.internal.SourceSetUtil");
-        Method configureForSourceSet = sourceSetUtil.getDeclaredMethod("configureForSourceSet", SourceSet.class, SourceDirectorySet.class, AbstractCompile.class, Project.class);
-        configureForSourceSet.invoke(null, sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
-      } catch(ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-          throw new GradleException("Unable to apply Gosu plugin", e);
-      }
+      org.gradle.api.plugins.internal.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
     } else {
       javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
     }
