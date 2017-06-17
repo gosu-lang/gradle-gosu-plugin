@@ -37,6 +37,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath()
                 .withArguments('compileGosu', '-is')
+                .withGradleVersion(gradleVersion)
 
         BuildResult result = runner.build()
         
