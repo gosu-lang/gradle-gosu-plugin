@@ -78,7 +78,7 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         }
 
 
-        File buildOutputRoot = new File(testProjectDir.root, asPath('build', 'classes', 'main'))
+        File buildOutputRoot = new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + 'main'))
         new File(buildOutputRoot, 'Foo.class').exists()
         new File(buildOutputRoot, 'Bar.class').exists()
         !new File(buildOutputRoot, 'Errant_Class.class').exists()

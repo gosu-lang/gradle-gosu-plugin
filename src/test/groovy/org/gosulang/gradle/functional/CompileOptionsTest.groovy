@@ -73,8 +73,8 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         result.output.contains('[6,27] error: The type "java.lang.String" cannot be converted to "int"')
         result.task(':compileGosu').outcome == SUCCESS
 
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'ErrantPogo.class')).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
+        !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'ErrantPogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest
@@ -137,8 +137,8 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         result.task(':compileGosu').outcome == FAILED
 
         //compiler ordering is non-deterministic, so we should end up with only one class file produced before the threshold is reached
-        File fooClass = new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Foo.class'))
-        File barClass = new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Bar.class'))
+        File fooClass = new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'Foo.class']))
+        File barClass = new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'Bar.class']))
 
         //One file is successfully compiled, but warnings exceed the threshold
         //Compilation aborts before attempting to compile the second file
@@ -200,8 +200,8 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
 
         //One file is attempted to be compiled, but errors exceed the threshold
         //Compilation aborts before attempting to compile the second file
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Foo.class')).exists()
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'Bar.class')).exists()
+        !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'Foo.class'])).exists()
+        !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'Bar.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest

@@ -94,7 +94,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
 
     private boolean assertOutputs() {
         //did we actually compile anything?
-        return new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists() &&
+        return new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists() &&
         //did we actually doc anything?
         new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc', 'index.html')).exists()
 
