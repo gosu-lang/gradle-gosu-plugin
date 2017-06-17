@@ -51,7 +51,7 @@ public class GosuPlugin implements Plugin<Project> {
     gosuDoc.setClasspath(sourceSet.getOutput().plus(sourceSet.getCompileClasspath()));
 
     GosuSourceSet gosuSourceSet = new DslObject(sourceSet).getConvention().getPlugin(GosuSourceSet.class);
-    gosuDoc.setSource(gosuSourceSet.getGosu());
+    gosuDoc.setSource((Object) gosuSourceSet.getGosu());  // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
   }
 
 }

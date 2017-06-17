@@ -58,11 +58,11 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     ExecResult result = _project.javaexec(javaExecSpec -> {
-      javaExecSpec.setWorkingDir(_project.getProjectDir());
+      javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
           .setClasspath(spec.getGosuClasspath().call().plus(_project.files(Jvm.current().getToolsJar())))
-          .setArgs(gosucArgs);
+          .setArgs((Iterable<?>) gosucArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
       javaExecSpec.setIgnoreExitValue(true); //otherwise fails immediately before displaying output
@@ -109,8 +109,8 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       args.add("-Xdock:name=gosuc");
     }
 
-    spec.setJvmArgs(args);
-  }  
+    spec.setJvmArgs((Iterable<?>) args); // Gradle 4.0 overloads JavaForkOptions#setJvmArgs; must upcast to Iterable<?> for backwards compatibility
+  }
   
   private File createArgFile(DefaultGosuCompileSpec spec) throws IOException {
     File tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments", spec.getTempDir());
