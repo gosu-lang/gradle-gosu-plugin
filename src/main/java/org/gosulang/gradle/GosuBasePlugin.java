@@ -12,6 +12,7 @@ import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.internal.SourceSetUtil;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.VersionNumber;
@@ -86,12 +87,12 @@ public class GosuBasePlugin implements Plugin<Project> {
     VersionNumber gradleVersion = VersionNumber.parse(_project.getGradle().getGradleVersion());
     if(gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0) {
       //Gradle 4.0+
-      org.gradle.api.plugins.internal.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
+      SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
     } else {
       javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
+      gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     }
     gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
-    gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     gosuCompile.setSource((Object) gosuSourceSet.getGosu()); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
 
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
