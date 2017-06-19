@@ -15,6 +15,7 @@ import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
@@ -29,6 +30,7 @@ import java.util.Set;
 
 import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
+@ParallelizableTask
 @CacheableTask
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
