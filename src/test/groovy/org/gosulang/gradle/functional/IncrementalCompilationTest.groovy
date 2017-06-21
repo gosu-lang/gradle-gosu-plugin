@@ -55,7 +55,7 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildFailure)
         result.task(':compileGosu').outcome == SUCCESS
-        String buildOutput = asPath(testProjectDir.root.absolutePath, 'build', 'classes', 'main')
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
         new File(buildOutput).exists()
         new File(buildOutput, 'A.class').exists()
         new File(buildOutput, 'B.class').exists()

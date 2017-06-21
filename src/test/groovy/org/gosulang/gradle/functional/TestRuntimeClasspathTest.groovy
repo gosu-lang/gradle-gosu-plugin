@@ -68,8 +68,8 @@ class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
         notThrown(UnexpectedBuildFailure)
         result.task(":test").outcome == SUCCESS
         
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'SimplePogo.class')).exists()
-        new File(testProjectDir.root, asPath('build', 'classes', 'test', 'SimpleTestPogo.class')).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'SimplePogo.class'])).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['test', 'SimpleTestPogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest

@@ -59,7 +59,7 @@ class GosuBasePluginTest {
 
         def task = project.tasks['compileCustomGosu']
         assertThat(task, instanceOf(GosuCompile.class))
-        assertThat(task.description, equalTo('Compiles the custom Gosu source'))
+        assertThat(task.description, equalTo('Compiles the custom Gosu source.'))
         assertTrue(task.dependsOn.contains('compileCustomJava'))
     }
 

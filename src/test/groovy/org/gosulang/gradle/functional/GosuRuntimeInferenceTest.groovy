@@ -48,7 +48,7 @@ class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildSuccess)
         result.output.contains('Cannot infer Gosu classpath because the Gosu Core API Jar was not found.')
-        !new File(testProjectDir.root, asPath('build', 'classes', 'main', 'SimplePogo.class')).exists()
+        !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'SimplePogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest

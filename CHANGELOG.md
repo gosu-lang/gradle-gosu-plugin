@@ -1,5 +1,23 @@
 # Change Log
 
+## [v0.3.2](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.2) (2017-06-21)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.1...v0.3.2)
+
+**Implemented enhancements:**
+
+- Upgrade to Gradle 3.5 [\#30](https://github.com/gosu-lang/gradle-gosu-plugin/issues/30)
+
+**Closed issues:**
+
+- Drop support for Gradle 2.11 and earlier [\#32](https://github.com/gosu-lang/gradle-gosu-plugin/issues/32)
+
+## [v0.3.1](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.1) (2017-05-23)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.0...v0.3.1)
+
+**Implemented enhancements:**
+
+- Enable task caching [\#31](https://github.com/gosu-lang/gradle-gosu-plugin/issues/31)
+
 ## [v0.3.0](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.0) (2017-03-23)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.2.2...v0.3.0)
 

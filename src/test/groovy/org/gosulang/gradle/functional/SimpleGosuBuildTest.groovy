@@ -37,6 +37,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath()
                 .withArguments('compileGosu', '-is')
+                .withGradleVersion(gradleVersion)
 
         BuildResult result = runner.build()
         
@@ -49,7 +50,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         result.output.contains('Picked up JAVA_TOOL_OPTIONS: -Duser.language=en') 
         
         //did we actually compile anything?
-        new File(testProjectDir.root, asPath('build', 'classes', 'main', 'example', 'gradle', 'SimplePogo.class')).exists()
+        new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
         gradleVersion << gradleVersionsToTest

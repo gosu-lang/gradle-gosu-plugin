@@ -5,39 +5,37 @@ import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.internal.file.FileResolver;
+import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.file.SourceDirectorySetFactory;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.compile.AbstractCompile;
+import org.gradle.util.VersionNumber;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class GosuBasePlugin implements Plugin<Project> {
   public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
 
-  private final FileResolver _fileResolver;
-  //private final SourceDirectorySetFactory sourceDirectorySetFactory;
+  private final SourceDirectorySetFactory _sourceDirectorySetFactory;
 
   private Project _project;
   private GosuRuntime _gosuRuntime;
 
   @Inject
-  GosuBasePlugin(FileResolver fileResolver) {
-    _fileResolver = fileResolver;
+  GosuBasePlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
+    _sourceDirectorySetFactory = sourceDirectorySetFactory;
   }
-  
-// Below is incompatible with Gradle versions prior to 2.12
-// TODO introduce along with Gradle 4.0
-//  @Inject
-//  GosuBasePlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
-//    this.sourceDirectorySetFactory = sourceDirectorySetFactory;
-//  }
 
   @Override
   public void apply(Project project) {
@@ -67,8 +65,7 @@ public class GosuBasePlugin implements Plugin<Project> {
 
   private void configureSourceSetDefaults(final JavaBasePlugin javaBasePlugin) {
     _project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().all(sourceSet -> {
-      DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), _fileResolver);
-//      DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), sourceDirectorySetFactory);
+      GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), _sourceDirectorySetFactory);
       new DslObject(sourceSet).getConvention().getPlugins().put("gosu", gosuSourceSet);
 
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
@@ -81,13 +78,30 @@ public class GosuBasePlugin implements Plugin<Project> {
     });
   }
 
+  /**
+   * Gradle 4.0+: call o.g.a.p.i.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project)
+   * Gradle 2.x, 3.x: call javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
+   */
   private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
     GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
-    javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
+
+    VersionNumber gradleVersion = VersionNumber.parse(_project.getGradle().getGradleVersion());
+    if(gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0) {
+      //Gradle 4.0+
+      try {
+        Class<?> sourceSetUtil = Class.forName("org.gradle.api.plugins.internal.SourceSetUtil");
+        Method configureForSourceSet = sourceSetUtil.getDeclaredMethod("configureForSourceSet", SourceSet.class, SourceDirectorySet.class, AbstractCompile.class, Project.class);
+        configureForSourceSet.invoke(null, sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
+      } catch(ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+          throw new GradleException("Unable to apply Gosu plugin", e);
+      }
+    } else {
+      javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
+      gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
+    }
     gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
-    gosuCompile.setDescription("Compiles the " + sourceSet.getName() + " Gosu source");
-    gosuCompile.setSource(gosuSourceSet.getGosu());
+    gosuCompile.setSource((Object) gosuSourceSet.getGosu()); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
 
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
