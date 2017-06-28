@@ -60,6 +60,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    * @return The classpath.
    */
   @Classpath
+  @InputFiles
   public FileCollection getClasspath() {
     return _classpath;
   }
@@ -74,6 +75,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    */
   @Override
   @Classpath
+  @InputFiles
   public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }

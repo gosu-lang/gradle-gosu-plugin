@@ -12,6 +12,7 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.CompileClasspath;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -82,6 +83,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
    */
   @Override
   @Classpath
+  @InputFiles
   public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
