@@ -73,7 +73,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    * @return the classpath to use to load the gosudoc tool.
    */
   @Override
-  @InputFiles
+  @Classpath
   public Closure<FileCollection> getGosuClasspath() {
     return _gosuClasspath;
   }
