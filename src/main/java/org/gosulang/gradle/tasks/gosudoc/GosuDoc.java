@@ -12,7 +12,6 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceTask;
@@ -21,7 +20,6 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 
 @CacheableTask
-@ParallelizableTask
 public class GosuDoc extends SourceTask implements InfersGosuRuntime {
 
   private FileCollection _classpath;
