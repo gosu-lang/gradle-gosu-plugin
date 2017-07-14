@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 sed -i '/testedVersions =/d' ./gradle.properties
 str=`grep 'testedVersionsCI' gradle.properties|awk -F "=" '{print $2}'`
-IFS=', ' read -r -a arr <<< "$str"
+
+arr=(`echo $str|sed 's/, /\n/g'`)
 
 echo "Array...${arr[@]}"
 size=${#arr[@]}
