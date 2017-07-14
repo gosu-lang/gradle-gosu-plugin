@@ -17,7 +17,7 @@ general:
 
 test:
   override:
-      - sh ./runTestP.sh:
+      - bash ./runTestP.sh:
           parallel: true
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
