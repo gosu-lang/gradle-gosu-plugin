@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 sed -i '/testedVersions =/d' ./gradle.properties
 str=`grep 'testedVersionsCI' gradle.properties|awk -F "=" '{print $2}'`
 
