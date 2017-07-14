@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+sed -i '/testedVersions =/d' ./aa.txt
 str=`grep 'testedVersionsCI' gradle.properties|awk -F "=" '{print $2}'`
 IFS=', ' read -r -a arr <<< "$str"
 
