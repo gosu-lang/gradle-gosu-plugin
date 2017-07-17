@@ -6,7 +6,7 @@ machine:
       oraclejdk8
   environment:
     TERM: dumb
-    GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
+    GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m
 
 general:
   branches:

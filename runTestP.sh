@@ -5,7 +5,7 @@ str=`grep 'testedVersionsCI' gradle.properties|awk -F "=" '{print $2}'`
 
 arr=(`echo $str|sed 's/, /\n/g'`)
 
-echo "Array...${arr[@]}"
+#echo "Array...${arr[@]}"
 size=${#arr[@]}
 
 let nt=${CIRCLE_NODE_TOTAL}
@@ -29,6 +29,7 @@ else
 fi
 
 var=$(IFS=','; echo "${new[*]}")
+echo "Gradle versions on this container are...$var"
 
 echo "testedVersions=$var">>gradle.properties
 
