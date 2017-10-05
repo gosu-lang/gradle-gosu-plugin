@@ -4,7 +4,10 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
+import org.gradle.util.VersionNumber
 import spock.lang.Unroll
+
+import java.util.regex.Pattern
 
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -82,12 +85,20 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         then:
         notThrown(UnexpectedBuildSuccess)
         result.task(':compileGosu').outcome == FAILED
-        result.output.contains('Executing task \':compileGosu\'')
+        result.output.matches(skipUpToDateTaskExecuterExpectedOutput(gradleVersion))
         result.output.contains('/src/main/gosu/B.gs has changed.')
         result.output.contains('[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
         
         where:
         gradleVersion << gradleVersionsToTest
+    }
+
+    Closure<Pattern> skipUpToDateTaskExecuterExpectedOutput = { String gradleVersion ->
+        String regex = '.*Executing task \':compileGosu\'.*'
+        if(VersionNumber.parse(gradleVersion) > VersionNumber.parse('4.3')) {
+            regex = '.*Up-to-date check for task \':compileGosu\' took \\d+.\\d+ secs. It is not up-to-date because:.*'
+        }
+        return Pattern.compile(regex, Pattern.DOTALL)
     }
 
 }

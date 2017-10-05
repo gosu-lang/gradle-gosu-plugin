@@ -8,6 +8,7 @@ import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
@@ -21,7 +22,9 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
+import org.gradle.util.VersionNumber;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,8 +40,18 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
-  private final CompileOptions _compileOptions = new CompileOptions();
+  private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
+
+  @Inject
+  public GosuCompile() {
+    VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
+    if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
+      _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
+    } else {
+      _compileOptions = new CompileOptions();
+    }
+  }
 
   @Override
   @TaskAction
