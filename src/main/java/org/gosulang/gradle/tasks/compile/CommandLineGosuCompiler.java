@@ -1,9 +1,11 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
+import org.gradle.api.GradleException;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
+import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
@@ -17,6 +19,8 @@ import org.gradle.util.GUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -131,7 +135,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     fileOutput.add("-sourcepath");
     fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getSourceRoots())));
 
-    if(!spec.getCompileOptions().isWarnings()) {
+    if(!isWarnings(spec)) {
       fileOutput.add("-nowarn");
     }
 
@@ -156,6 +160,23 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     Files.write(tempFile.toPath(), fileOutput, StandardCharsets.UTF_8);
 
     return tempFile;
+  }
+
+  /**
+   * <p>Internal API change in 4.3+; return type of getCompileOptions() changes
+   * <p>This helper method will call isWarnings() reflectively
+   * @param spec An implementation of JavaCompileSpec (most likely DefaultGosuCompileSpec)
+   * @return true if isWarnings() is true, false otherwise
+   */
+  private boolean isWarnings(JavaCompileSpec spec) {
+    try {
+      Method getCompileOptions = spec.getClass().getMethod("getCompileOptions");
+      Object compileOptions = getCompileOptions.invoke(spec);
+      Method isWarnings = compileOptions.getClass().getMethod("isWarnings");
+      return (boolean) isWarnings.invoke(compileOptions);
+    } catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      throw new GradleException("Unable to apply Gosu plugin", e);
+    }
   }
   
 }
