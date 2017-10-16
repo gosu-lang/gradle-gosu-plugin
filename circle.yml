@@ -16,6 +16,9 @@ general:
     - "build/reports/tests" # preserve the generated HTML test reports
 
 test:
+  override:
+      - sh ./runTestParallel.sh:
+          parallel: true
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
