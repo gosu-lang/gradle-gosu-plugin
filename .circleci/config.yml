@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    environment:
+      TZ: "/usr/share/zoneinfo/America/Los_Angeles"
+      TERM: dumb
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
+    docker:
+      - image: circleci/java:8
+    steps:
+      - checkout
+      - run: 
+          name: Compile source and tests
+          command: ./gradlew testClasses
+      - run: 
+          name: Run tests
+          command: ./gradlew check
+      - store_test_results:
+          path: build/reports/tests
+
