@@ -20,8 +20,8 @@ jobs:
       - save_cache:
           key: v1-{{ checksum "build.gradle" }}
           paths:
-            - /home/ubuntu/.gradle/caches/modules-2
-            - /home/ubuntu/.gradle/wrapper/dists
+            - /home/circleci/.gradle/caches/modules-2
+            - /home/circleci/.gradle/wrapper/dists
       - store_test_results:
           path: build/reports/tests
 
