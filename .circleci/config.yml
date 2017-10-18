@@ -26,7 +26,6 @@ jobs:
     steps:
       - checkout
       - run:
-	- type: shell
           name: Run tests
           command: ./runParallel.sh
       - store_test_results:
