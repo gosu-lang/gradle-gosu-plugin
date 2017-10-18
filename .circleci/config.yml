@@ -1,0 +1,39 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    environment:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
+      TERM: dumb
+      TZ: /usr/share/zoneinfo/America/Los_Angeles
+
+    branches:
+      ignore:
+        - /rel\/.*/
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "build.gradle" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run:
+          name: Run tests
+          command: ./gradlew check
+      - deploy:
+          name: Upload artifacts
+          command: |
+            if [ -z ${CI_PULL_REQUEST} ]; then
+                ./gradlew uploadArchives
+            fi
+      - store_artifacts:
+          path: ~/project/build/reports/tests
+      - store_test_results:
+          path: ~/project/build/test-results/test
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
