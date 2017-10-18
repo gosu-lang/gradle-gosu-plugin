@@ -32,4 +32,4 @@ echo "Gradle versions on this container are...$ver"
 
 echo "testedVersions=$ver">>gradle.properties
 
-./gradlew test
+./gradlew check --no-daemon
