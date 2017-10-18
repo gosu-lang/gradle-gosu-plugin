@@ -22,29 +22,20 @@ jobs:
   test:
     docker:
       - image: circleci/java:8
-    steps:
-      - checkout
-      - run:
-          name: Run tests
-          command: ./gradlew check
-      - store_test_results:
-          path: build/reports/tests
-  test1:
-    docker:
-      - image: circleci/java:8
     parallelism: 3
     steps:
       - checkout
       - run:
-	  - type: shell
-	    command: |
-	    circleci tests glob "src/test/groovy/org/gosulang/gradle/**/*.groovy" | xargs -n 1 echo
-
+	- type: shell
+          name: Run tests
+          command: ./runParallel.sh
+      - store_test_results:
+          path: build/reports/tests
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
-      - test1:
+      - test:
           requires:
             - build
