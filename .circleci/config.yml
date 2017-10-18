@@ -20,6 +20,8 @@ jobs:
             - /home/circleci/.gradle/caches/modules-2
             - /home/circleci/.gradle/wrapper/dists
   test:
+    docker:
+      - image: circleci/java:8
     steps:
       - checkout
       - run:
