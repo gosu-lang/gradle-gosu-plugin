@@ -10,7 +10,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "build.gradle" }}
+          key: v1-test-{{ checksum "build.gradle" }}
       - run: 
           name: Compile source and tests
           command: ./gradlew testClasses
@@ -18,7 +18,7 @@ jobs:
           name: Run tests
           command: ./gradlew check
       - save_cache:
-          key: v1-{{ checksum "build.gradle" }}
+          key: v1-test-{{ checksum "build.gradle" }}
           paths:
             - /home/circleci/.gradle/caches/modules-2
             - /home/circleci/.gradle/wrapper/dists
