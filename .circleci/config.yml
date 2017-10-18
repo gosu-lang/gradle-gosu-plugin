@@ -9,12 +9,19 @@ jobs:
       - image: circleci/java:8
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "build.gradle" }}
       - run: 
           name: Compile source and tests
           command: ./gradlew testClasses
       - run: 
           name: Run tests
           command: ./gradlew check
+      - save_cache:
+          key: v1-{{ checksum "build.gradle" }}
+          paths:
+            - /home/ubuntu/.gradle/caches/modules-2
+            - /home/ubuntu/.gradle/wrapper/dists
       - store_test_results:
           path: build/reports/tests
 
