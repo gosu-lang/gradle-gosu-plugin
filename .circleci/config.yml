@@ -14,14 +14,25 @@ jobs:
       - run: 
           name: Compile source and tests
           command: ./gradlew testClasses
-      - run: 
-          name: Run tests
-          command: ./gradlew check
       - save_cache:
           key: v1-test-{{ checksum "build.gradle" }}
           paths:
             - /home/circleci/.gradle/caches/modules-2
             - /home/circleci/.gradle/wrapper/dists
+  test:
+    steps:
+      - checkout
+      - run:
+          name: Run tests
+          command: ./gradlew check
       - store_test_results:
           path: build/reports/tests
 
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
