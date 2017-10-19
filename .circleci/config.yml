@@ -22,7 +22,7 @@ jobs:
   test:
     docker:
       - image: circleci/java:8
-    parallelism: 3
+    parallelism: 4
     steps:
       - checkout
       - run:
