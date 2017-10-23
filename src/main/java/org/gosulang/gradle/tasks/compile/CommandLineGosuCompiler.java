@@ -103,7 +103,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
 
     //respect JAVA_OPTS, if it exists
     String JAVA_OPTS = System.getenv("JAVA_OPTS");
-    if(JAVA_OPTS != null) {
+    if(JAVA_OPTS != null && !JAVA_OPTS.isEmpty()) {
       args.add(JAVA_OPTS);
     }
 
