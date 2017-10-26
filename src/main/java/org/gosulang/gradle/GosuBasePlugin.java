@@ -97,6 +97,7 @@ public class GosuBasePlugin implements Plugin<Project> {
           throw new GradleException("Unable to apply Gosu plugin", e);
       }
     } else {
+      //noinspection deprecation
       javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
       gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
     }

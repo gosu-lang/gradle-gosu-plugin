@@ -23,6 +23,7 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.util.VersionNumber;
+import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -35,6 +36,7 @@ import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
 @CacheableTask
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
+  protected WorkerExecutor _workerExecutor;
 
   private Compiler<DefaultGosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
@@ -43,8 +45,17 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
 
+  /**
+   * Only used by Gradle 3.5+
+   * @param workerExecutor
+   */
   @Inject
-  public GosuCompile() {
+  public GosuCompile(WorkerExecutor workerExecutor) {
+    this();
+    _workerExecutor = workerExecutor;
+  }
+    
+  public GosuCompile() {    
     VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
     if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
@@ -196,7 +207,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   private Compiler<DefaultGosuCompileSpec> getCompiler(DefaultGosuCompileSpec spec) {
     if(_compiler == null) {
       ProjectInternal projectInternal = (ProjectInternal) getProject();
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath());
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), _workerExecutor);
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
