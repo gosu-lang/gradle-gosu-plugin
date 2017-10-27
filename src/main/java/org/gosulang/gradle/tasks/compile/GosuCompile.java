@@ -44,6 +44,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
+  private final VersionNumber _gradleVersion;
 
   /**
    * Only used by Gradle 3.5+
@@ -56,8 +57,8 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
     
   public GosuCompile() {    
-    VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
-    if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
+    _gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
+    if(_gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
     } else {
       _compileOptions = new CompileOptions();
@@ -207,7 +208,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   private Compiler<DefaultGosuCompileSpec> getCompiler(DefaultGosuCompileSpec spec) {
     if(_compiler == null) {
       ProjectInternal projectInternal = (ProjectInternal) getProject();
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), _workerExecutor);
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath(), _gradleVersion, _workerExecutor);
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;

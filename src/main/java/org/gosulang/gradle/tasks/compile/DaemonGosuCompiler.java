@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
@@ -43,10 +44,9 @@ public class DaemonGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
       wc.setDisplayName("Daemonized gosuc");
 
       List<String> args = CommandLineGosuCompiler.formatSpecAsListOfStringArguments(spec);
-      wc.setParams(args);
-      if(LOGGER.isInfoEnabled()) {
-        LOGGER.info("Invoking gosuc with arguments: " + args.toString());
-      }
+      
+      wc.setParams(_projectName, spec.getGosuCompileOptions().isFailOnError(), args);
+      LOGGER.info("Invoking gosuc with arguments: " + args.toString());
 
       wc.setClasspath(spec.getGosuClasspath().call().plus(_project.files(Jvm.current().getToolsJar())));
 
@@ -54,7 +54,6 @@ public class DaemonGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
         setJvmArgs(spec, javaForkOptions);
         //javaForkOptions.setJvmArgs(Arrays.asList("-Xdebug", "-Xrunjdwp:transport=dt_socket,address=5006,server=y,suspend=y"));
       });
-      
       wc.setIsolationMode(mode);
     });
     
@@ -66,11 +65,8 @@ public class DaemonGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
   private void setJvmArgs( DefaultGosuCompileSpec spec, JavaForkOptions forkOptions) {
     setMemoryBounds(spec.getGosuCompileOptions().getForkOptions(), forkOptions);
     
-    //TODO if gw, set compiler.type=gw
-//    if("gw".equals( System.getProperty( "compiler.type" ) )) {
-      forkOptions.systemProperty("compiler.type", "gw");
-//    }
-
+    forkOptions.jvmArgs(spec.getGosuCompileOptions().getForkOptions().getJvmArgs()); //TODO confirm if gw, set compiler.type=gw
+    
     //respect JAVA_OPTS, if it exists
     final String JAVA_OPTS = "JAVA_OPTS";
     String javaOpts = System.getenv(JAVA_OPTS);
