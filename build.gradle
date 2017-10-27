@@ -43,7 +43,6 @@ repositories {
 
 dependencies {
     compile     gradleApi()
-    compile "org.gosu-lang.gosu:gosu-core-api:$gosuVersion" //TODO don't checkin with compile dep
     
     testCompile 'junit:junit:4.12'
     testCompile 'org.easytesting:fest-assert:1.3'
