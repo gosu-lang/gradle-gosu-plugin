@@ -12,7 +12,7 @@ public class WorkerAwareGosuCompile extends GosuCompile {
   protected WorkerExecutor _workerExecutor;
 
   /**
-   * Only used by Gradle 3.5+
+   * Only used by Gradle 4.0+
    * @param workerExecutor
    */
   @Inject

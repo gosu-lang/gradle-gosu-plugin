@@ -42,10 +42,10 @@ public class WorkerAwareGosuCompilerFactory extends GosuCompilerFactory {
   }
 
   /**
-   * Worker API requires Gradle 3.5+ and Gosu 1.14.7+
+   * Worker API requires Gradle 4.0+ and Gosu 1.14.7+
    */
   private boolean isWorkerApiCapable(VersionNumber gradleVersion, VersionNumber gosuVersion) {
-    return gradleVersion.compareTo(VersionNumber.parse("3.5")) >= 0 &&
+    return gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0 &&
         gosuVersion.compareTo(VersionNumber.parse("1.14.7")) >= 0;
   }
 

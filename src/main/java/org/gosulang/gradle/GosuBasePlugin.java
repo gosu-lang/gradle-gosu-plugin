@@ -88,16 +88,11 @@ public class GosuBasePlugin implements Plugin<Project> {
 
     VersionNumber gradleVersion = VersionNumber.parse(_project.getGradle().getGradleVersion());
 
-    // get Gradle version number, then create appropriate Task
     GosuCompile gosuCompile;
-    if(gradleVersion.compareTo(VersionNumber.parse("3.5")) >= 0) {
-      gosuCompile = _project.getTasks().create(compileTaskName, WorkerAwareGosuCompile.class);
-    } else {
-      gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
-    }
 
+    // get Gradle version number, then create appropriate Task
     if(gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0) {
-      //Gradle 4.0+
+      gosuCompile = _project.getTasks().create(compileTaskName, WorkerAwareGosuCompile.class);
       try {
         Class<?> sourceSetUtil = Class.forName("org.gradle.api.plugins.internal.SourceSetUtil");
         Method configureForSourceSet = sourceSetUtil.getDeclaredMethod("configureForSourceSet", SourceSet.class, SourceDirectorySet.class, AbstractCompile.class, Project.class);
@@ -106,6 +101,7 @@ public class GosuBasePlugin implements Plugin<Project> {
           throw new GradleException("Unable to apply Gosu plugin", e);
       }
     } else {
+      gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
       //noinspection deprecation
       javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
       gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
