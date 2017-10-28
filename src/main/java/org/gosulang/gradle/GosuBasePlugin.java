@@ -4,6 +4,7 @@ import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
+import org.gosulang.gradle.tasks.compile.WorkerAwareGosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -84,9 +85,17 @@ public class GosuBasePlugin implements Plugin<Project> {
    */
   private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
-    GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
 
     VersionNumber gradleVersion = VersionNumber.parse(_project.getGradle().getGradleVersion());
+
+    // get Gradle version number, then create appropriate Task
+    GosuCompile gosuCompile;
+    if(gradleVersion.compareTo(VersionNumber.parse("3.5")) >= 0) {
+      gosuCompile = _project.getTasks().create(compileTaskName, WorkerAwareGosuCompile.class);
+    } else {
+      gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
+    }
+
     if(gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0) {
       //Gradle 4.0+
       try {
