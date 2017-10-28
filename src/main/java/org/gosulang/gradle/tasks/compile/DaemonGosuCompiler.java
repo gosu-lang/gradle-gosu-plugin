@@ -59,7 +59,7 @@ public class DaemonGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
     
     //_workerExecutor.await();
     
-    return WorkResults.didWork(true);
+    return () -> true; // "WorkResults.didWork(true)" is better, but not available in 4.0, 4.1
   }
   
   private void setJvmArgs( DefaultGosuCompileSpec spec, JavaForkOptions forkOptions) {

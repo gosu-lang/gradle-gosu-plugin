@@ -104,7 +104,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       LOGGER.info(String.format("%s completed successfully.", _projectName.isEmpty() ? "gosuc" : _projectName));
     }
     
-    return new SimpleWorkResult(true); //TODO Refactor for 4.2 and above
+    return () -> true;
   }
 
   private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
