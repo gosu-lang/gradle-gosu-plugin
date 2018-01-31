@@ -95,7 +95,9 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
 
     Closure<Pattern> skipUpToDateTaskExecuterExpectedOutput = { String gradleVersion ->
         String regex = '.*Executing task \':compileGosu\'.*'
-        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.3')) {
+        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.5')) {
+            regex = '.*Task \':compileGosu\' is not up-to-date because:.*'
+        } else if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.3')) {
             regex = '.*Up-to-date check for task \':compileGosu\' took \\d+.\\d+ secs. It is not up-to-date because:.*'
         }
         return Pattern.compile(regex, Pattern.DOTALL)
