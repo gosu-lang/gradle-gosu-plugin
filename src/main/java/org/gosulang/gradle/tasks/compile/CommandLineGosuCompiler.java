@@ -3,7 +3,6 @@ package org.gosulang.gradle.tasks.compile;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gradle.api.GradleException;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.SimpleWorkResult;
 import org.gradle.api.internal.tasks.compile.CompilationFailedException;
 import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
 import org.gradle.api.logging.Logger;
@@ -87,8 +86,8 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       LOGGER.info(stderr.toString());
       LOGGER.info(String.format("%s completed successfully.", _projectName.isEmpty() ? "gosuc" : _projectName));
     }
-    
-    return new SimpleWorkResult(true);
+
+    return () -> true;
   }
 
   private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
