@@ -2,6 +2,7 @@ package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
@@ -26,6 +27,7 @@ import org.gradle.util.VersionNumber;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -49,7 +51,12 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
     } else {
-      _compileOptions = new CompileOptions();
+      try {
+        Constructor ctor = CompileOptions.class.getConstructor();
+        _compileOptions = (CompileOptions) ctor.newInstance();
+      } catch (ReflectiveOperationException e) {
+        throw new GradleException("Unable to apply Gosu plugin", e);
+      }
     }
   }
 
