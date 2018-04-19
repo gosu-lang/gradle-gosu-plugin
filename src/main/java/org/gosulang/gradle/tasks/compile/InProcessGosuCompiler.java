@@ -1,12 +1,9 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.file.FileTree;
-import org.gradle.api.internal.tasks.compile.CompilationFailedException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
-import org.gradle.language.base.internal.compile.Compiler;
-import org.gradle.workers.internal.DefaultWorkResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,12 +20,12 @@ import java.util.stream.Collectors;
  * @deprecated Use CommandLineGosuCompiler instead
  */
 @Deprecated
-public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
+public class InProcessGosuCompiler implements GosuCompiler<GosuCompileSpec> {
 
   private static final Logger LOGGER = Logging.getLogger(InProcessGosuCompiler.class);
 
   @Override
-  public WorkResult execute( DefaultGosuCompileSpec spec ) {
+  public WorkResult execute( GosuCompileSpec spec ) {
     LOGGER.info("Initializing Gosu compiler...");
 
     Class<?> driverIF = null;
@@ -198,13 +195,14 @@ public class InProcessGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
 
     if(errorsInCompilation) {
       if(spec.getCompileOptions().isFailOnError()) {
-        throw new CompilationFailedException();
+        throw new GosuCompilationFailedException();
       } else {
         LOGGER.info("Gosu Compiler: Ignoring compilation failure as 'failOnError' was set to false");
       }
     }
 
-    return new DefaultWorkResult(didWork, null);
+    boolean finalDidWork = didWork;
+    return () -> finalDidWork;
   }
 
   /**

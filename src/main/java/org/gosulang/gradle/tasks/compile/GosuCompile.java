@@ -7,7 +7,6 @@ import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
@@ -22,7 +21,6 @@ import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
-import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.util.VersionNumber;
 
 import javax.inject.Inject;
@@ -38,7 +36,7 @@ import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 @CacheableTask
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
-  private Compiler<DefaultGosuCompileSpec> _compiler;
+  private GosuCompiler<GosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
@@ -200,10 +198,9 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return spec;
   }
 
-  private Compiler<DefaultGosuCompileSpec> getCompiler(DefaultGosuCompileSpec spec) {
+  private GosuCompiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
     if(_compiler == null) {
-      ProjectInternal projectInternal = (ProjectInternal) getProject();
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(projectInternal, this.getPath());
+      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(getProject(), this.getPath());
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;

@@ -1,13 +1,13 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
+import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.compile.ForkOptions;
-import org.gradle.internal.jvm.Jvm;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.tooling.BuildException;
@@ -73,7 +73,7 @@ public class CommandLineGosuDoc {
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    FileCollection jointClasspath = _project.files(Jvm.current().getToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
+    FileCollection jointClasspath = _project.files(Util.findToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
 
     // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
     File classpathJar;

@@ -1,23 +1,21 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.language.base.internal.compile.Compiler;
-import org.gradle.language.base.internal.compile.CompilerFactory;
+import org.gradle.api.Project;
 
-public class GosuCompilerFactory implements CompilerFactory<DefaultGosuCompileSpec> {
+public class GosuCompilerFactory implements IGosuCompilerFactory<GosuCompileSpec> {
 
-  private final ProjectInternal _project;
+  private final Project _project;
   private final String _taskPath;
 
-  public GosuCompilerFactory(ProjectInternal project, String forTask) {
+  public GosuCompilerFactory(Project project, String forTask) {
     _project = project;
     _taskPath = forTask;
   }
 
   @Override
-  public Compiler<DefaultGosuCompileSpec> newCompiler( DefaultGosuCompileSpec spec ) {
+  public GosuCompiler<GosuCompileSpec> newCompiler( GosuCompileSpec spec ) {
     GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
-    Compiler<DefaultGosuCompileSpec> gosuCompiler;
+    GosuCompiler<GosuCompileSpec> gosuCompiler;
     if(gosuOptions.isFork()) {
       gosuCompiler = new CommandLineGosuCompiler(_project, spec, _taskPath);
     } else {

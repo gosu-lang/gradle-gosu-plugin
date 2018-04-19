@@ -5,10 +5,10 @@ import org.gradle.api.Buildable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
-import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
-import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
+import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection; //TODO unavoidable use of internal API
+import org.gradle.api.internal.tasks.TaskDependencyResolveContext; //TODO unavoidable use of internal API
 import org.gradle.util.VersionNumber;
 
 import java.io.File;
@@ -89,8 +89,9 @@ public class GosuRuntime {
               throw new GradleException(String.format("Please declare a dependency on Gosu version 1.13.9, 1.14.2 or greater. Found: %s", gosuCoreApiRawVersion));
             }
 
-            return _project.getConfigurations().detachedConfiguration(
-                new DefaultExternalModuleDependency("org.gosu-lang.gosu", "gosu-doc", gosuCoreApiRawVersion));
+            Configuration detachedConfiguration = _project.getConfigurations().detachedConfiguration();
+            detachedConfiguration.getDependencies().add(_project.getDependencies().create("org.gosu-lang.gosu:gosu-doc:" + gosuCoreApiRawVersion));
+            return detachedConfiguration;
           }
 
           // let's override this so that delegate isn't created at autowiring time (which would mean on every build)

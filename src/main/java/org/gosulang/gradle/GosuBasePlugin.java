@@ -1,28 +1,27 @@
 package org.gosulang.gradle;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
-import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.file.SourceDirectorySetFactory;
-import org.gradle.api.internal.plugins.DslObject;
-import org.gradle.api.internal.tasks.DefaultSourceSet;
+import org.gradle.api.internal.file.SourceDirectorySetFactory; //TODO unavoidable use of internal API
+import org.gradle.api.internal.tasks.DefaultSourceSetOutput; //TODO unavoidable use of internal API, needed to access DSSO#addClassesDir
+import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.AbstractCompile;
+import org.gradle.internal.Cast; //TODO unavoidable use of internal API, needed to access DSSO#addClassesDir
 import org.gradle.util.VersionNumber;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public class GosuBasePlugin implements Plugin<Project> {
   public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
@@ -65,8 +64,10 @@ public class GosuBasePlugin implements Plugin<Project> {
 
   private void configureSourceSetDefaults(final JavaBasePlugin javaBasePlugin) {
     _project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().all(sourceSet -> {
-      GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), _sourceDirectorySetFactory);
-      new DslObject(sourceSet).getConvention().getPlugins().put("gosu", gosuSourceSet);
+      GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _sourceDirectorySetFactory);
+
+      Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
+      sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
 
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
 
@@ -79,7 +80,8 @@ public class GosuBasePlugin implements Plugin<Project> {
   }
 
   /**
-   * Gradle 4.0+: call o.g.a.p.i.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project)
+   * Create and configure default compileGosu and compileTestGosu tasks
+   * Gradle 4.0+: call local equivalent of o.g.a.p.i.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project)
    * Gradle 2.x, 3.x: call javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
    */
   private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
@@ -89,13 +91,7 @@ public class GosuBasePlugin implements Plugin<Project> {
     VersionNumber gradleVersion = VersionNumber.parse(_project.getGradle().getGradleVersion());
     if(gradleVersion.compareTo(VersionNumber.parse("4.0")) >= 0) {
       //Gradle 4.0+
-      try {
-        Class<?> sourceSetUtil = Class.forName("org.gradle.api.plugins.internal.SourceSetUtil");
-        Method configureForSourceSet = sourceSetUtil.getDeclaredMethod("configureForSourceSet", SourceSet.class, SourceDirectorySet.class, AbstractCompile.class, Project.class);
-        configureForSourceSet.invoke(null, sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
-      } catch(ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-          throw new GradleException("Unable to apply Gosu plugin", e);
-      }
+      configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
     } else {
       javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
       gosuCompile.setDescription("Compiles the " + gosuSourceSet.getGosu() + ".");
@@ -113,6 +109,28 @@ public class GosuBasePlugin implements Plugin<Project> {
       gosudoc.getConventionMapping().map("title", () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
       //gosudoc.getConventionMapping().map("windowTitle", (Callable<Object>) () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
     });
+  }
+
+  private static void configureForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, AbstractCompile compile, final Project target) {
+    compile.setDescription("Compiles the " + sourceDirectorySet.getDisplayName() + ".");
+    compile.setSource(sourceSet.getJava());
+    compile.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath().plus(target.files(sourceSet.getJava().getOutputDir())));
+    configureOutputDirectoryForSourceSet(sourceSet, sourceDirectorySet, compile, target);
+  }
+
+  private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, AbstractCompile compile, final Project target) {
+    final String sourceSetChildPath = "classes/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
+    sourceDirectorySet.setOutputDir(target.provider(() -> {
+      if (sourceSet.getOutput().isLegacyLayout()) {
+        return sourceSet.getOutput().getClassesDir();
+      }
+      return new File(target.getBuildDir(), sourceSetChildPath);
+    }));
+
+    DefaultSourceSetOutput sourceSetOutput = Cast.cast(DefaultSourceSetOutput.class, sourceSet.getOutput());
+    sourceSetOutput.addClassesDir(sourceDirectorySet::getOutputDir);
+
+    compile.setDestinationDir(target.provider(sourceDirectorySet::getOutputDir));
   }
 
 }

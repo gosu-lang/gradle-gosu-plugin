@@ -1,11 +1,12 @@
 package org.gosulang.gradle;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.internal.plugins.DslObject;
+import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -50,7 +51,9 @@ public class GosuPlugin implements Plugin<Project> {
     SourceSet sourceSet = convention.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
     gosuDoc.setClasspath(sourceSet.getOutput().plus(sourceSet.getCompileClasspath()));
 
-    GosuSourceSet gosuSourceSet = new DslObject(sourceSet).getConvention().getPlugin(GosuSourceSet.class);
+    Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
+    GosuSourceSet gosuSourceSet = sourceSetConvention.getPlugin(GosuSourceSet.class);
+
     gosuDoc.setSource((Object) gosuSourceSet.getGosu());  // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
   }
 

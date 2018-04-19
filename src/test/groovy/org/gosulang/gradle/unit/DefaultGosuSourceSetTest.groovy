@@ -1,6 +1,7 @@
 package org.gosulang.gradle.unit
 
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet
+import org.gosulang.gradle.tasks.GosuSourceSet
 import org.gradle.api.Action
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.file.DefaultFileLookup
@@ -21,7 +22,7 @@ import static spock.util.matcher.HamcrestSupport.expect
 
 class DefaultGosuSourceSetTest extends Specification {
 
-    private DefaultGosuSourceSet sourceSet
+    private GosuSourceSet sourceSet
     
     @Rule
     public final TemporaryFolder _testProjectDir = new TemporaryFolder()
@@ -37,13 +38,13 @@ class DefaultGosuSourceSetTest extends Specification {
         expect:
         sourceSet.gosu instanceof DefaultSourceDirectorySet
         expect sourceSet.gosu, emptyIterable()
-        sourceSet.gosu.displayName == '<set-display-name> Gosu source'
+        sourceSet.gosu.displayName == 'set display name Gosu source'
         expect sourceSet.gosu.filter.includes, equalTo(['**/*.java', '**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
         expect sourceSet.gosu.filter.excludes, empty()
 
         sourceSet.allGosu instanceof DefaultSourceDirectorySet
         expect sourceSet.allGosu, emptyIterable()
-        sourceSet.allGosu.displayName == '<set-display-name> Gosu source'
+        sourceSet.allGosu.displayName == 'set display name Gosu source'
         sourceSet.allGosu.source.contains(sourceSet.gosu)
         expect sourceSet.allGosu.filter.includes, equalTo(['**/*.gs', '**/*.gsx', '**/*.gst', '**/*.gsp'] as Set)
         expect sourceSet.allGosu.filter.excludes, empty()

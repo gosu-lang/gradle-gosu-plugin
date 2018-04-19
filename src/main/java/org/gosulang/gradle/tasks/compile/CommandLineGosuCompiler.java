@@ -1,16 +1,12 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
-import org.gradle.api.GradleException;
-import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.CompilationFailedException;
-import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
+import org.gosulang.gradle.tasks.Util;
+import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.ForkOptions;
-import org.gradle.internal.jvm.Jvm;
-import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
@@ -18,28 +14,26 @@ import org.gradle.util.GUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec> {
+public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuCompiler.class);
   
-  private final ProjectInternal _project;
-  private final DefaultGosuCompileSpec _spec;
+  private final Project _project;
+  private final GosuCompileSpec _spec;
   private final String _projectName;
   
-  public CommandLineGosuCompiler( ProjectInternal project, DefaultGosuCompileSpec spec, String projectName ) {
+  public CommandLineGosuCompiler(Project project, GosuCompileSpec spec, String projectName ) {
     _project = project;
     _spec = spec;
     _projectName = projectName;
   }
   
   @Override
-  public WorkResult execute( DefaultGosuCompileSpec spec ) {
+  public WorkResult execute( GosuCompileSpec spec ) {
     String startupMsg = "Initializing gosuc compiler";
     if(_projectName.isEmpty()) {
       startupMsg += " for " + _projectName;
@@ -54,7 +48,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       gosucArgs.add("@" + argFile.getCanonicalPath().replace(File.separatorChar, '/'));
     } catch (IOException e) {
       LOGGER.error("Error creating argfile with gosuc arguments");
-      throw new CompilationFailedException(e);
+      throw new GosuCompilationFailedException(e);
     }
     
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
@@ -64,7 +58,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
-          .setClasspath(spec.getGosuClasspath().call().plus(_project.files(Jvm.current().getToolsJar())))
+          .setClasspath(spec.getGosuClasspath().call().plus(_project.files(Util.findToolsJar())))
           .setArgs((Iterable<?>) gosucArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
@@ -79,7 +73,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
       if(!_spec.getGosuCompileOptions().isFailOnError()) {
         LOGGER.quiet(String.format("%s completed with errors, but ignoring as 'gosuOptions.failOnError = false' was specified.", _projectName.isEmpty() ? "gosuc" : _projectName));
       } else {
-        throw new CompilationFailedException(exitCode);
+        throw new GosuCompilationFailedException(exitCode);
       }
     } else {
       LOGGER.info(stdout.toString());
@@ -115,7 +109,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     spec.setJvmArgs((Iterable<?>) args); // Gradle 4.0 overloads JavaForkOptions#setJvmArgs; must upcast to Iterable<?> for backwards compatibility
   }
   
-  private File createArgFile(DefaultGosuCompileSpec spec) throws IOException {
+  private File createArgFile(GosuCompileSpec spec) throws IOException {
     File tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments", spec.getTempDir());
 
     List<String> fileOutput = new ArrayList<>();
@@ -134,7 +128,7 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     fileOutput.add("-sourcepath");
     fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getSourceRoots())));
 
-    if(!isWarnings(spec)) {
+    if(!spec.getCompileOptions().isWarnings()) {
       fileOutput.add("-nowarn");
     }
 
@@ -161,22 +155,5 @@ public class CommandLineGosuCompiler implements Compiler<DefaultGosuCompileSpec>
     return tempFile;
   }
 
-  /**
-   * <p>Internal API change in 4.3+; return type of getCompileOptions() changes
-   * <p>This helper method will call isWarnings() reflectively
-   * @param spec An implementation of JavaCompileSpec (most likely DefaultGosuCompileSpec)
-   * @return true if isWarnings() is true, false otherwise
-   */
-  private boolean isWarnings(JavaCompileSpec spec) {
-    try {
-      Method getCompileOptions = spec.getClass().getMethod("getCompileOptions");
-      Object compileOptions = getCompileOptions.invoke(spec);
-      Method isWarnings = compileOptions.getClass().getMethod("isWarnings");
-      return (boolean) isWarnings.invoke(compileOptions);
-    } catch(NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-      throw new GradleException("Unable to apply Gosu plugin", e);
-    }
-  }
-  
 }
 
