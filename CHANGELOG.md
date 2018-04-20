@@ -1,18 +1,27 @@
 # Change Log
 
+## [v0.3.7](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.7) (2018-04-20)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.6...v0.3.7)
+
+**Implemented enhancements:**
+
+- Gosu plugin depends on Gradle-internal compiler architecture [\#39](https://github.com/gosu-lang/gradle-gosu-plugin/issues/39)
+- Deprecation warning with Gradle 4.2+ [\#38](https://github.com/gosu-lang/gradle-gosu-plugin/issues/38)
+
+**Fixed bugs:**
+
+- Gosu plugin depends on Gradle-internal compiler architecture [\#39](https://github.com/gosu-lang/gradle-gosu-plugin/issues/39)
+- Regression: Gosu 1.14.6 breaks \#25 [\#29](https://github.com/gosu-lang/gradle-gosu-plugin/issues/29)
+
 ## [v0.3.6](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.6) (2018-01-31)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.5...v0.3.6)
 
 **Fixed bugs:**
 
-- Deprecation warning with Gradle 4.2+ [\#38](https://github.com/gosu-lang/gradle-gosu-plugin/issues/38)
+- Gradle 4.3 will change API for `CompileOptions` [\#34](https://github.com/gosu-lang/gradle-gosu-plugin/issues/34)
 
 ## [v0.3.5](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.5) (2017-10-09)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.4...v0.3.5)
-
-**Fixed bugs:**
-
-- Gradle 4.3 will change API for `CompileOptions` [\#34](https://github.com/gosu-lang/gradle-gosu-plugin/issues/34)
 
 ## [v0.3.4](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.4) (2017-06-28)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.3...v0.3.4)
