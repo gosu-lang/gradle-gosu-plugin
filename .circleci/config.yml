@@ -24,10 +24,10 @@ jobs:
           name: Run tests
           command: ./gradlew check
       - deploy:
-          name: Upload artifacts
+          name: Publish artifacts
           command: |
             if [ -z ${CI_PULL_REQUEST} ]; then
-                ./gradlew uploadArchives
+                ./gradlew publish
             fi
       - store_artifacts:
           path: ~/project/build/reports/tests
