@@ -36,13 +36,15 @@ final boolean isSnapshot = project.version.endsWith('-SNAPSHOT')
 repositories {
     mavenLocal()
     maven {
+        url 'https://oss.jfrog.org/artifactory/libs-snapshot' //for Gosu snapshot builds
+    }
+    maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/' //for Gosu snapshot builds
     }
 	jcenter()
 }
 
 dependencies {
-    compile     gradleApi()
     testCompile 'junit:junit:4.12'
     testCompile 'org.easytesting:fest-assert:1.3'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
@@ -159,8 +161,8 @@ uploadArchives {
                 authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
             }
 
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
+            snapshotRepository(url: 'https://oss.jfrog.org/artifactory/oss-snapshot-local') {
+                authentication(userName: System.env.BINTRAY_USER, password: System.env.BINTRAY_API_KEY)
             }
 
             pom.project {
