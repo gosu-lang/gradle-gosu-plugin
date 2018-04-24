@@ -5,7 +5,10 @@ plugins {
     id 'com.gradle.plugin-publish' version '0.9.9'
 //    id 'com.jfrog.artifactory' version '4.7.1' //for publishing snapshots
 //    id 'com.jfrog.bintray' version '1.8.0' //for publishing releases
-    id 'maven-publish'
+//    id 'maven-publish'
+    id 'maven'
+    id 'signing'
+    id 'groovy'
     id 'java-gradle-plugin'
 }
 
@@ -140,7 +143,23 @@ release {
     }
 }
 
-afterReleaseBuild.dependsOn publish, publishPlugins
+afterReleaseBuild.dependsOn publishPlugins, uploadArchives
+//afterReleaseBuild.dependsOn publish, publishPlugins
+
+/**
+ * Only execute for release builds, which must be done locally.
+ * Store keyId, password, secretKeyRingFile in ~/.gradle/gradle.properties
+ */
+signing {
+    required { !isSnapshot && gradle.taskGraph.hasTask(':uploadArchives') }
+    sign configurations.archives
+}
+
+//publishing {
+//    repositories {
+//        maven { url '' }
+//    }
+//}
 
 //publishing.publications.maybeCreate('gosuPlugin') {
 //        from components.java
@@ -162,79 +181,79 @@ afterReleaseBuild.dependsOn publish, publishPlugins
 //}
 
 /* from 'maven' plugin */
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            beforeDeployment { MavenDeployment deployment -> if(!isSnapshot) { signing.signPom(deployment) } }
-//
-//            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-//                authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
-//            }
-//
-//            snapshotRepository(url: 'https://oss.jfrog.org/artifactory/libs-snapshot') {
-//                authentication(userName: System.env.BINTRAY_USER, password: System.env.BINTRAY_API_KEY)
-//            }
-//
-//            pom.project {
-//                name project.name
-//                packaging 'jar'
-//                description project.description
-//                url 'http://gosu-lang.github.io/'
-//
-//                scm {
-//                    connection 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
-//                    developerConnection 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
-//                    url 'git@github.com:gosu-lang/gosu-lang.git'
-//                }
-//
-//                licenses {
-//                    license {
-//                        name 'The Apache License, Version 2.0'
-//                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-//                    }
-//                }
-//
-//                developers {
-//                    developer {
-//                        name 'The Gosu Team'
-//                        email 'gosu.lang.team@gmail.com'
-//                        organization 'Guidewire'
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> if(!isSnapshot) { signing.signPom(deployment) } }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: System.env.ossrhUsername, password: System.env.ossrhPassword)
+            }
+
+            snapshotRepository(url: 'https://oss.jfrog.org/artifactory/oss-snapshot-local') {
+                authentication(userName: System.env.BINTRAY_USER, password: System.env.BINTRAY_API_KEY)
+            }
+
+            pom.project {
+                name project.name
+                packaging 'jar'
+                description project.description
+                url 'http://gosu-lang.github.io/'
+
+                scm {
+                    connection 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
+                    developerConnection 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
+                    url 'git@github.com:gosu-lang/gosu-lang.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name 'The Gosu Team'
+                        email 'gosu.lang.team@gmail.com'
+                        organization 'Guidewire'
+                    }
+                }
+            }
+        }
+    }
+}
 
 /**
  * Fetches the publishing credentials from the build machine's env vars
  * Necessitated by https://issues.gradle.org/browse/GRADLE-3281
  */
-//task setupPluginUpload {
-//
-//    onlyIf {
-//        !isSnapshot
-//    }
-//
-//    doLast {
-//        String key = System.env.gradlePublishKey
-//        String secret = System.env.gradlePublishSecret
-//
-//        if( !key || !secret ) {
-//            throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
-//        }
-//
-//        System.setProperty('gradle.publish.key', key)
-//        System.setProperty('gradle.publish.secret', secret)
-//    }
-//
-//}
+task setupPluginUpload {
 
-//tasks.publishPlugins.dependsOn tasks.setupPluginUpload
+    onlyIf {
+        !isSnapshot
+    }
+
+    doLast {
+        String key = System.env.gradlePublishKey
+        String secret = System.env.gradlePublishSecret
+
+        if( !key || !secret ) {
+            throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
+        }
+
+        System.setProperty('gradle.publish.key', key)
+        System.setProperty('gradle.publish.secret', secret)
+    }
+
+}
+
+tasks.publishPlugins.dependsOn tasks.setupPluginUpload
 
 // the gradle plugin portal isn't compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
-//    signArchives.enabled = false
+    signArchives.enabled = false
     publishPlugins.enabled = false
 }
