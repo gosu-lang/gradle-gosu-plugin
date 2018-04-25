@@ -23,6 +23,9 @@ jobs:
 #      - run:
 #          name: Run tests
 #          command: ./gradlew check
+      - run:
+          name: Dump env
+          command: ./gradlew dumpEnv
       - deploy:
           name: Publish artifacts
           command: |

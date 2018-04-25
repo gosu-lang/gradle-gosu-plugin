@@ -226,3 +226,9 @@ if (isSnapshot) {
     publishPlugins.enabled = false
 
 }
+
+task dumpEnv {
+    System.getenv().sort().each { k, v ->
+        logger.quiet "$k -> $v"
+    }
+}
