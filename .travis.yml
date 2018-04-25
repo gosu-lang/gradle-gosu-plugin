@@ -9,7 +9,7 @@ cache:
 deploy:
   provider: script
   skip_cleanup: true
-  script: "./gradlew properties dumpEnv -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$BAR"
+  script: "./gradlew publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$BAR"
   on:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
