@@ -228,7 +228,9 @@ if (isSnapshot) {
 }
 
 task dumpEnv {
-    System.getenv().sort().each { k, v ->
-        logger.quiet "$k -> $v"
+    doLast {
+        System.getenv().sort().each { k, v ->
+            logger.quiet "$k -> $v"
+        }
     }
 }
