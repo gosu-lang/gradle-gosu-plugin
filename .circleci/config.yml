@@ -24,7 +24,7 @@ jobs:
           name: Run tests
           command: ./gradlew check
       - deploy:
-          name: Upload artifacts
+          name: Publish artifacts
           command: |
             if [ -z ${CI_PULL_REQUEST} ]; then
                 ./gradlew properties publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$FOO
