@@ -5,7 +5,7 @@ jobs:
       - image: circleci/openjdk:8-jdk
 
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$FOO
       TERM: dumb
       TZ: /usr/share/zoneinfo/America/Los_Angeles
 
@@ -27,7 +27,7 @@ jobs:
           name: Upload artifacts
           command: |
             if [ -z ${CI_PULL_REQUEST} ]; then
-                ./gradlew uploadArchives
+                ./gradlew properties publish
             fi
       - store_artifacts:
           path: ~/project/build/reports/tests
