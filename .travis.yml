@@ -17,9 +17,11 @@ addons:
     packages:
     - libxml-xpath-perl
 
-before_deploy:
+before_install:
   # Set $RELEASE env var
   - source ./detectRelease.sh
+
+before_deploy:
   # Set up git user name and tag this commit
   #- git config --local user.name "Gosu CI"
   #- git config --local user.email "gosu.lang.team@gmail.com"
