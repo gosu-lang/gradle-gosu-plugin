@@ -18,7 +18,8 @@ addons:
     - libxml-xpath-perl
 
 before_deploy:
-  - xpath
+  # Set $RELEASE env var
+  - source ./detectRelease.sh
   # Set up git user name and tag this commit
   #- git config --local user.name "Gosu CI"
   #- git config --local user.email "gosu.lang.team@gmail.com"
@@ -30,6 +31,7 @@ deploy:
   on:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
+    condition: $RELEASE = false
     all_branches: true
 
 #notifications:
