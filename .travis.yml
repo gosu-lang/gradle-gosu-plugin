@@ -21,7 +21,7 @@ before_install:
   # Set $RELEASE env var
   - source ./detectRelease.sh
 
-before_deploy:
+#before_deploy:
   # Set up git user name and tag this commit
   #- git config --local user.name "Gosu CI"
   #- git config --local user.email "gosu.lang.team@gmail.com"
@@ -40,7 +40,7 @@ deploy:
   # $RELEASE = true; e.g. perform the release and publish it
   provider: script
   skip_cleanup: true
-  script: "echo Wow let's do a release!"
+  script: echo "Wow let's do a release!"
   on:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
