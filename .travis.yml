@@ -27,6 +27,7 @@ before_deploy:
   #- git config --local user.email "gosu.lang.team@gmail.com"
 
 deploy:
+  # $RELEASE = false; e.g. publish a snapshot
   provider: script
   skip_cleanup: true
   script: "./gradlew publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$BAR"
@@ -34,6 +35,16 @@ deploy:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
     condition: $RELEASE = false
+    all_branches: true
+
+  # $RELEASE = true; e.g. perform the release and publish it
+  provider: script
+  skip_cleanup: true
+  script: "echo Wow let's do a release!"
+  on:
+    # don't deploy from forks; TODO test with PRs
+    repo: gosu-lang/gradle-gosu-plugin
+    condition: $RELEASE = true
     all_branches: true
 
 #notifications:
