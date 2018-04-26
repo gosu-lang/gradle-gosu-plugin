@@ -30,7 +30,7 @@ deploy:
   # $RELEASE = false; e.g. publish a snapshot
   provider: script
   skip_cleanup: true
-  script: "./gradlew publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$BAR"
+  script: ./gradlew publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$BAR
   on:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
@@ -40,7 +40,10 @@ deploy:
   # $RELEASE = true; e.g. perform the release and publish it
   provider: script
   skip_cleanup: true
-  script: echo "Wow let's do a release!"
+  script:
+    - echo "Wow let's do a release!"
+    - git config --local user.name "Gosu CI"
+    - git config --local user.email "gosu.lang.team@gmail.com"
   on:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
