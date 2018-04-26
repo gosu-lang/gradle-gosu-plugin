@@ -12,6 +12,11 @@ cache:
   - "$HOME/.gradle/wrapper/"
   timeout: 600
 
+addons:
+  apt:
+    packages:
+    - libxml-xpath-perl
+
 before_deploy:
   - xpath
   # Set up git user name and tag this commit
