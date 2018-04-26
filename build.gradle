@@ -139,7 +139,7 @@ release {
     }
 }
 
-afterReleaseBuild.dependsOn publish, publishPlugins
+afterReleaseBuild.dependsOn publish //, publishPlugins //TODO re-enable
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
@@ -190,47 +190,6 @@ publishing {
     }
 }
 
-//TODO add plugin portal creds like so: ./gradlew release -Dgradle.publish.key=$FOO -Dgradle.publish.secret=$BAR
-
-//
-///**
-// * Fetches the publishing credentials from the build machine's env vars
-// * Necessitated by https://issues.gradle.org/browse/GRADLE-3281
-// */
-//task setupPluginUpload {
-//
-//    onlyIf {
-//        !isSnapshot
-//    }
-//
-//    doLast {
-//        String key = System.env.gradlePublishKey
-//        String secret = System.env.gradlePublishSecret
-//
-//        if( !key || !secret ) {
-//            throw new RuntimeException('gradlePublishKey and/or gradlePublishSecret are not defined environment variables')
-//        }
-//
-//        System.setProperty('gradle.publish.key', key)
-//        System.setProperty('gradle.publish.secret', secret)
-//    }
-//
-//}
-
-//tasks.publishPlugins.dependsOn tasks.setupPluginUpload
-
-// the gradle plugin portal isn't compatible with SNAPSHOT versions
-// https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
-//    signArchives.enabled = false
     publishPlugins.enabled = false
-
-}
-
-task dumpEnv {
-    doLast {
-        System.getenv().sort().each { k, v ->
-            logger.quiet "$k -> $v"
-        }
-    }
 }

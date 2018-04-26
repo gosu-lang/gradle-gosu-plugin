@@ -31,7 +31,7 @@ deploy:
   # $RELEASE = false; e.g. publish a snapshot
   provider: script
   skip_cleanup: true
-  script: ./gradlew publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$BAR
+  script: ./gradlew publish
   on:
     # don't deploy from forks; TODO test with PRs
     repo: gosu-lang/gradle-gosu-plugin
