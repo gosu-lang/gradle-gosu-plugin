@@ -32,28 +32,33 @@ before_install:
   #- git config --local user.name "Gosu CI"
   #- git config --local user.email "gosu.lang.team@gmail.com"
 
-deploy:
-  # $RELEASE = false; e.g. publish a snapshot
-  provider: script
-  skip_cleanup: true
-  script: ./gradlew publish
-  env: GRADLE_TEST_VERSION=
-  on:
-    # don't deploy from forks; TODO test with PRs
-    repo: gosu-lang/gradle-gosu-plugin
-    condition: $RELEASE = false
-    all_branches: true
+jobs:
+  include:
+    - stage: deploy
+      env: GRADLE_TEST_VERSION=
+      script: skip
+      deploy:
+        # $RELEASE = false; e.g. publish a snapshot
+        provider: script
+        skip_cleanup: true
+        script: ./gradlew publish
+        env: GRADLE_TEST_VERSION=
+        on:
+          # don't deploy from forks; TODO test with PRs
+          repo: gosu-lang/gradle-gosu-plugin
+          condition: $RELEASE = false
+          all_branches: true
 
-  # $RELEASE = true; e.g. perform the release and publish it
-  provider: script
-  skip_cleanup: true
-  script: ./performRelease.sh
-  env: GRADLE_TEST_VERSION=
-  on:
-    # don't deploy from forks; TODO test with PRs
-    repo: gosu-lang/gradle-gosu-plugin
-    condition: $RELEASE = true
-    all_branches: true
+        # $RELEASE = true; e.g. perform the release and publish it
+        provider: script
+        skip_cleanup: true
+        script: ./performRelease.sh
+        env: GRADLE_TEST_VERSION=
+        on:
+          # don't deploy from forks; TODO test with PRs
+          repo: gosu-lang/gradle-gosu-plugin
+          condition: $RELEASE = true
+          all_branches: true
 
 #notifications:
 #  slack:
