@@ -109,17 +109,6 @@ tasks.withType(AbstractCompile) {
     }
 }
 
-//constrain memory usage when running on CI server
-if(System.getenv('CI') != null) {
-    tasks.withType(AbstractCompile) { //covers JavaCompile and GroovyCompile
-        options.fork = false
-    }
-    test {
-        maxHeapSize = '1g'
-        systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit from spawning daemons and running out of memory
-    }
-}
-
 task sourceJar(type: Jar) {
     classifier = 'sources'
     description 'generate sources'
