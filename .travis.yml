@@ -16,16 +16,16 @@ cache:
   directories:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
-  timeout: 600
+#  timeout: 600
 
-addons:
-  apt:
-    packages:
-    - libxml-xpath-perl
-
-before_install:
-  # Set $RELEASE env var
-  - source ./detectRelease.sh
+#addons:
+#  apt:
+#    packages:
+#    - libxml-xpath-perl
+#
+#before_install:
+#  # Set $RELEASE env var
+#  - source ./detectRelease.sh
 
 #before_deploy:
   # Set up git user name and tag this commit
@@ -45,17 +45,6 @@ jobs:
         on:
           # don't deploy from forks; TODO test with PRs
           repo: gosu-lang/gradle-gosu-plugin
-          condition: $RELEASE = false
-          all_branches: true
-
-        # $RELEASE = true; e.g. perform the release and publish it
-        provider: script
-        skip_cleanup: true
-        script: ./performRelease.sh
-        on:
-          # don't deploy from forks; TODO test with PRs
-          repo: gosu-lang/gradle-gosu-plugin
-          condition: $RELEASE = true
           all_branches: true
 
 #notifications:
