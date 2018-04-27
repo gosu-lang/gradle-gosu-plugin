@@ -106,6 +106,6 @@ class SourceSetsModificationTest extends AbstractGosuPluginSpecification {
         !new File(buildOutputRoot, asPath('four', 'IgnoredPogo.class')).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 }

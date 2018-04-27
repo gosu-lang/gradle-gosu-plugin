@@ -8,10 +8,10 @@ import spock.lang.Specification
 
 abstract class AbstractGosuPluginSpecification extends Specification implements MultiversionTestable {
 
-    // These are the versions of gradle to iteratively test against
-    // Locally, only test the latest.
+    // This is the version of gradle to test against
+    // Use of array with single value is intentional
     @Shared
-    String[] gradleVersionsToTest = System.getenv().get('CI') != null ? getTestedVersions().plus(getGradleVersion()).sort() : [getGradleVersion()]
+    String[] gradleVersionToTest = [System.getenv().get('GRADLE_TEST_VERSION') ?: getGradleVersion()]
 
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator

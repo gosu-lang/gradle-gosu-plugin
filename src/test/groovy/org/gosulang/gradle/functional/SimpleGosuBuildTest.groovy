@@ -53,7 +53,7 @@ class SimpleGosuBuildTest extends AbstractGosuPluginSpecification {
         new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 }

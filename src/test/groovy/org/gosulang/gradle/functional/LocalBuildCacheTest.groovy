@@ -5,11 +5,16 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.VersionNumber
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import spock.lang.Requires
 import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
+/**
+ * build caching only available since Gradle 3.5
+ */
+@Requires( { VersionNumber.parse(System.getenv().get('GRADLE_TEST_VERSION') ?: "999") >= VersionNumber.parse('3.5') } )
 @Unroll
 class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
 
@@ -97,7 +102,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         assertTaskOutputs()
         
         where:
-        gradleVersion << gradleVersionsToTest.findAll { VersionNumber.parse(it) >= VersionNumber.parse('3.5') } // build caching only available since Gradle 3.5
+        gradleVersion << gradleVersionToTest
     }
 
     private boolean assertTaskOutputs() {

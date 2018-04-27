@@ -90,7 +90,7 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         result.output.contains('[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
         
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
     Closure<Pattern> skipUpToDateTaskExecuterExpectedOutput = { String gradleVersion ->

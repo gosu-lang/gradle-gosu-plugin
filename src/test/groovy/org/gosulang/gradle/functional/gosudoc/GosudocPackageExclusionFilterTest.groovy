@@ -110,7 +110,7 @@ class GosudocPackageExclusionFilterTest extends AbstractGosuPluginSpecification 
         !excludedPogoGosudoc.exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
     
 }

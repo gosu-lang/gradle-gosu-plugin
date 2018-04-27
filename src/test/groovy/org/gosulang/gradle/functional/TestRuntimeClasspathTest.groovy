@@ -72,7 +72,7 @@ class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
         new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['test', 'SimpleTestPogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 

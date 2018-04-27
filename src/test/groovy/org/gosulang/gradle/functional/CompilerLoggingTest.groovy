@@ -60,7 +60,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
     def 'log warning under info logging level [Gradle #gradleVersion]'() {
@@ -99,7 +99,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }    
     
     def 'log compilation error under default logging level [Gradle #gradleVersion]'() {
@@ -136,7 +136,7 @@ class CompilerLoggingTest extends AbstractGosuPluginSpecification {
         !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
     
 }

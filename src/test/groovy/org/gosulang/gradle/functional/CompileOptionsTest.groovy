@@ -77,7 +77,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'ErrantPogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
     def 'fail build fast when warning threshold exceeded [Gradle #gradleVersion]'() {
@@ -145,7 +145,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         (fooClass.exists() && !barClass.exists()) || (barClass.exists() && !fooClass.exists())
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
     def 'fail build fast when error threshold exceeded [Gradle #gradleVersion]'() {
@@ -204,7 +204,7 @@ class CompileOptionsTest extends AbstractGosuPluginSpecification {
         !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'Bar.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 }

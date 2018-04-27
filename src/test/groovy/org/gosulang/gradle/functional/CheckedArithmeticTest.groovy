@@ -71,7 +71,7 @@ class CheckedArithmeticTest extends AbstractGosuPluginSpecification {
         result.task(':test').outcome == FAILED
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 }

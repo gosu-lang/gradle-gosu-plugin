@@ -168,7 +168,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         !result.output.contains('app wins!')
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
     /**
@@ -240,7 +240,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         !result.output.contains('baseTest wins!')
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
     private static String[] getOrderedClasspath(String stdOut) {

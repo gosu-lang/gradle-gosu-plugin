@@ -84,7 +84,7 @@ class ExclusionFilterTest extends AbstractGosuPluginSpecification {
         !new File(buildOutputRoot, 'Errant_Class.class').exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 }

@@ -105,7 +105,7 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
         new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'rules', 'DummyRuleSet_dir', 'order.txt'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
         apiAwareOutputDir = VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0') ? 'sourceSets.main.gosu.outputDir' : 'sourceSets.main.output.classesDir'
 
     }

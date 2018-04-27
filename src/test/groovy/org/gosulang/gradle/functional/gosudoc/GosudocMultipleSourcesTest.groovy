@@ -96,7 +96,7 @@ class GosudocMultipleSourcesTest extends AbstractGosuPluginSpecification {
         anotherPogoGosudoc.readLines().contains('<div class="block">This is AnotherPogo...</div>')
         
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 }

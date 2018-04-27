@@ -53,6 +53,6 @@ class GosudocNothingToDoHereTest extends AbstractGosuPluginSpecification {
         !simpleStringTemplateGosudoc.exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 }

@@ -68,7 +68,7 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
         simplePogoGosudoc.readLines().contains('<div class="block">I can has gosudoc</div>')
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 }

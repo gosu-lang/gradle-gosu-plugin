@@ -51,7 +51,7 @@ class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
         !new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'SimplePogo.class'])).exists()
 
         where:
-        gradleVersion << gradleVersionsToTest
+        gradleVersion << gradleVersionToTest
     }
 
 
