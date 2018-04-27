@@ -133,6 +133,7 @@ task javadocJar(type: Jar) {
 }
 
 release {
+    newVersion = version + '-SNAPSHOT'
     tagTemplate = 'v${version}'
     git {
         requireBranch = ''
