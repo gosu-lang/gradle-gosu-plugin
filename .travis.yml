@@ -42,7 +42,6 @@ jobs:
         provider: script
         skip_cleanup: true
         script: ./gradlew publish
-        env: GRADLE_TEST_VERSION=
         on:
           # don't deploy from forks; TODO test with PRs
           repo: gosu-lang/gradle-gosu-plugin
@@ -53,7 +52,6 @@ jobs:
         provider: script
         skip_cleanup: true
         script: ./performRelease.sh
-        env: GRADLE_TEST_VERSION=
         on:
           # don't deploy from forks; TODO test with PRs
           repo: gosu-lang/gradle-gosu-plugin
