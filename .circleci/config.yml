@@ -27,7 +27,7 @@ jobs:
           name: Publish artifacts
           command: |
             if [ -z ${CI_PULL_REQUEST} ]; then
-                ./gradlew properties publish -Pgradle.publish.key=$FOO -Pgradle.publish.secret=$FOO
+                ./gradlew publish
             fi
       - store_artifacts:
           path: ~/project/build/reports/tests
