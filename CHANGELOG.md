@@ -1,5 +1,12 @@
 # Change Log
 
+## [v0.3.8](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.8) (2018-05-01)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.7...v0.3.8)
+
+**Implemented enhancements:**
+
+- Modernize release process [\#42](https://github.com/gosu-lang/gradle-gosu-plugin/issues/42)
+
 ## [v0.3.7](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.7) (2018-04-20)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.6...v0.3.7)
 
