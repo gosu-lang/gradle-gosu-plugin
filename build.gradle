@@ -143,40 +143,11 @@ afterReleaseBuild.dependsOn publish, publishPlugins
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
-            artifact javadocJar
-            artifact sourceJar
-            pom.packaging 'jar'
-            pom.withXml { xml ->
-                xml.asNode().appendNode('name', project.name)
-                xml.asNode().appendNode('description', project.description)
-                xml.asNode().appendNode('url', 'http://gosu-lang.github.io/')
-
-                xml.asNode().appendNode('scm').with {
-                    appendNode('connection', 'scm:git:git@github.com:gosu-lang/gosu-lang.git')
-                    appendNode('developerConnection', 'scm:git:git@github.com:gosu-lang/gosu-lang.git')
-                    appendNode('url', 'git@github.com:gosu-lang/gosu-lang.git')
-                }
-
-                xml.asNode().appendNode('licenses')
-                    .appendNode('license').with {
-                        appendNode('name', 'The Apache License, Version 2.0')
-                        appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt')
-                    }
-
-                xml.asNode().appendNode('developers').with {
-                    appendNode('developer').with {
-                        appendNode('name', 'Kyle Moore')
-                        appendNode('email', 'github@kylemoore.com')
-                        appendNode('organization', 'gosu-lang.org')
-                    }
-                    appendNode('developer').with {
-                        appendNode('name', 'The Gosu Team')
-                        appendNode('email', 'gosu.lang.team@gmail.com')
-                        appendNode('organization', 'Guidewire')
-                    }
-                }
-            }
-        }
+        artifact javadocJar
+        artifact sourceJar
+        pom.packaging 'jar'
+        pom.withXml { xml -> configurePom(xml) }
+    }
 
     repositories {
         maven {
@@ -186,6 +157,43 @@ publishing {
                 username System.getenv('BINTRAY_USER')
                 password System.getenv('BINTRAY_API_KEY')
             }
+        }
+    }
+}
+
+model {
+    tasks.generatePomFileForGosuPluginPluginMarkerMavenPublication {
+        pom.withXml { xml -> configurePom(xml) }
+    }
+}
+
+void configurePom(XmlProvider xml) {
+    xml.asNode().appendNode('name', project.name)
+    xml.asNode().appendNode('description', project.description)
+    xml.asNode().appendNode('url', 'http://gosu-lang.github.io/')
+
+    xml.asNode().appendNode('scm').with {
+        appendNode('connection', 'scm:git:git@github.com:gosu-lang/gosu-lang.git')
+        appendNode('developerConnection', 'scm:git:git@github.com:gosu-lang/gosu-lang.git')
+        appendNode('url', 'git@github.com:gosu-lang/gosu-lang.git')
+    }
+
+    xml.asNode().appendNode('licenses')
+            .appendNode('license').with {
+        appendNode('name', 'The Apache License, Version 2.0')
+        appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt')
+    }
+
+    xml.asNode().appendNode('developers').with {
+        appendNode('developer').with {
+            appendNode('name', 'Kyle Moore')
+            appendNode('email', 'github@kylemoore.com')
+            appendNode('organization', 'gosu-lang.org')
+        }
+        appendNode('developer').with {
+            appendNode('name', 'The Gosu Team')
+            appendNode('email', 'gosu.lang.team@gmail.com')
+            appendNode('organization', 'Guidewire')
         }
     }
 }
