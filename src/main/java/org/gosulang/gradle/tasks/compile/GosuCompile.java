@@ -2,15 +2,12 @@ package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.InputFiles;
@@ -19,79 +16,85 @@ import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.compile.AbstractCompile;
-import org.gradle.api.tasks.compile.CompileOptions;
-import org.gradle.util.VersionNumber;
+import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.tooling.BuildException;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
-@CacheableTask
-public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
+public class GosuCompile extends JavaCompile implements InfersGosuRuntime {
 
-  private GosuCompiler<GosuCompileSpec> _compiler;
+  @Deprecated
   private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
 
-  private final CompileOptions _compileOptions;
+  @Deprecated
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
 
   @Inject
   public GosuCompile() {
-    VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
-    if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
-      _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
-    } else {
-      try {
-        Constructor ctor = CompileOptions.class.getConstructor();
-        _compileOptions = (CompileOptions) ctor.newInstance();
-      } catch (ReflectiveOperationException e) {
-        throw new GradleException("Unable to apply Gosu plugin", e);
-      }
-    }
   }
 
   @Override
   @TaskAction
   protected void compile() {
-    DefaultGosuCompileSpec spec = createSpec();
-    _compiler = getCompiler(spec);
-    _compiler.execute(spec);
+    getOptions().getCompilerArgs().add("-Xplugin:Manifold static");
+    getOptions().setFork(true);
+    getOptions().getForkOptions().setExecutable("javac");
+    //noinspection ConstantConditions
+    getOptions().getForkOptions().getJvmArgs().addAll(createExternalSourcesList());
+    super.compile();
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  @PathSensitive(NAME_ONLY)
-  public FileTree getSource() {
-    return super.getSource();
+  private List<String> createExternalSourcesList() {
+    List<String> retval = Collections.emptyList();
+
+    FileTree gosuSources = getSource().matching( filter -> filter.exclude("**/*.java") );
+
+    if(!gosuSources.isEmpty()) {
+      Path sourcesFile = new File(getTemporaryDir(), "manifold-additional-sources.txt").toPath();
+      List<String> sources = gosuSources.getFiles().stream().map(File::getAbsolutePath).collect(Collectors.toList());
+      try {
+        Files.write(sourcesFile, sources, StandardCharsets.UTF_8);
+      } catch (IOException e) {
+        throw new BuildException(String.format("Unable to write source list to %s", sourcesFile), e);
+      }
+      retval = Collections.singletonList("-J-Dgosu.source.list=" + sourcesFile);
+    }
+    return retval;
   }
+
+//  /**
+//   * {@inheritDoc}
+//   */
+//  @Override
+//  @PathSensitive(NAME_ONLY)
+//  public FileTree getSource() {
+//    return super.getSource();
+//  }
 
   /**
    * @return Gosu-specific compilation options.
    */
   @Nested
+  @Deprecated
   public GosuCompileOptions getGosuOptions() {
     return _gosuCompileOptions;
-  }
-
-  @Nested
-  public CompileOptions getOptions() {
-    return _compileOptions;
   }
 
   /**
    * We override in order to apply the {@link org.gradle.api.tasks.CompileClasspath}, in order to ignore changes in JAR'd resources.
    */
   @CompileClasspath
+  @Deprecated() //TODO maybe deprecated?
   public FileCollection getClasspath() {
     return super.getClasspath();
   }
@@ -134,6 +137,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   @Internal
   @Optional
+  @Deprecated
   public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
@@ -145,16 +149,15 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return getProject().files(returnValues);
   }
 
+  @Deprecated
   private DefaultGosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
-    spec.setCompileOptions(_compileOptions);
     Project project = getProject();
     spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
     spec.setTempDir(getTemporaryDir());
     spec.setGosuClasspath(getGosuClasspath());
-    spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
 
     if (_orderClasspath == null) {
@@ -198,14 +201,15 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return spec;
   }
 
-  private GosuCompiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
-    if(_compiler == null) {
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(getProject(), this.getPath());
-      _compiler = gosuCompilerFactory.newCompiler(spec);
-    }
-    return _compiler;
-  }
+//  private GosuCompiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
+//    if(_compiler == null) {
+//      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(getProject(), this.getPath());
+//      _compiler = gosuCompilerFactory.newCompiler(spec);
+//    }
+//    return _compiler;
+//  }
 
+  @Deprecated
   private List<File> asList(final FileCollection files) {
     List<File> list = new ArrayList<>();
     files.forEach(list::add);
