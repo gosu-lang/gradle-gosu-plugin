@@ -20,9 +20,12 @@ jobs:
           - v1-dependencies-{{ checksum "build.gradle" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
+#      - run:
+#          name: Run tests
+#          command: ./gradlew check
       - run:
-          name: Run tests
-          command: ./gradlew check
+          name: Dump env
+          command: ./gradlew dumpEnv
       - deploy:
           name: Publish artifacts
           command: |
