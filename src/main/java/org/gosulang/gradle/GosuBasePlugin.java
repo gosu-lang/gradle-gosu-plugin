@@ -8,16 +8,15 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.file.SourceDirectorySetFactory; //TODO unavoidable use of internal API
-import org.gradle.api.internal.tasks.DefaultSourceSetOutput; //TODO unavoidable use of internal API, needed to access DSSO#addClassesDir
+import org.gradle.api.internal.file.SourceDirectorySetFactory;  //TODO unavoidable use of internal API
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.AbstractCompile;
-import org.gradle.internal.Cast; //TODO unavoidable use of internal API, needed to access DSSO#addClassesDir
 import org.gradle.util.VersionNumber;
 
 import javax.inject.Inject;
@@ -127,8 +126,7 @@ public class GosuBasePlugin implements Plugin<Project> {
       return new File(target.getBuildDir(), sourceSetChildPath);
     }));
 
-    DefaultSourceSetOutput sourceSetOutput = Cast.cast(DefaultSourceSetOutput.class, sourceSet.getOutput());
-    sourceSetOutput.addClassesDir(sourceDirectorySet::getOutputDir);
+    ((ConfigurableFileCollection) sourceSet.getOutput().getClassesDirs()).from(target.provider( sourceDirectorySet::getOutputDir));
 
     compile.setDestinationDir(target.provider(sourceDirectorySet::getOutputDir));
   }
