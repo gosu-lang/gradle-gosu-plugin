@@ -8,13 +8,13 @@ import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.tooling.BuildException;
@@ -28,8 +28,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
-
+@CacheableTask
 public class GosuCompile extends JavaCompile implements InfersGosuRuntime {
 
   @Deprecated
