@@ -11,6 +11,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.internal.jvm.Jvm;
 
 public class GosuPlugin implements Plugin<Project> {
 
@@ -21,8 +22,23 @@ public class GosuPlugin implements Plugin<Project> {
     project.getPluginManager().apply(GosuBasePlugin.class);
     project.getPluginManager().apply(JavaPlugin.class);
 
+//    maybeAddToolsJar(project);
     refreshTestRuntimeClasspath(project);
     configureGosuDoc(project);
+  }
+
+  /**
+   * Adds a tools.jar dependency only if the project is using JDK 8
+   * <br>
+   * Java 9, 10 don't need this
+   * @param project
+   */
+  private void maybeAddToolsJar(Project project) {
+    if(!Jvm.current().getJavaVersion().isJava9Compatible()) {
+      project.getConfigurations().getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME,
+              (runtime) -> runtime.add(project.files(Jvm.current().getToolsJar()))
+      );
+    }
   }
 
   /**

@@ -8,6 +8,7 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.SourceDirectorySetFactory; //TODO unavoidable use of internal API
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput; //TODO unavoidable use of internal API, needed to access DSSO#addClassesDir
