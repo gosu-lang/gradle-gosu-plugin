@@ -1,5 +1,17 @@
 # Change Log
 
+## [v0.3.10](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.10) (2018-05-30)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.9...v0.3.10)
+
+**Closed issues:**
+
+- Remove support for 4.0.x [\#45](https://github.com/gosu-lang/gradle-gosu-plugin/issues/45)
+- Remove remaining Gradle internal APIs, if possible [\#40](https://github.com/gosu-lang/gradle-gosu-plugin/issues/40)
+
+**Merged pull requests:**
+
+- Remove more internal APIs [\#44](https://github.com/gosu-lang/gradle-gosu-plugin/pull/44) ([wolfs](https://github.com/wolfs))
+
 ## [v0.3.9](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.9) (2018-05-01)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.8...v0.3.9)
 
