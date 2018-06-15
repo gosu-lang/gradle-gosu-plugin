@@ -72,7 +72,7 @@ public class GosuCompile extends JavaCompile implements InfersGosuRuntime {
       } catch (IOException e) {
         throw new BuildException(String.format("Unable to write source list to %s", sourcesFile), e);
       }
-      retval = Collections.singletonList("-J-Dgosu.source.list=" + sourcesFile);
+      retval = Collections.singletonList("-J-Dgosu.source.list=" + getProject().getProjectDir().toPath().relativize(sourcesFile));
     }
     return retval;
   }
