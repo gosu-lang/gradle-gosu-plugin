@@ -51,11 +51,17 @@ public class GosuCompile extends JavaCompile implements InfersGosuRuntime {
     getProject().getLogger().quiet("Dumping javac classpath for {}:", getPath());
     getClasspath().forEach( elt -> getProject().getLogger().quiet(elt.getAbsolutePath()));
     getProject().getLogger().quiet("End javac classpath for {}:", getPath());
+
     getOptions().getCompilerArgs().add("-Xplugin:Manifold static");
     getOptions().setFork(true);
     getOptions().getForkOptions().setExecutable("javac");
     //noinspection ConstantConditions
     getOptions().getForkOptions().getJvmArgs().addAll(createExternalSourcesList());
+
+    getProject().getLogger().quiet("Dumping jvm args for {}:", getPath());
+    getOptions().getForkOptions().getJvmArgs().forEach( elt -> getProject().getLogger().quiet(elt));
+    getProject().getLogger().quiet("End jvm args for {}:", getPath());
+
     super.compile();
   }
 
