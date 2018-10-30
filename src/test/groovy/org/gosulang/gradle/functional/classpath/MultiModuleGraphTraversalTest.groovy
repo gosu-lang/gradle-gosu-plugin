@@ -9,8 +9,8 @@ import spock.lang.Unroll
 
 import java.util.regex.Matcher
 
-import static org.fest.assertions.Assertions.assertThat
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import static org.junit.Assert.assertEquals
 
 /**
  * commons, base and app are three projects. On the file system, they are peers sitting at the same level on the tree
@@ -159,7 +159,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         //filter gosu dependencies not related to this test
         List<String> actual = orderedClasspath.findAll { expected.contains(it) }
 
-        assertThat(actual).containsExactly(expected)
+        assertEquals(List.of(expected), actual)
 
         result.task(':appTest:printClasspath').outcome == SUCCESS
         result.task(':appTest:test').outcome == SUCCESS
@@ -231,7 +231,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         //filter gosu dependencies not related to this test
         List<String> actual = orderedClasspath.findAll { expected.contains(it) }
 
-        assertThat(actual).containsExactly(expected)
+        assertEquals(List.of(expected), actual)
 
         result.task(':appTest:printClasspath').outcome == SUCCESS
         result.task(':appTest:test').outcome == SUCCESS

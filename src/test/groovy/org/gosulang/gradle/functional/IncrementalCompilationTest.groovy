@@ -86,7 +86,8 @@ class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
         notThrown(UnexpectedBuildSuccess)
         result.task(':compileGosu').outcome == FAILED
         result.output.matches(skipUpToDateTaskExecuterExpectedOutput(gradleVersion))
-        result.output.contains('/src/main/gosu/B.gs has changed.')
+        String f = '/src/main/gosu/B.gs'.replace( '/' as char, File.separatorChar )
+        result.output.contains(f + ' has changed.')
         result.output.contains('[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
         
         where:

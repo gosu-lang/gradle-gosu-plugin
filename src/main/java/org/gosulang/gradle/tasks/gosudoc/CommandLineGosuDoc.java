@@ -1,7 +1,6 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
-import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
@@ -73,7 +72,7 @@ public class CommandLineGosuDoc {
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    FileCollection jointClasspath = _project.files(Util.findToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
+    FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
 
     // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
     File classpathJar;

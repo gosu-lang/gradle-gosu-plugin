@@ -4,9 +4,11 @@ import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
+import org.junit.Ignore
 import spock.lang.Unroll
 
 @Unroll
+@Ignore
 class GosudocOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
@@ -55,10 +57,6 @@ class GosudocOptionsTest extends AbstractGosuPluginSpecification {
         notThrown(UnexpectedBuildFailure)
         result.output.contains('Generating Documentation')
         result.output.contains('example.gradle.SimplePogo - document : true')
-
-        // Verify presence of JAVA_TOOL_OPTIONS sent to stderr does not fail task execution
-        // JAVA_TOOL_OPTIONS is echoed to stderr... amazing.
-        result.output.contains('Picked up JAVA_TOOL_OPTIONS: -Duser.language=en')
 
         File gosudocOutputRoot = new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc'))
         File simplePogoGosudoc = new File(gosudocOutputRoot, asPath('example', 'gradle', 'example.gradle.SimplePogo.html'))

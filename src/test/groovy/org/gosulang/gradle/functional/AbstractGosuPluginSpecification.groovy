@@ -14,7 +14,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     String[] gradleVersionsToTest = System.getenv().get('CI') != null ? getTestedVersions().plus(getGradleVersion()).sort() : [getGradleVersion()]
 
     protected static final String LF = System.lineSeparator
-    protected static final String FS = File.separator
+    protected static final String FS = '/' //File.separator
 
     @Rule
     final TemporaryFolder testProjectDir = new TemporaryFolder()

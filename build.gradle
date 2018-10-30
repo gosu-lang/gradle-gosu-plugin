@@ -11,7 +11,7 @@ plugins {
 }
 
 wrapper {
-    gradleVersion '4.7'
+    gradleVersion '4.10.2'
 }
 
 group = 'org.gosu-lang.gosu'
@@ -104,6 +104,9 @@ test {
 tasks.withType(AbstractCompile) {
     options.with {
         compilerArgs += ['-Xlint:unchecked']
+        compilerArgs += [
+                
+        ]
         deprecation = true
         encoding = StandardCharsets.UTF_8
     }
