@@ -1,5 +1,4 @@
 import org.gosulang.gradle.build.VersionWriterTask
-
 import java.nio.charset.StandardCharsets
 
 plugins {
