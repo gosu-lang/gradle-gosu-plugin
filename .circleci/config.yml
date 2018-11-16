@@ -22,7 +22,7 @@ jobs:
           - v1-dependencies-
       - run:
           name: Run tests
-          command: ./gradlew check
+          command: ./gradlew test --tests GosudocOptionsTest
       - deploy:
           name: Publish artifacts
           command: |
