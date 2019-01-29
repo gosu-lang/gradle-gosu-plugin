@@ -137,7 +137,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
-    for(Object obj : this.source) {
+    for(Object obj : this.getSource()) {
       if(obj instanceof SourceDirectorySet) {
         returnValues.addAll(((SourceDirectorySet) obj).getSrcDirs());
       }

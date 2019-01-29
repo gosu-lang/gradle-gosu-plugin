@@ -7,6 +7,7 @@ import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.testfixtures.ProjectBuilder
@@ -46,7 +47,7 @@ class GosuPluginTest {
     public void applyPlugin() throws IOException {
         project = createRootProject()
         instantiator = ((ProjectInternal) project).services.get(Instantiator)
-        convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
+        convention = new DefaultJavaPluginConvention(((ProjectInternal) project), instantiator)
         project.pluginManager.apply(GosuPlugin)
     }
 
