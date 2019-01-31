@@ -10,12 +10,16 @@ import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.internal.reflect.Instantiator
+import org.gradle.internal.reflect.JavaReflectionUtil
+import org.gradle.internal.reflect.PropertyMutator
 import org.gradle.testfixtures.ProjectBuilder
 import org.hamcrest.Matchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+
+import java.util.concurrent.Callable
 
 import static org.gradle.util.WrapUtil.toLinkedSet
 import static org.hamcrest.Matchers.empty
@@ -47,7 +51,7 @@ class GosuPluginTest {
     public void applyPlugin() throws IOException {
         project = createRootProject()
         instantiator = ((ProjectInternal) project).services.get(Instantiator)
-        convention = new DefaultJavaPluginConvention(((ProjectInternal) project), instantiator)
+        convention = new DefaultJavaPluginConvention(((ProjectInternal) project), instantiator, null)
         project.pluginManager.apply(GosuPlugin)
     }
 
@@ -89,15 +93,19 @@ class GosuPluginTest {
         //assertTrue(task.dependsOn.contains(JavaPlugin.CLASSES_TASK_NAME)) //TODO failing; do we care?
     }
 
+
     @Test
     public void canConfigureSourceSets() {
         File dir = new File('classes-dir')
         convention.sourceSets {
             main {
-                output.classesDir = dir
+                output.addClassesDir ( new Callable() {
+                    public Object call() {
+                        return dir;
+                    } })
             }
         }
-        assertThat(convention.sourceSets.main.output.classesDir, equalTo(project.file(dir)))
+        assert(convention.sourceSets.main.output.classesDirs.containsAll(project.file(dir)))
     }
 
     @Test

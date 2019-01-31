@@ -74,8 +74,10 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                     compile 'org.gosu-lang.gosu:gosu-core-api:$gosuVersion'
                     testCompile 'junit:junit:4.12'
                 }
-                task printClasspath << {
+                task printClasspath  { 
+                   doLast{
                     println 'The classpath is: ' + compileGosu.classpath.files.collect { it.name } //configurations.compile.files.collect { it.name }
+                   } 
                 }
             }
             """
