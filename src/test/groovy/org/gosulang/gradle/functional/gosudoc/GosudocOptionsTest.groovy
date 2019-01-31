@@ -5,8 +5,10 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import spock.lang.Unroll
+import spock.lang.Ignore
 
 @Unroll
+@Ignore
 class GosudocOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu

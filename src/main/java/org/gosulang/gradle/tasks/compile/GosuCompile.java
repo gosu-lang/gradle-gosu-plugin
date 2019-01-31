@@ -128,8 +128,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   @Internal
   @Optional
   public FileCollection getSourceRoots() {
-    FileCollection files = null;
-
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
     for(Object obj : getSourceReflectively()) {

@@ -6,11 +6,13 @@ import org.gradle.util.VersionNumber
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Unroll
+import spock.lang.Ignore
 
 import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Unroll
+@Ignore
 class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
 
     /**
