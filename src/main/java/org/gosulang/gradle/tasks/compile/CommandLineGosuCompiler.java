@@ -58,7 +58,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
-          .setClasspath(spec.getGosuClasspath().call().plus(_project.files(Util.findToolsJar())))
+          .setClasspath(spec.getGosuClasspath().call())
           .setArgs((Iterable<?>) gosucArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);

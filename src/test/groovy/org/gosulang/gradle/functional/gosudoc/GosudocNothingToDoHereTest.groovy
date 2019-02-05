@@ -4,8 +4,10 @@ import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import spock.lang.Unroll
+import spock.lang.Ignore
 
 @Unroll
+@Ignore
 class GosudocNothingToDoHereTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu

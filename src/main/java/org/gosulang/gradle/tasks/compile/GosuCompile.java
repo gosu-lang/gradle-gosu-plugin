@@ -10,15 +10,7 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.CacheableTask;
-import org.gradle.api.tasks.Classpath;
-import org.gradle.api.tasks.CompileClasspath;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.Internal;
-import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.PathSensitive;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.util.VersionNumber;
@@ -26,6 +18,7 @@ import org.gradle.util.VersionNumber;
 import javax.inject.Inject;
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -137,12 +130,23 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
-    for(Object obj : this.source) {
+    for(Object obj : getSourceReflectively()) {
       if(obj instanceof SourceDirectorySet) {
         returnValues.addAll(((SourceDirectorySet) obj).getSrcDirs());
       }
     }
     return getProject().files(returnValues);
+  }
+
+  //!! todo: find a better way to iterate the FileTree
+  private Iterable getSourceReflectively() {
+    try {
+      Field field = SourceTask.class.getDeclaredField("source");
+      field.setAccessible(true);
+      return (Iterable)field.get(this);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private DefaultGosuCompileSpec createSpec() {
@@ -163,7 +167,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
     }
 
-    Logger logger = project.getLogger();
+   Logger  logger = project.getLogger();
 
     if(logger.isInfoEnabled()) {
       logger.info("Gosu Compiler source roots for {} are:", project.getName());
