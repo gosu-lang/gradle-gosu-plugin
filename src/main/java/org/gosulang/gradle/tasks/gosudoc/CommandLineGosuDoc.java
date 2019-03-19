@@ -75,6 +75,7 @@ public class CommandLineGosuDoc {
 
     FileCollection jointClasspath = _project.files(Util.findToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
 
+    //FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
     // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
     File classpathJar;
     try {

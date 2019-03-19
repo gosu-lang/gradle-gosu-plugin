@@ -17,9 +17,9 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     protected static final String FS = File.separator
 
     @Rule
-    final TemporaryFolder testProjectDir = new TemporaryFolder()
+     TemporaryFolder testProjectDir = new TemporaryFolder()
 
-    protected final URL _gosuVersionResource = this.class.classLoader.getResource("gosuVersion.txt")
+    protected  URL _gosuVersionResource = this.class.classLoader.getResource("gosuVersion.txt")
 
     File buildScript
     Closure<List<String>> expectedOutputDir = { String gradleVersion ->

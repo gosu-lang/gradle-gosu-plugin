@@ -7,6 +7,7 @@ import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.testfixtures.ProjectBuilder
@@ -16,11 +17,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+import java.util.concurrent.Callable
+
 import static org.gradle.util.WrapUtil.toLinkedSet
 import static org.hamcrest.Matchers.empty
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.instanceOf
 import static org.junit.Assert.*
+
 
 class GosuPluginTest {
 
@@ -46,7 +50,10 @@ class GosuPluginTest {
     public void applyPlugin() throws IOException {
         project = createRootProject()
         instantiator = ((ProjectInternal) project).services.get(Instantiator)
-        convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
+        project.pluginManager.apply(JavaPlugin)
+        convention = new DefaultJavaPluginConvention(
+                ((ProjectInternal) project), instantiator, null)
+//        convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
         project.pluginManager.apply(GosuPlugin)
     }
 
@@ -93,10 +100,21 @@ class GosuPluginTest {
         File dir = new File('classes-dir')
         convention.sourceSets {
             main {
-                output.classesDir = dir
+                System.out.println(output.classesDirs.asPath)
+                output.addClassesDir ( new Callable() {
+                    public Object call() {
+                        return dir;
+                    } })
             }
         }
-        assertThat(convention.sourceSets.main.output.classesDir, equalTo(project.file(dir)))
+        assert(convention.sourceSets.main.output.classesDirs.containsAll(project.file(dir)))
+   //     assertThat(convention.sourceSets.main.output.classesDirs.singleFile, equalTo(project.file(dir)))
+
+//        main {
+//                output.classesDir = dir
+//            }
+//        }
+//        assertThat(convention.sourceSets.main.output.classesDir, equalTo(project.file(dir)))
     }
 
     @Test
