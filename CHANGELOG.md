@@ -1,6 +1,16 @@
 # Change Log
 
-## [v0.3.11](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.11) (2018-11-27)
+## [v0.3.12](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.12) (2019-03-20)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.4.0-SNAPSHOT...v0.3.12)
+
+## [v0.4.0-SNAPSHOT](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.4.0-SNAPSHOT) (2019-02-05)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.11...v0.4.0-SNAPSHOT)
+
+**Merged pull requests:**
+
+- User/sv/jdk11 support [\#48](https://github.com/gosu-lang/gradle-gosu-plugin/pull/48) ([sadheeshv](https://github.com/sadheeshv))
+
+## [v0.3.11](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.11) (2018-11-29)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.10...v0.3.11)
 
 ## [v0.3.10](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.10) (2018-05-30)
