@@ -44,6 +44,7 @@ public class CommandLineGosuDoc {
   }
   
   public void execute() {
+    gosuDocUnavailablityBanner(); // This is to suppress the gosudoc exception and provide a meaningful inforamtion.  This method has to be removed when GosuDoc is ready.
     String startupMsg = "Initializing gosudoc generator";
     if(_project.getName().isEmpty()) {
       startupMsg += " for " + _project.getName();
@@ -73,7 +74,7 @@ public class CommandLineGosuDoc {
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    FileCollection jointClasspath = _project.files(Util.findToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
+    FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
 
     // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
     File classpathJar;
@@ -108,6 +109,15 @@ public class CommandLineGosuDoc {
     }
 
     result.assertNormalExitValue();
+  }
+
+  private void gosuDocUnavailablityBanner(){
+
+    String bannerMsg = "\n        ****************************************************************** \n " +
+                           "       *              GosuDoc is not available in this release          * \n " +
+                           "       ******************************************************************" ;
+
+    throw new GradleException(bannerMsg);
   }
 
   private File createClasspathJarFromFileCollection(FileCollection classpath) throws IOException {
