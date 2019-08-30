@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
@@ -10,6 +11,7 @@ import org.gradle.api.tasks.compile.ForkOptions;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
+import org.gradle.api.JavaVersion;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -55,11 +57,15 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     ExecResult result = _project.javaexec(javaExecSpec -> {
+      FileCollection gosuClasspathJars =  spec.getGosuClasspath().call();
+      if (!JavaVersion.current().isJava11Compatible()) { //if it is not java 11
+        gosuClasspathJars = gosuClasspathJars.plus(_project.files(Util.findToolsJar()));
+      }
+
       javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
-              .setClasspath(spec.getGosuClasspath().call()
-              .plus(_project.files(Util.findToolsJar())))
+              .setClasspath(gosuClasspathJars)
               .setArgs((Iterable<?>) gosucArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
