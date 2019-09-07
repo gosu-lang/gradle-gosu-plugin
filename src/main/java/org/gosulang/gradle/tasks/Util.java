@@ -1,5 +1,7 @@
 package org.gosulang.gradle.tasks;
 
+import org.gradle.api.JavaVersion;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,9 +22,13 @@ public class Util {
         if(!Files.isRegularFile(toolsJar) && javaHome.toFile().getName().equalsIgnoreCase("jre")) {
             javaHome = javaHome.getParent();
             toolsJar = javaHome.resolve("lib").resolve("tools.jar");
-        } else {
-            throw new IllegalStateException("Could not find tools.jar");
+        } else if(JavaVersion.current().isJava11Compatible()) {
+            toolsJar = null;
         }
-        return toolsJar.toFile();
+            else{
+                throw new IllegalStateException("Could not find tools.jar");
+            }
+
+        return toolsJar != null ? toolsJar.toFile() : null;
     }
 }
