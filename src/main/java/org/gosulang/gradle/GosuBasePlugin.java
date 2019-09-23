@@ -13,9 +13,10 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;  //TODO unavoidable use of internal API
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.internal.ConventionMapping;
-import org.gradle.api.plugins.internal.SourceSetUtil;
+//import org.gradle.api.plugins.internal.SourceSetUtil;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.internal.JvmPluginsHelper;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.AbstractCompile;
@@ -103,7 +104,7 @@ public class GosuBasePlugin implements Plugin<Project> {
           return sourceSet.getCompileClasspath().plus(gosuCompile.getProject().files(new Object[]{sourceSet.getJava().getOutputDir()}));
         }
       });
-      SourceSetUtil.configureAnnotationProcessorPath(sourceSet, gosuCompile.getOptions(), _project);
+      JvmPluginsHelper.configureAnnotationProcessorPath(sourceSet, gosuSourceSet.getGosu(), gosuCompile.getOptions(), _project);
       gosuCompile.setDestinationDir(_project.provider(new Callable<File>() {
         public File call() {
           return sourceSet.getJava().getOutputDir();

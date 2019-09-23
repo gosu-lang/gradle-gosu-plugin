@@ -5,6 +5,7 @@ import org.gosulang.gradle.tasks.compile.GosuCompile
 import org.gradle.api.Project
 import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
@@ -43,17 +44,15 @@ class GosuPluginTest {
     }
 
     private Project project
-    private Instantiator instantiator
+    private ObjectFactory instantiator
     private JavaPluginConvention convention
 
     @Before
     public void applyPlugin() throws IOException {
         project = createRootProject()
-        instantiator = ((ProjectInternal) project).services.get(Instantiator)
+        instantiator = ((ProjectInternal) project).services.get(ObjectFactory)
         project.pluginManager.apply(JavaPlugin)
-        convention = new DefaultJavaPluginConvention(
-                ((ProjectInternal) project), instantiator, null)
-//        convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
+        convention = new DefaultJavaPluginConvention(((ProjectInternal) project), instantiator)
         project.pluginManager.apply(GosuPlugin)
     }
 

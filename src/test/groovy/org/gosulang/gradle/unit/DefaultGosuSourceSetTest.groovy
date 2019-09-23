@@ -5,7 +5,7 @@ import org.gosulang.gradle.tasks.GosuSourceSet
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.SourceDirectorySet
-import org.gradle.api.internal.DefaultInstantiatorFactory
+//import org.gradle.api.internal.DefaultInstantiatorFactory
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
@@ -15,18 +15,17 @@ import org.gradle.api.internal.file.SourceDirectorySetFactory
 import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
 import org.gradle.api.internal.model.DefaultObjectFactory
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.model.ObjectFactory
 import org.gradle.internal.reflect.Instantiator
-import org.gradle.api.internal.model.NamedObjectInstantiator
+//import org.gradle.api.internal.model.NamedObjectInstantiator
 import org.gradle.api.tasks.util.internal.PatternSets
 import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.nativeintegration.services.NativeServices
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import spock.lang.IgnoreIf
 import spock.lang.Specification
-
-import javax.naming.spi.ObjectFactory
-import javax.naming.spi.ObjectFactoryBuilder
 
 import static org.hamcrest.Matchers.*
 import static spock.util.matcher.HamcrestSupport.expect
@@ -48,13 +47,9 @@ class DefaultGosuSourceSetTest extends Specification {
     def setup() {
         Project project = createRootProject()
         NativeServices.initialize(_testProjectDir.root)
-        FileResolver fileResolver = new DefaultFileLookup(NativeServices.instance.get(FileSystem.class), PatternSets.getNonCachingPatternSetFactory()).getFileResolver(_testProjectDir.root)
+//        FileResolver fileResolver = new DefaultFileLookup(NativeServices.instance.get(FileSystem.class), PatternSets.getNonCachingPatternSetFactory()).getFileResolver(_testProjectDir.root)
 //        SourceDirectorySetFactory sourceDirectorySetFactory = new DefaultSourceDirectorySetFactory(fileResolver, new DefaultDirectoryFileTreeFactory())
-        SourceDirectorySetFactory sourceDirectorySetFactory = new DefaultSourceDirectorySetFactory(
-                new DefaultObjectFactory(
-                        ((ProjectInternal) project).services.get(Instantiator),null,
-                        fileResolver,new DefaultDirectoryFileTreeFactory(),new DefaultFilePropertyFactory(fileResolver)))
-//        SourceDirectorySetFactory sourceSetDirectorySetFactory =
+        SourceDirectorySetFactory sourceDirectorySetFactory = new DefaultSourceDirectorySetFactory((ObjectFactory) ((ProjectInternal)project).services.get(ObjectFactory))
         sourceSet = new DefaultGosuSourceSet("<set-display-name>", sourceDirectorySetFactory)
     }
 
@@ -74,6 +69,7 @@ class DefaultGosuSourceSetTest extends Specification {
         expect sourceSet.allGosu.filter.excludes, empty()
     }
 
+    @IgnoreIf({System.getProperty("os.name").toLowerCase().contains("mac")})
     def 'can configure Gosu source'() {
         when:
         sourceSet.gosu {
@@ -84,6 +80,7 @@ class DefaultGosuSourceSetTest extends Specification {
         expect sourceSet.gosu.srcDirs, equalTo([new File(_testProjectDir.root, 'src/somepathtogosu').absoluteFile] as Set)
     }
 
+    @IgnoreIf({System.getProperty("os.name").toLowerCase().contains("mac")})
     def 'can configure Gosu source using an action'() {
         when:
         sourceSet.gosu({ set -> set.srcDir 'src/somepathtogosu' } as Action<SourceDirectorySet>)
