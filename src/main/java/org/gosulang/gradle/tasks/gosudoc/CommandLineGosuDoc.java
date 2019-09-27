@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.gosudoc;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.GradleException;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
@@ -44,6 +45,7 @@ public class CommandLineGosuDoc {
   }
   
   public void execute() {
+    gosuDocUnavailablityBanner(); // This is to suppress the gosudoc exception and provide a meaningful inforamtion.  This method has to be removed when GosuDoc is ready.
     String startupMsg = "Initializing gosudoc generator";
     if(_project.getName().isEmpty()) {
       startupMsg += " for " + _project.getName();
@@ -73,7 +75,10 @@ public class CommandLineGosuDoc {
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    FileCollection jointClasspath = _project.files(Util.findToolsJar()).plus(_gosuClasspath).plus(_projectClasspath);
+    FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
+    if (!JavaVersion.current().isJava11Compatible()) { //if it is not java 11
+      jointClasspath = jointClasspath.plus(_project.files(Util.findToolsJar()));
+    }
 
     //FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
     // make temporary classpath jar with Class-Path attribute because jointClasspath will be way too long in some cases
@@ -87,6 +92,7 @@ public class CommandLineGosuDoc {
     LOGGER.info("Created classpathJar at " + classpathJar.getAbsolutePath());
     
     ExecResult result = _project.javaexec(javaExecSpec -> {
+
       javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _options.getForkOptions());
       javaExecSpec.setMain("gw.gosudoc.cli.Gosudoc")
@@ -109,6 +115,14 @@ public class CommandLineGosuDoc {
     }
 
     result.assertNormalExitValue();
+  }
+  private void gosuDocUnavailablityBanner(){
+
+    String bannerMsg = "\n        ****************************************************************** \n " +
+            "       *              GosuDoc is not available in this release          * \n " +
+            "       ******************************************************************" ;
+
+    throw new GradleException(bannerMsg);
   }
 
   private File createClasspathJarFromFileCollection(FileCollection classpath) throws IOException {
