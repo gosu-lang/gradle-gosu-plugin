@@ -15,20 +15,24 @@ public class Util {
      * Takes the place of {@link org.gradle.internal.jvm.Jvm#findToolsJar(File)}
      * @return the location of tools.jar
      */
+
     public static File findToolsJar() {
-        Path javaHome = Paths.get(System.getProperty("java.home"));
-        Path toolsJar = javaHome.resolve("lib").resolve("tools.jar");
-
-        if(!Files.isRegularFile(toolsJar) && javaHome.toFile().getName().equalsIgnoreCase("jre")) {
-            javaHome = javaHome.getParent();
+       Path toolsJar = null;
+        if(JavaVersion.current().isJava11Compatible()) {
+            return null;
+        } else {
+            Path javaHome = Paths.get(System.getProperty("java.home"));
             toolsJar = javaHome.resolve("lib").resolve("tools.jar");
-        } else if(JavaVersion.current().isJava11Compatible()) {
-            toolsJar = null;
-        }
-            else{
-                throw new IllegalStateException("Could not find tools.jar");
-            }
 
-        return toolsJar != null ? toolsJar.toFile() : null;
+            if(!Files.isRegularFile(toolsJar) && javaHome.toFile().getName().equalsIgnoreCase("jre")) {
+                javaHome = javaHome.getParent();
+                toolsJar = javaHome.resolve("lib").resolve("tools.jar");
+                if(!Files.isRegularFile(toolsJar))
+                    throw new IllegalStateException("Could not find tools.jar");
+            }
+        }
+        return  toolsJar.toFile();
     }
+
+
 }
