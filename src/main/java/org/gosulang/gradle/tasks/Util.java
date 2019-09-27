@@ -31,7 +31,7 @@ public class Util {
                     throw new IllegalStateException("Could not find tools.jar");
             }
         }
-        return toolsJar != null ? toolsJar.toFile() : null;
+        return  toolsJar.toFile();
     }
 
 
