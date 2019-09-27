@@ -5,21 +5,11 @@ import org.gosulang.gradle.tasks.GosuSourceSet
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.SourceDirectorySet
-//import org.gradle.api.internal.DefaultInstantiatorFactory
-import org.gradle.api.internal.file.DefaultFileLookup
-import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.DefaultSourceDirectorySetFactory
-import org.gradle.api.internal.file.FileResolver
 import org.gradle.api.internal.file.SourceDirectorySetFactory
-import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
-import org.gradle.api.internal.model.DefaultObjectFactory
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.model.ObjectFactory
-import org.gradle.internal.reflect.Instantiator
-//import org.gradle.api.internal.model.NamedObjectInstantiator
-import org.gradle.api.tasks.util.internal.PatternSets
-import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.nativeintegration.services.NativeServices
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
@@ -69,6 +59,7 @@ class DefaultGosuSourceSetTest extends Specification {
         expect sourceSet.allGosu.filter.excludes, empty()
     }
 
+    // TODO: this starts happening with the upgrade to 5.6.2
     @IgnoreIf({System.getProperty("os.name").toLowerCase().contains("mac")})
     def 'can configure Gosu source'() {
         when:
@@ -80,6 +71,7 @@ class DefaultGosuSourceSetTest extends Specification {
         expect sourceSet.gosu.srcDirs, equalTo([new File(_testProjectDir.root, 'src/somepathtogosu').absoluteFile] as Set)
     }
 
+    // TODO: this starts happening with the upgrade to 5.6.2
     @IgnoreIf({System.getProperty("os.name").toLowerCase().contains("mac")})
     def 'can configure Gosu source using an action'() {
         when:

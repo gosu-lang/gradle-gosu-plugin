@@ -4,6 +4,7 @@ import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
+import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
  * @deprecated Use CommandLineGosuCompiler instead
  */
 @Deprecated
-public class InProcessGosuCompiler implements GosuCompiler<GosuCompileSpec> {
+public class InProcessGosuCompiler implements Compiler<GosuCompileSpec> {
 
   private static final Logger LOGGER = Logging.getLogger(InProcessGosuCompiler.class);
 

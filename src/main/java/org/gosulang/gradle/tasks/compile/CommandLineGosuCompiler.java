@@ -12,6 +12,7 @@ import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
 import org.gradle.api.JavaVersion;
+import org.gradle.language.base.internal.compile.Compiler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,7 +22,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
+public class CommandLineGosuCompiler implements Compiler<GosuCompileSpec> {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuCompiler.class);
   
   private final Project _project;
@@ -107,7 +108,9 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       args.add(JAVA_OPTS);
     }
 
-    args.addAll(forkOptions.getJvmArgs());
+    if (forkOptions.getJvmArgs() != null) {
+      args.addAll(forkOptions.getJvmArgs());
+    }
 
     if(Os.isFamily(Os.FAMILY_MAC)) {
       args.add("-Xdock:name=gosuc");

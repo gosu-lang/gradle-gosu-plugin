@@ -2,61 +2,126 @@ package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
-import org.gradle.api.GradleException;
+import org.gosulang.gradle.tasks.compile.incremental.IncrementalCompilerFactory;
+import org.gosulang.gradle.tasks.compile.incremental.cache.DefaultGosuCompileCaches;
+import org.gosulang.gradle.tasks.compile.incremental.cache.GosuCompileCaches;
+import org.gosulang.gradle.tasks.compile.incremental.recomp.GosuRecompilationSpecProvider;
+import org.gosulang.gradle.tasks.compile.incremental.recomp.RecompilationSpecProvider;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.cache.StringInterner;
+import org.gradle.api.internal.file.FileOperations;
+import org.gradle.api.internal.file.FileTreeInternal;
+import org.gradle.api.internal.file.collections.FileCollectionAdapter;
+import org.gradle.api.internal.file.collections.ListBackedFileSet;
+import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.internal.tasks.compile.incremental.cache.UserHomeScopedCompileCaches;
+import org.gradle.api.internal.tasks.compile.incremental.recomp.CompilationSourceDirs;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.Classpath;
+import org.gradle.api.tasks.CompileClasspath;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
+import org.gradle.api.tasks.SkipWhenEmpty;
+import org.gradle.api.tasks.SourceTask;
+import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
-import org.gradle.util.VersionNumber;
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
+import org.gradle.cache.CacheRepository;
+import org.gradle.cache.internal.InMemoryCacheDecoratorFactory;
+import org.gradle.internal.hash.FileHasher;
+import org.gradle.internal.hash.StreamHasher;
+import org.gradle.internal.operations.BuildOperationExecutor;
+import org.gradle.internal.snapshot.FileSystemSnapshotter;
+import org.gradle.internal.snapshot.WellKnownFileLocations;
+import org.gradle.language.base.internal.compile.Compiler;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
 @CacheableTask
 public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
-  private GosuCompiler<GosuCompileSpec> _compiler;
+  private Compiler<GosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
   private Closure<FileCollection> _orderClasspath;
+  private FileCollection _filesToCompile;
 
   private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
 
+  private final FileCollection stableSources = getProject().files((Callable<FileTree>) this::getSource);
+
   @Inject
   public GosuCompile() {
-    VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
-    if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
-      _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
-    } else {
-      try {
-        Constructor ctor = CompileOptions.class.getConstructor();
-        _compileOptions = (CompileOptions) ctor.newInstance();
-      } catch (ReflectiveOperationException e) {
-        throw new GradleException("Unable to apply Gosu plugin", e);
-      }
-    }
+    ObjectFactory objectFactory = getServices().get(ObjectFactory.class);
+    CompileOptions compileOptions = objectFactory.newInstance(CompileOptions.class);
+    compileOptions.setIncremental(false);
+    this._compileOptions = compileOptions;
+  }
+
+  /**
+   * The sources for incremental change detection.
+   * Copied from GradleCompile
+   * @since 5.6
+   */
+  @SkipWhenEmpty
+  @PathSensitive(PathSensitivity.RELATIVE) // Java source files are supported, too. Therefore we should care about the relative path.
+  @InputFiles
+  protected FileCollection getStableSources() {
+    return stableSources;
   }
 
   @Override
-  @TaskAction
   protected void compile() {
-    DefaultGosuCompileSpec spec = createSpec();
-    _compiler = getCompiler(spec);
+    throw new UnsupportedOperationException("no-args compile() method should never be called.");
+  }
+
+  @TaskAction
+  protected void compile(IncrementalTaskInputs inputs) {
+    _filesToCompile = inputs.isIncremental() ? getOutOfDateSource(inputs) : getSource();
+
+    GosuCompileSpec spec = createSpec();
+
+    _compiler = getCompiler(spec, inputs);
     _compiler.execute(spec);
+  }
+
+ protected FileCollection getOutOfDateSource(final IncrementalTaskInputs inputs) {
+   final List<File> files = new ArrayList<>();
+
+   inputs.outOfDate(inputFileDetails -> files.add(inputFileDetails.getFile()));
+
+   return new FileCollectionAdapter(new ListBackedFileSet(files));
+ }
+
+ // TODO: figure out whether we need to call this and remove the corresponding class files
+  @SuppressWarnings("unused")
+  protected FileCollection getRemovedSource(final IncrementalTaskInputs inputs) {
+    final List<File> removed = new ArrayList<>();
+
+    inputs.removed(inputFileDetails -> removed.add(inputFileDetails.getFile()));
+
+    return new FileCollectionAdapter(new ListBackedFileSet(removed));
   }
 
   /**
@@ -150,10 +215,11 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   private DefaultGosuCompileSpec createSpec() {
+    // TODO: add new fields
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
     spec.setCompileOptions(_compileOptions);
     Project project = getProject();
-    spec.setSource(getSource());
+    spec.setSource(_filesToCompile);
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDir());
     spec.setTempDir(getTemporaryDir());
@@ -202,12 +268,113 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return spec;
   }
 
-  private GosuCompiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
-    if(_compiler == null) {
+  protected IncrementalCompilerFactory getIncrementalCompilerFactory() {
+    return new IncrementalCompilerFactory(
+        getFileOperations(),
+        getStreamHasher(),
+        getGosuCompileCaches(),
+        getBuildOperationExecutor(),
+        getStringInterner(),
+        getFileSystemSnapshotter(),
+        getFileHasher());
+  }
+
+  @Inject
+  protected FileOperations getFileOperations() {
+    return null;
+  }
+
+  @Inject
+  protected BuildOperationExecutor getBuildOperationExecutor() {
+    return null;
+  }
+
+  @Inject
+  protected FileHasher getFileHasher() {
+    return null;
+  }
+
+  @Inject
+  protected FileSystemSnapshotter getFileSystemSnapshotter() {
+    return null;
+  }
+
+  @Inject
+  protected StringInterner getStringInterner() {
+    return null;
+  }
+
+  protected GosuCompileCaches getGosuCompileCaches() {
+    return new DefaultGosuCompileCaches(
+        getFileSystemSnapshotter(),
+        getUserHomeScopedCompileCaches(),
+        getCacheRepository(),
+        getGradle(),
+        getInMemoryCacheDecoratorFactory(),
+        getWellKnownFileLocations(),
+        getStringInterner()
+        );
+  }
+
+  @Inject
+  protected Gradle getGradle() {
+    return null;
+  }
+
+  @Inject
+  protected WellKnownFileLocations getWellKnownFileLocations() {
+    return null;
+  }
+
+  @Inject
+  protected InMemoryCacheDecoratorFactory getInMemoryCacheDecoratorFactory() {
+    return null;
+  }
+
+  @Inject
+  protected CacheRepository getCacheRepository() {
+    return null;
+  }
+
+  @Inject
+  protected UserHomeScopedCompileCaches getUserHomeScopedCompileCaches() {
+    return null;
+  }
+
+  @Inject
+  protected StreamHasher getStreamHasher() {
+    return null;
+  }
+
+  private Compiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec, IncrementalTaskInputs inputChanges) {
+    if (_compiler == null) {
       GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(getProject(), this.getPath());
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
-    return _compiler;
+
+    CleaningGosuCompiler cleaningGosuCompiler = new CleaningGosuCompiler(_compiler, getOutputs());
+
+    if (spec.incrementalCompilationEnabled()) {
+      IncrementalCompilerFactory factory = getIncrementalCompilerFactory();
+
+      return factory.makeIncremental(
+          cleaningGosuCompiler,
+          getPath(),
+          getStableSources().getAsFileTree(),
+          createRecompilationSpecProvider(inputChanges, new CompilationSourceDirs(new ArrayList<>(spec.getSourceRoots().getFiles())))
+      );
+    } else {
+      return cleaningGosuCompiler;
+    }
+  }
+
+  private RecompilationSpecProvider createRecompilationSpecProvider(IncrementalTaskInputs inputChanges, CompilationSourceDirs sourceDirs) {
+    return new GosuRecompilationSpecProvider(
+        ((ProjectInternal) getProject()).getFileOperations(),
+        (FileTreeInternal) getSource(),
+        inputChanges,
+        sourceDirs
+    );
   }
 
   private List<File> asList(final FileCollection files) {

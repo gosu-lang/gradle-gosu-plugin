@@ -8,6 +8,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class DefaultGosuCompileSpec implements GosuCompileSpec {
 
@@ -52,6 +53,18 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
 
   public void setCompileOptions(CompileOptions compileOptions) {
     this.compileOptions = new MinimalGosuCompileOptions(compileOptions);
+  }
+
+  Set<String> classesToProcess;
+
+  @Override
+  public Set<String> getClasses() {
+    return classesToProcess;
+  }
+
+  @Override
+  public void setClasses(Set<String> classesToProcess) {
+    this.classesToProcess = classesToProcess;
   }
 
   //-- below are copied from org.gradle.api.internal.tasks.compile.DefaultJvmLanguageCompileSpec
@@ -102,5 +115,4 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
     classpath.forEach(target::add);
     _classpath = Collections.unmodifiableList(target);
   }
-
 }
