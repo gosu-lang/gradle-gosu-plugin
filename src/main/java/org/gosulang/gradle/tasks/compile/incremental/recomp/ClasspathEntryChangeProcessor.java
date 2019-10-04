@@ -16,8 +16,8 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshot;
-import org.gradle.api.internal.tasks.compile.incremental.deps.DependentsSet;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.deps.DependentsSet;
 import org.gradle.api.internal.tasks.compile.incremental.recomp.RecompilationSpec;
 import org.gradle.api.tasks.incremental.InputFileDetails;
 

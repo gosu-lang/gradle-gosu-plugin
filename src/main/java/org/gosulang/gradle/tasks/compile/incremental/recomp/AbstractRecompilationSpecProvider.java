@@ -17,10 +17,10 @@
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
 import org.gosulang.gradle.tasks.compile.GosuCompileSpec;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshot;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.file.FileOperations;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshot;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshot;
 import org.gradle.api.internal.tasks.compile.incremental.recomp.RecompilationSpec;
 import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.internal.execution.history.changes.DefaultFileChange;

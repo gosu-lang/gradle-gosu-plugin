@@ -16,15 +16,14 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshot;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
-import org.gradle.api.internal.tasks.compile.incremental.deps.ClassSetAnalysis;
-import org.gradle.api.internal.tasks.compile.incremental.deps.DependentsSet;
-import org.gradle.api.internal.tasks.compile.incremental.recomp.PreviousCompilationOutputAnalyzer;
-import org.gradle.internal.impldep.it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import org.gradle.internal.impldep.it.unimi.dsi.fastutil.ints.IntSet;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
+import org.gosulang.gradle.tasks.compile.incremental.deps.ClassSetAnalysis;
+import org.gosulang.gradle.tasks.compile.incremental.deps.DependentsSet;
+
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.Set;
 
 public class PreviousCompilation {
@@ -39,7 +38,7 @@ public class PreviousCompilation {
     this.previousCompilationOutputAnalyzer = previousCompilationOutputAnalyzer;
   }
 
-  public DependentsSet getDependents(Set<String> allClasses, IntSet constants) {
+  public DependentsSet getDependents(Set<String> allClasses, Set<Integer> constants) {
     return getClassAnalysis().getRelevantDependents(allClasses, constants);
   }
 
@@ -59,8 +58,8 @@ public class PreviousCompilation {
     return data.getClasspathSnapshot().getFileHashes().keySet();
   }
 
-  public DependentsSet getDependents(String className, IntSet newConstants) {
-    IntSet constants = new IntOpenHashSet(getClassAnalysis().getConstants(className));
+  public DependentsSet getDependents(String className, Set<Integer> newConstants) {
+    Set<Integer> constants = new HashSet<>(getClassAnalysis().getConstants(className));
     constants.removeAll(newConstants);
     return getClassAnalysis().getRelevantDependents(className, constants);
   }

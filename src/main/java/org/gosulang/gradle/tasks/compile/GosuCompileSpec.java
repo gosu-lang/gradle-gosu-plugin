@@ -4,10 +4,10 @@ package org.gosulang.gradle.tasks.compile;
 
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
-import org.gradle.internal.impldep.com.google.common.collect.Lists;
 import org.gradle.language.base.internal.compile.CompileSpec;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -56,7 +56,7 @@ public interface GosuCompileSpec extends CompileSpec, InfersGosuRuntime {
       return Collections.emptyList();
     }
     String[] modules = getCompileOptions().getCompilerArgs().get(i + 1).split(File.pathSeparator);
-    List<File> result = Lists.newArrayListWithCapacity(modules.length);
+    List<File> result = new ArrayList<>(modules.length);
     for (String module : modules) {
       result.add(new File(module));
     }

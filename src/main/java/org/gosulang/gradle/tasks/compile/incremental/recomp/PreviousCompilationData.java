@@ -16,8 +16,8 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotData;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotDataSerializer;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotData;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotDataSerializer;
 import org.gradle.internal.serialize.AbstractSerializer;
 import org.gradle.internal.serialize.BaseSerializerFactory;
 import org.gradle.internal.serialize.Decoder;

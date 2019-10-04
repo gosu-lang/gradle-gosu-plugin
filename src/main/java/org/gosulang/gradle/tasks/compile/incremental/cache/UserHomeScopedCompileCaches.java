@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,8 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.cache;
 
-import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassAnalysisCache;
 import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
-import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationStore;
 
-
-public interface GosuCompileCaches {
-  ClassAnalysisCache getClassAnalysisCache();
-
+public interface UserHomeScopedCompileCaches {
   ClasspathEntrySnapshotCache getClasspathEntrySnapshotCache();
-
-  PreviousCompilationStore createPreviousCompilationStore(String taskPath);
 }
-

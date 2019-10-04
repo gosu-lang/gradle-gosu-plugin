@@ -18,6 +18,7 @@ package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
 import org.gosulang.gradle.tasks.compile.GosuCompileSpec;
 import org.gradle.api.Action;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.file.FileOperations;
 import org.gradle.api.internal.file.FileTreeInternal;
@@ -32,6 +33,7 @@ import org.gradle.api.tasks.incremental.InputFileDetails;
 import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.internal.Factory;
 import org.gradle.internal.FileUtils;
+import org.gradle.internal.execution.history.changes.DefaultFileChange;
 
 import java.io.File;
 import java.util.Collection;
@@ -41,10 +43,12 @@ import java.util.Map;
 
 public class GosuRecompilationSpecProvider extends AbstractRecompilationSpecProvider {
     private final IncrementalTaskInputs inputs;
+    private final FileCollection filesToCompile;
     private final GosuConventionalSourceFileClassNameConverter sourceFileClassNameConverter;
 
-    public GosuRecompilationSpecProvider(FileOperations fileOperations, FileTreeInternal sources, IncrementalTaskInputs inputs, CompilationSourceDirs sourceDirs) {
+    public GosuRecompilationSpecProvider(FileOperations fileOperations, FileTreeInternal sources, FileCollection filesToCompile, IncrementalTaskInputs inputs, CompilationSourceDirs sourceDirs) {
         super(fileOperations, sources);
+        this.filesToCompile = filesToCompile;
         this.sourceFileClassNameConverter = new GosuConventionalSourceFileClassNameConverter(sourceDirs);
         this.inputs = inputs;
     }
@@ -120,8 +124,39 @@ public class GosuRecompilationSpecProvider extends AbstractRecompilationSpecProv
             }
         };
 
-        inputs.outOfDate(action);
+        if (inputs.isIncremental()) {
+            // can't do inputs.outOfDate because it's already been called once
+            filesToCompile.getFiles().forEach(f -> action.execute(new ModifiedAdapter(f)));
+        }
         inputs.removed(action);
+    }
+
+    static class ModifiedAdapter implements InputFileDetails {
+        private File file;
+
+        ModifiedAdapter(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public boolean isAdded() {
+            return false;
+        }
+
+        @Override
+        public boolean isModified() {
+            return true;
+        }
+
+        @Override
+        public boolean isRemoved() {
+            return false;
+        }
+
+        @Override
+        public File getFile() {
+            return file;
+        }
     }
 
 

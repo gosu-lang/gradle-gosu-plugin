@@ -16,17 +16,17 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshot;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.deps.ClassSetAnalysisData;
+import org.gosulang.gradle.tasks.compile.incremental.deps.DependentsSet;
 import org.gradle.api.internal.tasks.compile.incremental.deps.ClassChanges;
-import org.gradle.api.internal.tasks.compile.incremental.deps.ClassSetAnalysisData;
-import org.gradle.api.internal.tasks.compile.incremental.deps.DependentsSet;
 import org.gradle.api.tasks.incremental.InputFileDetails;
-import org.gradle.internal.impldep.com.google.common.collect.Lists;
-import org.gradle.internal.impldep.com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class ClasspathChangeDependentsFinder {
@@ -86,7 +86,7 @@ public class ClasspathChangeDependentsFinder {
       return DependentsSet.dependencyToAll("at least one of the classes of modified classpath entry '" + classpathEntry + "' is already present in the classpath");
     }
 
-    DependentsSet affectedOnClasspath = collectDependentsFromClasspath(Sets.union(classChanges.getModified(), classChanges.getAdded()));
+    DependentsSet affectedOnClasspath = collectDependentsFromClasspath(union(classChanges.getModified(), classChanges.getAdded()));
     if (affectedOnClasspath.isDependencyToAll()) {
       return affectedOnClasspath;
     } else {
@@ -95,8 +95,8 @@ public class ClasspathChangeDependentsFinder {
   }
 
   private DependentsSet collectDependentsFromClasspath(Set<String> modified) {
-    final Set<String> dependentClasses = Sets.newHashSet(modified);
-    final Deque<String> queue = Lists.newLinkedList(dependentClasses);
+    final Set<String> dependentClasses = new HashSet<>(modified);
+    final Deque<String> queue = new LinkedList<>(dependentClasses);
     while (!queue.isEmpty()) {
       final String dependentClass = queue.poll();
       for (File entry : classpathSnapshot.getEntries()) {
@@ -119,6 +119,13 @@ public class ClasspathChangeDependentsFinder {
     ClasspathEntrySnapshot entrySnapshot = classpathSnapshot.getSnapshot(entry);
     ClassSetAnalysisData data = entrySnapshot.getData().getClassAnalysis();
     return data.getDependents(dependentClass);
+  }
+
+  private static <E> Set<E> union(Set<? extends E> s1, Set<? extends E> s2) {
+    Set<E> union = new HashSet<>();
+    union.addAll(s1);
+    union.addAll(s2);
+    return union;
   }
 
 }

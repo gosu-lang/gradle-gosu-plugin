@@ -17,9 +17,13 @@
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
 import org.gosulang.gradle.tasks.compile.GosuCompileSpec;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshot;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotProvider;
-import org.gradle.internal.impldep.com.google.common.collect.Iterables;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshot;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotProvider;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class CurrentCompilation {
     private final GosuCompileSpec spec;
@@ -31,6 +35,13 @@ public class CurrentCompilation {
     }
 
     public ClasspathSnapshot getClasspathSnapshot() {
-        return classpathSnapshotProvider.getClasspathSnapshot(Iterables.concat(spec.getClasspath(), spec.getModulePath()));
+        return classpathSnapshotProvider.getClasspathSnapshot(concat(spec.getClasspath(), spec.getModulePath()));
+    }
+
+    private Iterable<File> concat(Iterable<File> classpath, List<File> modulePath) {
+        ArrayList<File> result = new ArrayList<>();
+        classpath.forEach(result::add);
+        result.addAll(modulePath);
+        return result;
     }
 }

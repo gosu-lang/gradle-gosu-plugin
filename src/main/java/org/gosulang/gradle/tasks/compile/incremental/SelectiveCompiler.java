@@ -18,14 +18,13 @@ package org.gosulang.gradle.tasks.compile.incremental;
 
 import org.gosulang.gradle.tasks.compile.CleaningGosuCompilerSupport;
 import org.gosulang.gradle.tasks.compile.GosuCompileSpec;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotProvider;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.CurrentCompilation;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilation;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.RecompilationSpecProvider;
 import org.gradle.api.internal.tasks.compile.incremental.RecompilationNotNecessary;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotProvider;
 import org.gradle.api.internal.tasks.compile.incremental.recomp.RecompilationSpec;
 import org.gradle.api.tasks.WorkResult;
-import org.gradle.internal.impldep.com.google.common.collect.Iterables;
 import org.gradle.internal.time.Time;
 import org.gradle.internal.time.Timer;
 import org.gradle.language.base.internal.compile.Compiler;
@@ -73,7 +72,7 @@ class SelectiveCompiler<T extends GosuCompileSpec> implements org.gradle.languag
 
         recompilationSpecProvider.initializeCompilation(spec, recompilationSpec);
 
-        if (Iterables.isEmpty(spec.getSource()) && spec.getClasses().isEmpty()) {
+        if (spec.getSource().isEmpty() && spec.getClasses().isEmpty()) {
             LOG.info("None of the classes needs to be compiled! Analysis took {}. ", clock.getElapsed());
             return new RecompilationNotNecessary();
         }
@@ -86,4 +85,5 @@ class SelectiveCompiler<T extends GosuCompileSpec> implements org.gradle.languag
             LOG.debug("Recompiled classes {}", classesToCompile);
         }
     }
+
 }

@@ -54,6 +54,8 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-library:2.1'
     testCompile 'org.spockframework:spock-core:1.2-groovy-2.5@jar'
     compile files("${System.getProperty('java.home')}/lib/tools.jar")
+    compile files("${System.getProperty('java.home')}/jre/lib/rt.jar")
+    compile 'org.ow2.asm:asm:7.2'
 }
 
 gradlePlugin {
@@ -206,5 +208,9 @@ void configurePom(XmlProvider xml) {
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
 if (isSnapshot) {
     publishPlugins.enabled = false
+}
 
+tasks.withType(JavaCompile) {
+    options.deprecation false
+    options.warnings false
 }

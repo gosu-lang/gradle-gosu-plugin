@@ -18,23 +18,23 @@ package org.gosulang.gradle.tasks.compile.incremental;
 
 import org.gosulang.gradle.tasks.compile.CleaningGosuCompilerSupport;
 import org.gosulang.gradle.tasks.compile.GosuCompileSpec;
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.CachingClassDependenciesAnalyzer;
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassAnalysisCache;
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.DefaultClassDependenciesAnalyzer;
 import org.gosulang.gradle.tasks.compile.incremental.cache.GosuCompileCaches;
 import org.gosulang.gradle.tasks.compile.incremental.cache.TaskScopedCompileCaches;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.CachingClasspathEntrySnapshotter;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotter;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotFactory;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotMaker;
+import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationOutputAnalyzer;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationStore;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.RecompilationSpecProvider;
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassDependenciesAnalyzer;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.api.internal.file.FileOperations;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.CachingClassDependenciesAnalyzer;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.ClassAnalysisCache;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.ClassDependenciesAnalyzer;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.DefaultClassDependenciesAnalyzer;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.CachingClasspathEntrySnapshotter;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotter;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotFactory;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotMaker;
-import org.gradle.api.internal.tasks.compile.incremental.recomp.PreviousCompilationOutputAnalyzer;
 import org.gradle.internal.hash.FileHasher;
 import org.gradle.internal.hash.StreamHasher;
 import org.gradle.internal.operations.BuildOperationExecutor;
@@ -67,7 +67,7 @@ public class IncrementalCompilerFactory {
         ClasspathEntrySnapshotter classpathEntrySnapshotter = new CachingClasspathEntrySnapshotter(fileHasher, streamHasher, fileSystemSnapshotter, analyzer, compileCaches.getClasspathEntrySnapshotCache(), fileOperations);
         ClasspathSnapshotMaker classpathSnapshotMaker = new ClasspathSnapshotMaker(new ClasspathSnapshotFactory(classpathEntrySnapshotter, buildOperationExecutor));
         PreviousCompilationOutputAnalyzer previousCompilationOutputAnalyzer = new PreviousCompilationOutputAnalyzer(fileHasher, streamHasher, analyzer, fileOperations);
-        IncrementalCompilerDecorator<T> incrementalSupport = new IncrementalCompilerDecorator<>(classpathSnapshotMaker, compileCaches, cleaningGosuCompiler, rebuildAllCompiler, previousCompilationOutputAnalyzer);
+        IncrementalCompilerDecorator<T> incrementalSupport = new IncrementalCompilerDecorator<T>(classpathSnapshotMaker, compileCaches, cleaningGosuCompiler, rebuildAllCompiler, previousCompilationOutputAnalyzer);
         return incrementalSupport.prepareCompiler(recompilationSpecProvider);
     }
 

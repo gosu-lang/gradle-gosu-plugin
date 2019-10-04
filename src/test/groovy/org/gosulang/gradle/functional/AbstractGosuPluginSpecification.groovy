@@ -11,7 +11,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     // These are the versions of gradle to iteratively test against
     // Locally, only test the latest.
     @Shared
-    String[] gradleVersionsToTest = System.getenv().get('CI') != null ? getTestedVersions().plus(getGradleVersion()).sort() : [getGradleVersion()]
+    String[] gradleVersionsToTest = System.getenv().get('CI') != null ? (getTestedVersions() + getGradleVersion()).sort() : [getGradleVersion()]
 
     protected static final String LF = System.lineSeparator
     protected static final String FS = File.separator

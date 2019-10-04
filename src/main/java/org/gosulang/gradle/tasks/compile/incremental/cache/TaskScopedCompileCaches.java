@@ -16,9 +16,9 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.cache;
 
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassAnalysisCache;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationStore;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.ClassAnalysisCache;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
 
 public interface TaskScopedCompileCaches {
   ClassAnalysisCache getClassAnalysisCache();

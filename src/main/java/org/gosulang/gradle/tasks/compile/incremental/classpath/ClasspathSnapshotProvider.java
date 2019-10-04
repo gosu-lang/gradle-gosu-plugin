@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package org.gosulang.gradle.tasks.compile.incremental.cache;
+package org.gosulang.gradle.tasks.compile.incremental.classpath;
 
-import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassAnalysisCache;
-import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
-import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationStore;
+import java.io.File;
 
-
-public interface GosuCompileCaches {
-  ClassAnalysisCache getClassAnalysisCache();
-
-  ClasspathEntrySnapshotCache getClasspathEntrySnapshotCache();
-
-  PreviousCompilationStore createPreviousCompilationStore(String taskPath);
+public interface ClasspathSnapshotProvider {
+  ClasspathSnapshot getClasspathSnapshot(Iterable<File> classpath);
 }
-

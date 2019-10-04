@@ -4,7 +4,9 @@ import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gosulang.gradle.tasks.compile.incremental.IncrementalCompilerFactory;
 import org.gosulang.gradle.tasks.compile.incremental.cache.DefaultGosuCompileCaches;
+import org.gosulang.gradle.tasks.compile.incremental.cache.DefaultUserHomeScopedCompileCaches;
 import org.gosulang.gradle.tasks.compile.incremental.cache.GosuCompileCaches;
+import org.gosulang.gradle.tasks.compile.incremental.cache.UserHomeScopedCompileCaches;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.GosuRecompilationSpecProvider;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.RecompilationSpecProvider;
 import org.gradle.api.Project;
@@ -17,7 +19,6 @@ import org.gradle.api.internal.file.FileTreeInternal;
 import org.gradle.api.internal.file.collections.FileCollectionAdapter;
 import org.gradle.api.internal.file.collections.ListBackedFileSet;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.tasks.compile.incremental.cache.UserHomeScopedCompileCaches;
 import org.gradle.api.internal.tasks.compile.incremental.recomp.CompilationSourceDirs;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
@@ -336,9 +337,8 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return null;
   }
 
-  @Inject
   protected UserHomeScopedCompileCaches getUserHomeScopedCompileCaches() {
-    return null;
+    return new DefaultUserHomeScopedCompileCaches(getFileSystemSnapshotter(), getCacheRepository(), getInMemoryCacheDecoratorFactory(), getStringInterner());
   }
 
   @Inject
@@ -372,6 +372,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return new GosuRecompilationSpecProvider(
         ((ProjectInternal) getProject()).getFileOperations(),
         (FileTreeInternal) getSource(),
+        _filesToCompile,
         inputChanges,
         sourceDirs
     );

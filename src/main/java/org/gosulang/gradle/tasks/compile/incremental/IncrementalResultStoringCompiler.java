@@ -18,10 +18,10 @@ package org.gosulang.gradle.tasks.compile.incremental;
 
 
 import org.gosulang.gradle.tasks.compile.GosuCompileSpec;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotData;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathSnapshotProvider;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationData;
 import org.gradle.api.internal.tasks.compile.incremental.RecompilationNotNecessary;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotData;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathSnapshotProvider;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.cache.internal.Stash;
 import org.gradle.language.base.internal.compile.Compiler;

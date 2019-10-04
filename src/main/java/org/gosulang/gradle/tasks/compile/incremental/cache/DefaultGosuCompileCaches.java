@@ -1,18 +1,17 @@
 package org.gosulang.gradle.tasks.compile.incremental.cache;
 
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassAnalysisCache;
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.ClassAnalysisSerializer;
+import org.gosulang.gradle.tasks.compile.incremental.analyzer.DefaultClassAnalysisCache;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotData;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.ClasspathEntrySnapshotDataSerializer;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.DefaultClasspathEntrySnapshotCache;
+import org.gosulang.gradle.tasks.compile.incremental.classpath.SplitClasspathEntrySnapshotCache;
+import org.gosulang.gradle.tasks.compile.incremental.deps.ClassAnalysis;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationData;
 import org.gosulang.gradle.tasks.compile.incremental.recomp.PreviousCompilationStore;
 import org.gradle.api.internal.cache.StringInterner;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.ClassAnalysisCache;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.ClassAnalysisSerializer;
-import org.gradle.api.internal.tasks.compile.incremental.analyzer.DefaultClassAnalysisCache;
-import org.gradle.api.internal.tasks.compile.incremental.cache.UserHomeScopedCompileCaches;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotCache;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotData;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.ClasspathEntrySnapshotDataSerializer;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.DefaultClasspathEntrySnapshotCache;
-import org.gradle.api.internal.tasks.compile.incremental.classpath.SplitClasspathEntrySnapshotCache;
-import org.gradle.api.internal.tasks.compile.incremental.deps.ClassAnalysis;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.cache.CacheRepository;
 import org.gradle.cache.FileLockManager;
@@ -43,15 +42,15 @@ public class DefaultGosuCompileCaches implements GosuCompileCaches, Closeable {
                                   WellKnownFileLocations fileLocations,
                                   StringInterner interner) {
     cache = cacheRepository
-        .cache(gradle, "javaCompile")
-        .withDisplayName("Java compile cache")
+        .cache(gradle, "gosuCompile")
+        .withDisplayName("Gosu compile cache")
         .withLockOptions(mode(FileLockManager.LockMode.None)) // Lock on demand
         .open();
     PersistentIndexedCacheParameters<HashCode, ClassAnalysis> classCacheParameters = PersistentIndexedCacheParameters.of("classAnalysis", new HashCodeSerializer(), new ClassAnalysisSerializer(interner))
         .withCacheDecorator(inMemoryCacheDecoratorFactory.decorator(400000, true));
     this.classAnalysisCache = new DefaultClassAnalysisCache(cache.createCache(classCacheParameters));
 
-    PersistentIndexedCacheParameters<HashCode, ClasspathEntrySnapshotData> jarCacheParameters = PersistentIndexedCacheParameters.of("jarAnalysis", new HashCodeSerializer(), new ClasspathEntrySnapshotDataSerializer(interner))
+    PersistentIndexedCacheParameters<HashCode, ClasspathEntrySnapshotData> jarCacheParameters = PersistentIndexedCacheParameters.of("gosuJarAnalysis", new HashCodeSerializer(), new ClasspathEntrySnapshotDataSerializer(interner))
         .withCacheDecorator(inMemoryCacheDecoratorFactory.decorator(20000, true));
     this.classpathEntrySnapshotCache = new SplitClasspathEntrySnapshotCache(fileLocations, userHomeScopedCompileCaches.getClasspathEntrySnapshotCache(), new DefaultClasspathEntrySnapshotCache(fileSystemSnapshotter, cache.createCache(jarCacheParameters)));
 

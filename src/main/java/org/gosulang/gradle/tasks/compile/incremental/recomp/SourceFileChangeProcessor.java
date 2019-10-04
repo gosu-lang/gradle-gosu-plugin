@@ -16,12 +16,12 @@
 
 package org.gosulang.gradle.tasks.compile.incremental.recomp;
 
-import org.gradle.api.internal.tasks.compile.incremental.deps.DependentsSet;
+import org.gosulang.gradle.tasks.compile.incremental.deps.DependentsSet;
 import org.gradle.api.internal.tasks.compile.incremental.recomp.RecompilationSpec;
-import org.gradle.internal.impldep.it.unimi.dsi.fastutil.ints.IntSets;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 
 public class SourceFileChangeProcessor {
   private final PreviousCompilation previousCompilation;
@@ -34,7 +34,7 @@ public class SourceFileChangeProcessor {
     spec.getClassesToCompile().addAll(classNames);
 
     for (String className : classNames) {
-      DependentsSet actualDependents = previousCompilation.getDependents(className, IntSets.EMPTY_SET);
+      DependentsSet actualDependents = previousCompilation.getDependents(className, Collections.emptySet());
       if (actualDependents.isDependencyToAll()) {
         spec.setFullRebuildCause(actualDependents.getDescription(), inputFile);
         return;
