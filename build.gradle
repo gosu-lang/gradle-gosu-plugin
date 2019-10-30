@@ -123,13 +123,15 @@ if(System.getenv('CI') != null) {
 }
 
 task sourceJar(type: Jar) {
-    classifier = 'sources'
+    dependsOn 'test'
+    archiveClassifier = 'sources'
     description 'generate sources'
     from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar) {
-    classifier = 'javadoc'
+    dependsOn 'test'
+    archiveClassifier = 'javadoc'
     description 'generate javadoc'
     from javadoc
 }
