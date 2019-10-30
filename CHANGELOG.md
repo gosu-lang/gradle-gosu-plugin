@@ -1,5 +1,8 @@
 # Change Log
 
+## [v0.3.14](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.14) (2019-10-30)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.13...v0.3.14)
+
 ## [v0.3.13](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.13) (2019-09-27)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.4.2...v0.3.13)
 
