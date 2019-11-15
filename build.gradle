@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     id 'net.researchgate.release' version '2.7.0'
-    id 'com.gradle.plugin-publish' version '0.9.10'
+   // id 'com.gradle.plugin-publish' version '0.9.10'
     id 'maven-publish'
     id 'groovy'
     id 'java-gradle-plugin'
@@ -32,7 +32,10 @@ dependencies {
 }
 """
 
+
+
 final boolean isSnapshot = project.version.endsWith('-SNAPSHOT')
+boolean  publishSnapshotToNexus = project.hasProperty('publishSnapshotToNexus')
 
 repositories {
     mavenLocal()
@@ -63,7 +66,7 @@ gradlePlugin {
     }
 }
 
-pluginBundle {
+/*pluginBundle {
     website = 'http://gosu-lang.org'
     vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
     description = project.description
@@ -75,7 +78,7 @@ pluginBundle {
             displayName = 'Gosu Gradle Plugin'
         }
     }
-}
+}*/
 
 task gradleVersionHelper(type: VersionWriterTask) {
     propertyToRead = 'gradleVersion'
@@ -143,7 +146,8 @@ release {
     }
 }
 
-afterReleaseBuild.dependsOn publish, publishPlugins
+//afterReleaseBuild.dependsOn publish, publishPlugins
+afterReleaseBuild.dependsOn publish
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
@@ -153,7 +157,7 @@ publishing {
         pom.withXml { xml -> configurePom(xml) }
     }
 
-    repositories {
+    /*repositories {
         maven {
             url isSnapshot ? 'https://oss.jfrog.org/artifactory/oss-snapshot-local'
                            : 'https://api.bintray.com/maven/gosu-lang/gosu-lang/gradle-gosu-plugin/;publish=1'
@@ -162,7 +166,50 @@ publishing {
                 password System.getenv('BINTRAY_API_KEY')
             }
         }
+    }*/
+
+    if(publishSnapshotToNexus) {
+
+        repositories {
+            maven {
+                if(isSnapshot ){
+                    url 'https://nexus.guidewire.com/repository/snapshots-dev/'
+                } else {
+                    url 'https://api.bintray.com/maven/gosu-lang/gosu-lang/gradle-gosu-plugin/;publish=1'
+                    credentials {
+                        username System.getenv('BINTRAY_USER')
+                        password System.getenv('BINTRAY_API_KEY')
+                    }
+                }
+            }
+        }
+
+    } else {
+        repositories {
+            maven {
+                url isSnapshot ? 'https://oss.jfrog.org/artifactory/oss-snapshot-local'
+                        : 'https://api.bintray.com/maven/gosu-lang/gosu-lang/gradle-gosu-plugin/;publish=1'
+                credentials {
+                    username System.getenv('BINTRAY_USER')
+                    password System.getenv('BINTRAY_API_KEY')
+                }
+            }
+        }
     }
+
+  /*  repositories {
+        maven {
+            if(isSnapshot ){
+                url 'https://nexus.guidewire.com/repository/snapshots-dev/'
+            } else {
+                url 'https://api.bintray.com/maven/gosu-lang/gosu-lang/gradle-gosu-plugin/;publish=1'
+                credentials {
+                    username System.getenv('BINTRAY_USER')
+                    password System.getenv('BINTRAY_API_KEY')
+                }
+            }
+        }
+    }*/
 }
 
 model {
@@ -204,7 +251,7 @@ void configurePom(XmlProvider xml) {
 
 // the gradle plugin portal isn't compatible with SNAPSHOT versions
 // https://discuss.gradle.org/t/uploading-snapshot-versions-to-the-plugin-portal/11347
-if (isSnapshot) {
+/*if (isSnapshot) {
     publishPlugins.enabled = false
 
-}
+}*/
