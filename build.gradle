@@ -10,7 +10,7 @@ plugins {
 }
 
 wrapper {
-    gradleVersion '5.1.1'
+    gradleVersion '6.0.1'
 }
 
 group = 'org.gosu-lang.gosu'
@@ -143,15 +143,8 @@ publishing {
     if(publishSnapshotToNexus) {
         repositories {
             maven {
-                if(isSnapshot ){
+                if(isSnapshot)
                     url 'https://nexus.guidewire.com/repository/snapshots-dev/'
-                } else {
-                    url 'https://api.bintray.com/maven/gosu-lang/gosu-lang/gradle-gosu-plugin/;publish=1'
-                    credentials {
-                        username System.getenv('BINTRAY_USER')
-                        password System.getenv('BINTRAY_API_KEY')
-                    }
-                }
             }
         }
     } else {
