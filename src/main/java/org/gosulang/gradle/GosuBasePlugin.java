@@ -138,13 +138,6 @@ public class GosuBasePlugin implements Plugin<Project> {
 
   private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, AbstractCompile compile, final Project target) {
     final String sourceSetChildPath = "classes/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
-   /* sourceDirectorySet.setOutputDir(target.provider(() -> {
-      if (sourceSet.getOutput().isLegacyLayout()) {
-        return sourceSet.getJava().getOutputDir();
-      }
-      return new File(target.getBuildDir(), sourceSetChildPath);
-    }));*/
-
     sourceDirectorySet.setOutputDir(target.provider(() -> {
         return new File(target.getBuildDir(), sourceSetChildPath);
     }));

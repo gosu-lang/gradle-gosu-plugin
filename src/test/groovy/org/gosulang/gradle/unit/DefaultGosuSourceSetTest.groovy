@@ -7,35 +7,26 @@ import org.gradle.api.Project
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.file.DefaultFileCollectionFactory
 
-//import org.gradle.api.internal.DefaultInstantiatorFactory
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.DefaultSourceDirectorySetFactory
 import org.gradle.api.internal.file.FileCollectionFactory
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.api.internal.file.SourceDirectorySetFactory
 import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
 import org.gradle.api.internal.model.DefaultObjectFactory
 import org.gradle.api.internal.project.ProjectInternal
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.api.tasks.util.internal.PatternSpecFactory
 import org.gradle.internal.Factory
 import org.gradle.internal.reflect.Instantiator
-import org.gradle.api.internal.model.NamedObjectInstantiator
 import org.gradle.api.tasks.util.internal.PatternSets
-import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.nativeintegration.services.NativeServices
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
-import javax.inject.Inject
-
-//import javax.naming.spi.ObjectFactory
-//import javax.naming.spi.ObjectFactoryBuilder
 
 import static org.hamcrest.Matchers.*
 import static spock.util.matcher.HamcrestSupport.expect
@@ -56,7 +47,7 @@ class DefaultGosuSourceSetTest extends Specification {
 
     def setup() {
         Project project = createRootProject()
-        NativeServices.initialize(_testProjectDir.root)
+        NativeServices.initialize(_testProjectDir.root) //TODO: Need to find a better way to instantiate DefaultGosuSourceSet
         Factory<PatternSet> patternSetFactory = PatternSets.getPatternSetFactory(PatternSpecFactory.INSTANCE)
         FileResolver fileResolver = new DefaultFileLookup(patternSetFactory).getFileResolver(_testProjectDir.root)
         def defaultDirectoryFileTreeFactory = new DefaultDirectoryFileTreeFactory()
