@@ -51,7 +51,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     }
   }
 
- // @Override
   @TaskAction
   protected void compile() {
     DefaultGosuCompileSpec spec = createSpec();
@@ -126,7 +125,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   @Internal
- // @Optional
   public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
