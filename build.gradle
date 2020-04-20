@@ -10,7 +10,7 @@ plugins {
 }
 
 wrapper {
-    gradleVersion '6.0.1'
+    gradleVersion '5.1.1'
 }
 
 group = 'org.gosu-lang.gosu'

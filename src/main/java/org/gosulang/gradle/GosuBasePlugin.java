@@ -1,6 +1,5 @@
 package org.gosulang.gradle;
 
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
 import org.gosulang.gradle.tasks.GosuRuntime;
@@ -11,12 +10,10 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.SourceDirectorySet;
-//import org.gradle.api.internal.file.SourceDirectorySetFactory;  //TODO unavoidable use of internal API
-import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.internal.file.SourceDirectorySetFactory;  //TODO unavoidable use of internal API
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.internal.ConventionMapping;
-import org.gradle.api.plugins.internal.JvmPluginsHelper;
-//import org.gradle.api.plugins.internal.SourceSetUtil;
+import org.gradle.api.plugins.internal.SourceSetUtil;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
@@ -31,14 +28,14 @@ import java.util.concurrent.Callable;
 public class GosuBasePlugin implements Plugin<Project> {
   public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
 
-  private final ObjectFactory _objectFactory;
+  private final SourceDirectorySetFactory _sourceDirectorySetFactory;
 
   private Project _project;
   private GosuRuntime _gosuRuntime;
 
   @Inject
-  GosuBasePlugin(ObjectFactory objectFactory){
-  _objectFactory = objectFactory;
+  GosuBasePlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
+    _sourceDirectorySetFactory = sourceDirectorySetFactory;
   }
 
   @Override
@@ -63,13 +60,13 @@ public class GosuBasePlugin implements Plugin<Project> {
    */
   private void configureCompileDefaults() {
 
-    _project.getTasks().withType(GosuCompile.class, gosuCompile ->
+    _project.getTasks().withType(GosuCompile.class, gosuCompile -> 
         gosuCompile.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath())));
   }
 
   private void configureSourceSetDefaults(final JavaBasePlugin javaBasePlugin) {
     _project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().all(sourceSet -> {
-                GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _objectFactory);
+      GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _sourceDirectorySetFactory);
 
       Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
       sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
@@ -106,7 +103,7 @@ public class GosuBasePlugin implements Plugin<Project> {
           return sourceSet.getCompileClasspath().plus(gosuCompile.getProject().files(new Object[]{sourceSet.getJava().getOutputDir()}));
         }
       });
-      JvmPluginsHelper.configureAnnotationProcessorPath(sourceSet, gosuSourceSet.getGosu(), gosuCompile.getOptions(), _project);
+      SourceSetUtil.configureAnnotationProcessorPath(sourceSet, gosuCompile.getOptions(), _project);
       gosuCompile.setDestinationDir(_project.provider(new Callable<File>() {
         public File call() {
           return sourceSet.getJava().getOutputDir();
@@ -138,15 +135,11 @@ public class GosuBasePlugin implements Plugin<Project> {
 
   private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, AbstractCompile compile, final Project target) {
     final String sourceSetChildPath = "classes/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
-   /* sourceDirectorySet.setOutputDir(target.provider(() -> {
+    sourceDirectorySet.setOutputDir(target.provider(() -> {
       if (sourceSet.getOutput().isLegacyLayout()) {
         return sourceSet.getJava().getOutputDir();
       }
       return new File(target.getBuildDir(), sourceSetChildPath);
-    }));*/
-
-    sourceDirectorySet.setOutputDir(target.provider(() -> {
-        return new File(target.getBuildDir(), sourceSetChildPath);
     }));
 
     ((ConfigurableFileCollection) sourceSet.getOutput().getClassesDirs()).from(target.provider( sourceDirectorySet::getOutputDir));

@@ -10,7 +10,6 @@ import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.internal.reflect.Instantiator
-import org.gradle.api.model.ObjectFactory
 import org.gradle.testfixtures.ProjectBuilder
 import org.hamcrest.Matchers
 import org.junit.Before
@@ -44,17 +43,17 @@ class GosuPluginTest {
     }
 
     private Project project
-    private ObjectFactory instantiator
+    private Instantiator instantiator
     private JavaPluginConvention convention
 
     @Before
     public void applyPlugin() throws IOException {
         project = createRootProject()
-        instantiator = ((ProjectInternal) project).services.get(ObjectFactory)
+        instantiator = ((ProjectInternal) project).services.get(Instantiator)
         project.pluginManager.apply(JavaPlugin)
         convention = new DefaultJavaPluginConvention(
-                ((ProjectInternal) project), instantiator)
- //       convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
+                ((ProjectInternal) project), instantiator, null)
+//        convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
         project.pluginManager.apply(GosuPlugin)
     }
 
