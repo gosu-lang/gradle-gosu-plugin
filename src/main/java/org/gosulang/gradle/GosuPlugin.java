@@ -39,6 +39,7 @@ public class GosuPlugin implements Plugin<Project> {
         test.getOutput(),
         main.getOutput(),
         project.getConfigurations().getByName(JavaPlugin.TEST_RUNTIME_CONFIGURATION_NAME),
+       // project.getConfigurations().getByName(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME),
         gosuRuntime.inferGosuClasspath(project.getConfigurations().getByName(JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME))));
   }
 
