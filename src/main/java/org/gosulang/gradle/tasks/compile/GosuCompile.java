@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
+import org.gosulang.gradle.tasks.GosuConstants;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -38,6 +39,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   @Inject
   public GosuCompile() {
+    setGroup(GosuConstants.GROUP_NAME);
     VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
     if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);

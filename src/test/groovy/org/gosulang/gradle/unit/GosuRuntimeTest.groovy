@@ -2,6 +2,7 @@ package org.gosulang.gradle.unit
 
 import org.gosulang.gradle.GosuBasePlugin
 import org.gradle.api.GradleException
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.util.VersionNumber
 import spock.lang.Specification
@@ -11,6 +12,7 @@ class GosuRuntimeTest extends Specification {
     def project = ProjectBuilder.builder().build()
 
     def setup() {
+        project.pluginManager.apply(JavaPlugin)
         project.pluginManager.apply(GosuBasePlugin)
     }
 

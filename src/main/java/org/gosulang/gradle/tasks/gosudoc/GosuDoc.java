@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
 import groovy.lang.Closure;
+import org.gosulang.gradle.tasks.GosuConstants;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
@@ -29,6 +30,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   private String _title;
 
   public GosuDoc() {
+    setGroup(GosuConstants.GROUP_NAME);
     getLogging().captureStandardOutput(LogLevel.INFO);
   }
 

@@ -74,7 +74,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
      * @return Delimited String of the values, joined as suitable for use in a classpath statement
      */
     protected String asPath(String... values) {
-        return String.join(FS, values)
+        return String.join(FS, values).replace('\\', '\\\\')
     }
 
     /**
