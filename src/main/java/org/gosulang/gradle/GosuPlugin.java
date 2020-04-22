@@ -18,8 +18,8 @@ public class GosuPlugin implements Plugin<Project> {
   public static final String GOSUDOC_TASK_NAME = "gosudoc";
 
   public void apply(Project project) {
-    project.getPluginManager().apply(GosuBasePlugin.class);
     project.getPluginManager().apply(JavaPlugin.class);
+    project.getPluginManager().apply(GosuBasePlugin.class);
 
     refreshTestRuntimeClasspath(project);
     configureGosuDoc(project);

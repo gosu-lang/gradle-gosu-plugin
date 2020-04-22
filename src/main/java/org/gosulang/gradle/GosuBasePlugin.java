@@ -1,6 +1,5 @@
 package org.gosulang.gradle;
 
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
 import org.gosulang.gradle.tasks.GosuRuntime;
@@ -11,13 +10,11 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.SourceDirectorySet;
-//import org.gradle.api.internal.file.SourceDirectorySetFactory;  //TODO unavoidable use of internal API
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.internal.ConventionMapping;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.internal.JvmPluginsHelper;
-//import org.gradle.api.plugins.internal.SourceSetUtil;
-import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
@@ -44,9 +41,8 @@ public class GosuBasePlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     _project = project;
-    _project.getPluginManager().apply(JavaBasePlugin.class);
 
-    JavaBasePlugin javaBasePlugin = _project.getPlugins().getPlugin(JavaBasePlugin.class);
+    JavaPlugin javaBasePlugin = _project.getPlugins().getPlugin(JavaPlugin.class);
 
     configureGosuRuntimeExtension();
     configureCompileDefaults();
@@ -67,9 +63,9 @@ public class GosuBasePlugin implements Plugin<Project> {
         gosuCompile.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath())));
   }
 
-  private void configureSourceSetDefaults(final JavaBasePlugin javaBasePlugin) {
+  private void configureSourceSetDefaults(final JavaPlugin javaBasePlugin) {
     _project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().all(sourceSet -> {
-                GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _objectFactory);
+      GosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _objectFactory);
 
       Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
       sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
@@ -78,7 +74,7 @@ public class GosuBasePlugin implements Plugin<Project> {
 
       sourceSet.getResources().getFilter().exclude(element -> gosuSourceSet.getGosu().contains(element.getFile()));
 
-      sourceSet.getAllSource().source(gosuSourceSet.getGosu());
+      sourceSet.getJava().srcDir(gosuSourceSet.getGosu());
 
       configureGosuCompile(javaBasePlugin, sourceSet, gosuSourceSet);
     });
@@ -89,7 +85,7 @@ public class GosuBasePlugin implements Plugin<Project> {
    * Gradle 4.0+: call local equivalent of o.g.a.p.i.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project)
    * Gradle 2.x, 3.x: call javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
    */
-  private void configureGosuCompile(JavaBasePlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
+  private void configureGosuCompile(JavaPlugin javaPlugin, SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
     GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
 
