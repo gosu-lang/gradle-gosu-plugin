@@ -7,7 +7,6 @@ import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.Convention;
-import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
@@ -45,7 +44,6 @@ public class GosuPlugin implements Plugin<Project> {
   private void configureGosuDoc( final Project project ) {
     GosuDoc gosuDoc = project.getTasks().create(GOSUDOC_TASK_NAME, GosuDoc.class);
     gosuDoc.setDescription("Generates Gosudoc API documentation for the main source code.");
-    gosuDoc.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
 
     JavaPluginConvention convention = project.getConvention().getPlugin(JavaPluginConvention.class);
     SourceSet sourceSet = convention.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
