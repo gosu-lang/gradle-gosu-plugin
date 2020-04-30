@@ -9,7 +9,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.internal.reflect.Instantiator
+import org.gradle.api.model.ObjectFactory
 import org.gradle.testfixtures.ProjectBuilder
 import org.hamcrest.Matchers
 import org.junit.Before
@@ -20,7 +20,6 @@ import org.junit.rules.TemporaryFolder
 import java.util.concurrent.Callable
 
 import static org.gradle.util.WrapUtil.toLinkedSet
-import static org.hamcrest.Matchers.empty
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.instanceOf
 import static org.junit.Assert.*
@@ -43,17 +42,16 @@ class GosuPluginTest {
     }
 
     private Project project
-    private Instantiator instantiator
+    private ObjectFactory objectFactory
     private JavaPluginConvention convention
 
     @Before
     public void applyPlugin() throws IOException {
         project = createRootProject()
-        instantiator = ((ProjectInternal) project).services.get(Instantiator)
+        objectFactory = ((ProjectInternal) project).services.get(ObjectFactory)
         project.pluginManager.apply(JavaPlugin)
         convention = new DefaultJavaPluginConvention(
-                ((ProjectInternal) project), instantiator, null)
-//        convention = new JavaPluginConvention(((ProjectInternal) project), instantiator)
+                ((ProjectInternal) project), objectFactory)
         project.pluginManager.apply(GosuPlugin)
     }
 

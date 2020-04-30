@@ -51,7 +51,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     }
   }
 
-  @Override
   @TaskAction
   protected void compile() {
     DefaultGosuCompileSpec spec = createSpec();
@@ -126,7 +125,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   @Internal
-  @Optional
   public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
@@ -165,6 +163,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       spec.setClasspath(asList(getClasspath()));
     } else {
       spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
+      //spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME))));
     }
 
     Logger logger = project.getLogger();
