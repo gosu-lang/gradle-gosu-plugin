@@ -1,5 +1,15 @@
 # Change Log
 
+## [v6.0.0](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v6.0.0) (2020-04-30)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.105...v6.0.0)
+
+**Merged pull requests:**
+
+- User/sv/gradle 6.0.1 support snapshot [\#50](https://github.com/gosu-lang/gradle-gosu-plugin/pull/50) ([sadheeshv](https://github.com/sadheeshv))
+
+## [v0.3.105](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.105) (2019-11-15)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.14...v0.3.105)
+
 ## [v0.3.14](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v0.3.14) (2019-10-30)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.13...v0.3.14)
 
