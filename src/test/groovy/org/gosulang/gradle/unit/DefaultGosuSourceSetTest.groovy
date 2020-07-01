@@ -13,12 +13,17 @@ import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.DefaultSourceDirectorySetFactory
 import org.gradle.api.internal.file.FileCollectionFactory
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.internal.file.SourceDirectorySetFactory
 import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
 import org.gradle.api.internal.model.DefaultObjectFactory
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.internal.provider.PropertyHost
+import org.gradle.api.internal.tasks.DefaultTaskDependencyFactory
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.api.tasks.util.internal.PatternSpecFactory
 import org.gradle.internal.Factory
+import org.gradle.internal.nativeintegration.services.FileSystems
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.api.tasks.util.internal.PatternSets
 import org.gradle.internal.nativeintegration.services.NativeServices
@@ -49,12 +54,13 @@ class DefaultGosuSourceSetTest extends Specification {
         Project project = createRootProject()
         NativeServices.initialize(_testProjectDir.root) //TODO: Need to find a better way to instantiate DefaultGosuSourceSet
         Factory<PatternSet> patternSetFactory = PatternSets.getPatternSetFactory(PatternSpecFactory.INSTANCE)
-        FileResolver fileResolver = new DefaultFileLookup(patternSetFactory).getFileResolver(_testProjectDir.root)
+        FileResolver fileResolver = new DefaultFileLookup().getFileResolver(_testProjectDir.root)
+
         def defaultDirectoryFileTreeFactory = new DefaultDirectoryFileTreeFactory()
-        def fileCollectionFactory = new DefaultFileCollectionFactory(fileResolver, null, defaultDirectoryFileTreeFactory, patternSetFactory)
-        def defaultFilePropertyFactory = new DefaultFilePropertyFactory(fileResolver, fileCollectionFactory)
-        def objectFactory = new DefaultObjectFactory(((ProjectInternal) project).services.get(Instantiator),null, fileResolver,
-                defaultDirectoryFileTreeFactory, defaultFilePropertyFactory, fileCollectionFactory, null)
+        def fileCollectionFactory = new DefaultFileCollectionFactory(fileResolver, DefaultTaskDependencyFactory.withNoAssociatedProject(), defaultDirectoryFileTreeFactory, patternSetFactory, PropertyHost.NO_OP, FileSystems.getDefault())
+        def defaultFilePropertyFactory = new DefaultFilePropertyFactory(PropertyHost.NO_OP, fileResolver, fileCollectionFactory)
+        def objectFactory = new DefaultObjectFactory(((ProjectInternal) project).services.get(Instantiator),null, defaultDirectoryFileTreeFactory, patternSetFactory,
+                null, defaultFilePropertyFactory, fileCollectionFactory, null)
         sourceSet = new DefaultGosuSourceSet("<set-display-name>", objectFactory);
     }
 
