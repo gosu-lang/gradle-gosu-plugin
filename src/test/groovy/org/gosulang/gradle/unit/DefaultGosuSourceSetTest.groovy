@@ -10,16 +10,12 @@ import org.gradle.api.internal.file.DefaultFileCollectionFactory
 import org.gradle.api.internal.file.DefaultFileLookup
 import org.gradle.api.internal.file.DefaultFilePropertyFactory
 import org.gradle.api.internal.file.DefaultSourceDirectorySet
-import org.gradle.api.internal.file.DefaultSourceDirectorySetFactory
-import org.gradle.api.internal.file.FileCollectionFactory
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.api.internal.file.SourceDirectorySetFactory
 import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory
 import org.gradle.api.internal.model.DefaultObjectFactory
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.internal.provider.PropertyHost
 import org.gradle.api.internal.tasks.DefaultTaskDependencyFactory
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.api.tasks.util.internal.PatternSpecFactory
 import org.gradle.internal.Factory

@@ -60,7 +60,6 @@ class TestRuntimeClasspathTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments('clean', 'test', '-is')
                 .withGradleVersion(gradleVersion)
-                .withDebug(true)
                 .forwardOutput()
 
         BuildResult result = runner.build()
