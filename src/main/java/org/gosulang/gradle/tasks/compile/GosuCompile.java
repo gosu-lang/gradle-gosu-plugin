@@ -7,6 +7,8 @@ import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.file.FileTreeInternal;
+import org.gradle.api.internal.tasks.compile.CompilationSourceDirs;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
@@ -35,6 +38,12 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
+  private final FileCollection stableSources = getProject().files(new Callable<FileTree>() {
+    @Override
+    public FileTree call() {
+      return getSource();
+    }
+  });
 
   @Inject
   public GosuCompile() {
@@ -65,6 +74,13 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   @PathSensitive(NAME_ONLY)
   public FileTree getSource() {
     return super.getSource();
+  }
+
+  @SkipWhenEmpty
+  @PathSensitive(NAME_ONLY)
+  @InputFiles
+  public FileCollection getStableSources() {
+    return stableSources;
   }
 
   /**
@@ -124,22 +140,34 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     _orderClasspath = orderClasspath;
   }
 
-  @Internal
+/*  @Internal
   public FileCollection getSourceRoots() {
     Set<File> returnValues = new HashSet<>();
     //noinspection Convert2streamapi
-    for(Object obj : getSourceReflectively()) {
+   //  for(Object obj : getSourceReflectively()) {
+    for(Object obj : getSource()) {
       if(obj instanceof SourceDirectorySet) {
         returnValues.addAll(((SourceDirectorySet) obj).getSrcDirs());
       }
     }
     return getProject().files(returnValues);
-  }
+  }*/
+
+
+@Internal
+public FileCollection getSourceRoots() {
+  FileTreeInternal stableSourcesAsFileTree = (FileTreeInternal) getStableSources().getAsFileTree();
+  List<File> sourceRoots = CompilationSourceDirs.inferSourceRoots(stableSourcesAsFileTree);
+  return getProject().getLayout().files(sourceRoots);
+}
+
+
 
   //!! todo: find a better way to iterate the FileTree
   private Iterable getSourceReflectively() {
     try {
-      Field field = SourceTask.class.getDeclaredField("source");
+     // Field field = SourceTask.class.getDeclaredField("source");
+      Field field = SourceTask.class.getDeclaredField("sourceFiles");
       field.setAccessible(true);
       return (Iterable)field.get(this);
     } catch (Exception e) {

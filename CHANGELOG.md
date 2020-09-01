@@ -1,5 +1,8 @@
 # Change Log
 
+## [v6.0.1](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v6.0.1) (2020-09-01)
+[Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v6.0.0...v6.0.1)
+
 ## [v6.0.0](https://github.com/gosu-lang/gradle-gosu-plugin/tree/v6.0.0) (2020-04-30)
 [Full Changelog](https://github.com/gosu-lang/gradle-gosu-plugin/compare/v0.3.105...v6.0.0)
 
