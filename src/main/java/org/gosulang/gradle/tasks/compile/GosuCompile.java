@@ -6,6 +6,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.FileTreeInternal;
 import org.gradle.api.internal.tasks.compile.CompilationSourceDirs;
 import org.gradle.api.logging.Logger;
@@ -139,12 +140,40 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     _orderClasspath = orderClasspath;
   }
 
+/*  @Internal
+  public FileCollection getSourceRoots() {
+    Set<File> returnValues = new HashSet<>();
+    //noinspection Convert2streamapi
+   //  for(Object obj : getSourceReflectively()) {
+    for(Object obj : getSource()) {
+      if(obj instanceof SourceDirectorySet) {
+        returnValues.addAll(((SourceDirectorySet) obj).getSrcDirs());
+      }
+    }
+    return getProject().files(returnValues);
+  }*/
+
+
 @Internal
 public FileCollection getSourceRoots() {
   FileTreeInternal stableSourcesAsFileTree = (FileTreeInternal) getStableSources().getAsFileTree();
   List<File> sourceRoots = CompilationSourceDirs.inferSourceRoots(stableSourcesAsFileTree);
   return getProject().getLayout().files(sourceRoots);
 }
+
+
+
+  //!! todo: find a better way to iterate the FileTree
+  private Iterable getSourceReflectively() {
+    try {
+     // Field field = SourceTask.class.getDeclaredField("source");
+      Field field = SourceTask.class.getDeclaredField("sourceFiles");
+      field.setAccessible(true);
+      return (Iterable)field.get(this);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   private DefaultGosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
