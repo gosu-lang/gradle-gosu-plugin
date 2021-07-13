@@ -7,7 +7,6 @@ import org.junit.Ignore
 import spock.lang.Unroll
 
 @Unroll
-@Ignore
 class GosudocNothingToDoHereTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu

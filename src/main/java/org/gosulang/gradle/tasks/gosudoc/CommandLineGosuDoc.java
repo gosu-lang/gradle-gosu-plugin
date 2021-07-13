@@ -45,7 +45,6 @@ public class CommandLineGosuDoc {
   }
   
   public void execute() {
-    gosuDocUnavailablityBanner(); // This is to suppress the gosudoc exception and provide a meaningful inforamtion.  This method has to be removed when GosuDoc is ready.
     String startupMsg = "Initializing gosudoc generator";
     if(_project.getName().isEmpty()) {
       startupMsg += " for " + _project.getName();
@@ -115,14 +114,6 @@ public class CommandLineGosuDoc {
     }
 
     result.assertNormalExitValue();
-  }
-  private void gosuDocUnavailablityBanner(){
-
-    String bannerMsg = "\n        ****************************************************************** \n " +
-            "       *              GosuDoc is not available in this release          * \n " +
-            "       ******************************************************************" ;
-
-    throw new GradleException(bannerMsg);
   }
 
   private File createClasspathJarFromFileCollection(FileCollection classpath) throws IOException {

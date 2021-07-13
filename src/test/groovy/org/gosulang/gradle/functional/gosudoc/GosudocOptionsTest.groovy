@@ -8,7 +8,6 @@ import org.junit.Ignore
 import spock.lang.Unroll
 
 @Unroll
-@Ignore
 class GosudocOptionsTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu
