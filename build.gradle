@@ -35,6 +35,7 @@ dependencies {
 
 final boolean isSnapshot = project.version.endsWith('-SNAPSHOT')
 boolean  publishSnapshotToNexus = project.hasProperty('publishSnapshotToNexus')
+boolean publishSnapshotToGwArtifactory = project.hasProperty('publishSnapshotToGwArtifactory')
 
 repositories {
     mavenLocal()
@@ -147,7 +148,19 @@ publishing {
                     url 'https://nexus.guidewire.com/repository/snapshots-dev/'
             }
         }
-    } else {
+    }
+    if (publishSnapshotToGwArtifactory){
+        repositories {
+            maven {
+                url System.getenv('PUBLISH_TO_REPOSITORY_URL')
+                credentials {
+                    username System.getenv('PUBLISH_WITH_USERNAME')
+                    password System.getenv('PUBLISH_WITH_PASSWORD')
+                }
+            }
+        }
+    }    
+    else {
         repositories {
             maven {
                 url isSnapshot ? 'https://oss.jfrog.org/artifactory/oss-snapshot-local'
