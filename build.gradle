@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     id 'net.researchgate.release' version '2.7.0'
+    id 'com.gradle.plugin-publish' version '0.15.0'
     id 'maven-publish'
     id 'groovy'
     id 'java-gradle-plugin'
@@ -132,7 +133,20 @@ release {
     }
 }
 
-afterReleaseBuild.dependsOn publish
+pluginBundle {
+    website = 'http://gosu-lang.org'
+    vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
+    description = project.description
+    tags = ['gosu']
+    plugins {
+        gosuPlugin {
+            id = 'org.gosu-lang.gosu'
+            displayName = 'Gosu Gradle Plugin'
+        }
+    }
+}
+
+afterReleaseBuild.dependsOn publish, publishPlugins
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
@@ -160,7 +174,7 @@ publishing {
             }
         }
     }    
-    else {
+/*    else {
         repositories {
             maven {
                 url isSnapshot ? 'https://oss.jfrog.org/artifactory/oss-snapshot-local'
@@ -171,7 +185,7 @@ publishing {
                 }
             }
         }
-    }
+    }*/
 }
 
 model {
