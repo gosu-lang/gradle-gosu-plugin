@@ -1,21 +1,19 @@
 import org.gosulang.gradle.build.VersionWriterTask
-
 import java.nio.charset.StandardCharsets
 
 plugins {
-    id 'net.researchgate.release' version '2.7.0'
-    id 'com.gradle.plugin-publish' version '0.15.0'
-    id 'maven-publish'
+    id 'com.gradle.plugin-publish' version "${gradlePublishPluginVersion}"
+    id 'net.researchgate.release' version "${researchgateReleaseGradlePluginVersion}"
     id 'groovy'
     id 'java-gradle-plugin'
+    id 'maven-publish'
 }
 
 wrapper {
-    gradleVersion '6.5.1'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }
 
-group = 'org.gosu-lang.gosu'
-description = """Gosu language compiler for Gradle.  Built with Gradle $project.gradle.gradleVersion.
+description = """Gosu language compiler for Gradle.  Built with Gradle $gradleVersion.
 
 This has also been tested extensively with Gradle version(s): $project.testedVersions
 
@@ -23,7 +21,7 @@ This has also been tested extensively with Gradle version(s): $project.testedVer
 
 Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  
 
-This version requires Gosu 1.13.9 or greater, or 1.14.2 or greater. 
+This version requires $gosuVersion or greater. 
 
 Please include this in the depencencies closure:
 
@@ -32,17 +30,12 @@ dependencies {
 }
 """
 
-
-
 final boolean isSnapshot = project.version.endsWith('-SNAPSHOT')
-boolean  publishSnapshotToNexus = project.hasProperty('publishSnapshotToNexus')
 boolean publishSnapshotToGwArtifactory = project.hasProperty('publishSnapshotToGwArtifactory')
 
 repositories {
     mavenLocal()
-    maven {
-        url 'https://oss.jfrog.org/artifactory/libs-snapshot' //for Gosu snapshot builds
-    }
+    mavenCentral()
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/' //for Gosu snapshot builds
     }
@@ -50,12 +43,11 @@ repositories {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.easytesting:fest-assert:1.3'
-    testCompile 'org.hamcrest:hamcrest-library:2.1'
-    testCompile 'org.spockframework:spock-core:1.2-groovy-2.5@jar'
-    
-    
+    testImplementation "junit:junit:${junitVersion}"
+    testImplementation "org.easytesting:fest-assert:${festAssertVersion}" 
+    testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
+    testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
+    testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
 }
 
 gradlePlugin {
@@ -67,6 +59,7 @@ gradlePlugin {
     }
 }
 
+//Test Helper Tasks
 task gradleVersionHelper(type: VersionWriterTask) {
     propertyToRead = 'gradleVersion'
     fallbackValue = project.gradle.gradleVersion
@@ -113,24 +106,29 @@ if(System.getenv('CI') != null) {
 }
 
 task sourceJar(type: Jar) {
-    dependsOn 'test'
     archiveClassifier = 'sources'
     description 'generate sources'
+    dependsOn 'test'
     from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar) {
-    dependsOn 'test'
     archiveClassifier = 'javadoc'
     description 'generate javadoc'
-    from javadoc
+    dependsOn 'test'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourceJar
+    archives javadocJar
 }
 
 release {
-    tagTemplate = 'v${version}'
     git {
         requireBranch = 'rel/.*'
     }
+    tagTemplate = 'v${version}'
 }
 
 pluginBundle {
@@ -155,37 +153,19 @@ publishing {
         pom.packaging 'jar'
         pom.withXml { xml -> configurePom(xml) }
     }
-    if(publishSnapshotToNexus) {
-        repositories {
-            maven {
-                if(isSnapshot)
-                    url 'https://nexus.guidewire.com/repository/snapshots-dev/'
-            }
-        }
-    }
     if (publishSnapshotToGwArtifactory){
         repositories {
             maven {
-                url System.getenv('PUBLISH_TO_REPOSITORY_URL')
-                credentials {
-                    username System.getenv('PUBLISH_WITH_USERNAME')
-                    password System.getenv('PUBLISH_WITH_PASSWORD')
+                if(isSnapshot) {
+                    url System.getenv('PUBLISH_TO_REPOSITORY_URL')
+                    credentials {
+                        username System.getenv('PUBLISH_WITH_USERNAME')
+                        password System.getenv('PUBLISH_WITH_PASSWORD')
+                    } 
                 }
             }
         }
     }    
-/*    else {
-        repositories {
-            maven {
-                url isSnapshot ? 'https://oss.jfrog.org/artifactory/oss-snapshot-local'
-                        : 'https://api.bintray.com/maven/gosu-lang/gosu-lang/gradle-gosu-plugin/;publish=1'
-                credentials {
-                    username System.getenv('BINTRAY_USER')
-                    password System.getenv('BINTRAY_API_KEY')
-                }
-            }
-        }
-    }*/
 }
 
 model {
