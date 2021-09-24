@@ -52,7 +52,6 @@ workflows:
             branches:
               ignore:
                 - /rel\/.*/
-                - /user\/sv\/.*/
       - test:
           requires:
             - build
