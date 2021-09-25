@@ -18,7 +18,7 @@ jobs:
           - v1-dependencies-
       - run:
           name: Compile
-          command: ./gradlew compile
+          command: ./gradlew compileJava compileGroovy
       - save_cache:
           paths:
             - ~/.gradle
@@ -26,7 +26,6 @@ jobs:
   test:
     <<: *defaults
     steps:
-      - checkout
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "build.gradle" }}
@@ -43,9 +42,24 @@ jobs:
           paths:
             - ~/.gradle
           key: v1-dependencies-{{ checksum "build.gradle" }}
+  release:
+    <<: *defaults
+    steps:
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run:
+          name: Prepare and release
+          command: ./.circleci/release.sh << pipeline.parameters.release-version >>
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
 workflows:
   version: 2
-  build_and_test_all_branches:
+  build_and_test_only:
     jobs:
       - build:
           filters:
@@ -55,3 +69,23 @@ workflows:
       - test:
           requires:
             - build
+  build_test_release:
+    when: << pipeline.parameters.run_workflow_release >>
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - /rel\/.*/
+                - /user\/sv\/.*/
+      - test:
+          requires:
+            - build
+      - hold:
+          type: approval
+          requires:
+            - build
+            - test-java11
+      - release:
+          requires:
+            - hold
