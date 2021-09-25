@@ -74,20 +74,16 @@ workflows:
   build_test_release:
     when: << pipeline.parameters.run_workflow_release >>
     jobs:
-      - build:
+      - build_and_test:
           filters:
             branches:
               only:
                 - /rel\/.*/
                 - /user\/sv\/.*/
-      - test:
-          requires:
-            - build
       - hold:
           type: approval
           requires:
-            - build
-            - test-java11
+            - build_and_test
       - release:
           requires:
             - hold
