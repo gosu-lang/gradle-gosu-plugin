@@ -31,7 +31,7 @@ jobs:
           paths:
             - ~/.gradle
       #    key: v1-dependencies-{{ checksum "build.gradle" }}
-          key: - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
+          key: v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
   release:
     <<: *defaults
     steps:
