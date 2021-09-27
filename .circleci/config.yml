@@ -17,7 +17,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "build.gradle" }}
+            - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
       - run:
@@ -30,13 +30,15 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+      #    key: v1-dependencies-{{ checksum "build.gradle" }}
+          key: - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
   release:
     <<: *defaults
     steps:
+      - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "build.gradle" }}
+            - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
       - run:
@@ -45,7 +47,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+          key: v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
 workflows:
   version: 2
   build_and_test_only:
