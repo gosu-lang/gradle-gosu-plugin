@@ -55,6 +55,7 @@ workflows:
             branches:
               ignore:
                 - /rel\/.*/
+                - /user\/sv\/.*/
   build_test_release:
     when: << pipeline.parameters.run_workflow_release >>
     jobs:
