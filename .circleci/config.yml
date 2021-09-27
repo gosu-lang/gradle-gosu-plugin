@@ -11,22 +11,6 @@ parameters:
     default: false
     type: boolean
 jobs:
-  build:
-    <<: *defaults
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "build.gradle" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-      - run:
-          name: build
-          command: ./gradlew compileJava compileGroovy
-      - save_cache:
-          paths:
-            - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
   build_and_test:
     <<: *defaults
     steps:
