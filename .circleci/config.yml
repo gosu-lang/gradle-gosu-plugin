@@ -41,6 +41,9 @@ jobs:
             - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
+      - add_ssh_keys:
+          fingerprints:
+            - "c2:6a:d9:9f:cf:6b:44:f8:76:da:b4:c4:96:80:3c:25"
       - run:
           name: Prepare and release
           command: ./.circleci/release.sh
