@@ -22,7 +22,7 @@ jobs:
             - v1-dependencies-
       - run:
           name: Run tests
-          command: ./gradlew compileJava compileGroovy
+          command: ./gradlew check
       - store_artifacts:
           path: ~/project/build/reports/tests
       - store_test_results:
@@ -30,7 +30,6 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-      #    key: v1-dependencies-{{ checksum "build.gradle" }}
           key: v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
   release:
     <<: *defaults
