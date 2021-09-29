@@ -43,7 +43,7 @@ jobs:
             - v1-dependencies-
       - add_ssh_keys:
           fingerprints:
-            - "c2:6a:d9:9f:cf:6b:44:f8:76:da:b4:c4:96:80:3c:25"
+            - "15:b0:b9:68:2b:84:ba:42:a3:c7:23:8d:0e:61:2b:f7"
       - run:
           name: Prepare and release
           command: ./.circleci/release.sh
