@@ -1,34 +1,28 @@
-version: 2
+defaults: &defaults
+  environment:
+    TZ: "/usr/share/zoneinfo/America/Los_Angeles"
+    TERM: dumb
+    MAVEN_OPTS: "-Xmx1024m"
+  docker:
+    - image: circleci/openjdk:11-jdk
+version: 2.1
+parameters:
+  run_workflow_release:
+    default: false
+    type: boolean
 jobs:
-  build:
-    docker:
-      - image: circleci/openjdk:8u171-jdk
-
-    environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
-      TERM: dumb
-      TZ: /usr/share/zoneinfo/America/Los_Angeles
-
-    branches:
-      ignore:
-        - /rel\/.*/
-
+  build_and_test:
+    <<: *defaults
     steps:
       - checkout
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "build.gradle" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+            - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
       - run:
           name: Run tests
           command: ./gradlew check
-      - deploy:
-          name: Publish artifacts
-          command: |
-            if [ -z ${CI_PULL_REQUEST} ]; then
-                ./gradlew publish
-            fi
       - store_artifacts:
           path: ~/project/build/reports/tests
       - store_test_results:
@@ -36,4 +30,47 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+          key: v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
+  release:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - add_ssh_keys:
+          fingerprints:
+            - "15:b0:b9:68:2b:84:ba:42:a3:c7:23:8d:0e:61:2b:f7"
+      - run:
+          name: Prepare and release
+          command: ./.circleci/release.sh
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "gradle.properties" }}-{{ checksum "build.gradle" }}
+workflows:
+  version: 2
+  build_and_test_only:
+    jobs:
+      - build_and_test:
+          filters:
+            branches:
+              ignore:
+                - /rel\/.*/
+  build_test_release:
+    when: << pipeline.parameters.run_workflow_release >>
+    jobs:
+      - build_and_test:
+          filters:
+            branches:
+              only:
+                - /rel\/.*/
+      - hold:
+          type: approval
+          requires:
+            - build_and_test
+      - release:
+          requires:
+            - hold
