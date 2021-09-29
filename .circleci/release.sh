@@ -8,4 +8,4 @@ echo "just an dummy line" >> gradle.properties
 #./gradlew release -Pgradle.publish.key=$gradlePublishKey -Pgradle.publish.secret=$gradlePublishSecret
 git add -u
 git commit -m "Checking test commit works fine from CI to github"
-git push
+git push --set-upstream origin ${CIRCLE_BRANCH}
