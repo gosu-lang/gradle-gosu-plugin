@@ -59,7 +59,6 @@ workflows:
             branches:
               ignore:
                 - /rel\/.*/
-                - /user\/sv\/.*/
   build_test_release:
     when: << pipeline.parameters.run_workflow_release >>
     jobs:
@@ -68,7 +67,6 @@ workflows:
             branches:
               only:
                 - /rel\/.*/
-                - /user\/sv\/.*/
       - hold:
           type: approval
           requires:
