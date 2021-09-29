@@ -22,7 +22,7 @@ jobs:
             - v1-dependencies-
       - run:
           name: Run tests
-          command: ./gradlew check
+          command: ./gradlew compileJava compileGroovy
       - store_artifacts:
           path: ~/project/build/reports/tests
       - store_test_results:
