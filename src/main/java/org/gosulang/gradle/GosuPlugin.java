@@ -9,7 +9,7 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 
 public class GosuPlugin implements Plugin<Project> {
@@ -29,17 +29,17 @@ public class GosuPlugin implements Plugin<Project> {
    * Ensures that the runtime dependency on gosu-core is included the testRuntime's classpath
    */
   private void refreshTestRuntimeClasspath( final Project project ) {
-    final JavaPluginConvention pluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
+    final JavaPluginExtension pluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
     GosuRuntime gosuRuntime = project.getExtensions().getByType(GosuRuntime.class);
 
-    SourceSet main = pluginConvention.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
-    SourceSet test = pluginConvention.getSourceSets().getByName(SourceSet.TEST_SOURCE_SET_NAME);
+    SourceSet main = pluginExtension.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+    SourceSet test = pluginExtension.getSourceSets().getByName(SourceSet.TEST_SOURCE_SET_NAME);
 
     test.setRuntimeClasspath(project.files(
         test.getOutput(),
         main.getOutput(),
-        project.getConfigurations().getByName(JavaPlugin.TEST_RUNTIME_CONFIGURATION_NAME),
-        gosuRuntime.inferGosuClasspath(project.getConfigurations().getByName(JavaPlugin.TEST_COMPILE_CONFIGURATION_NAME))));
+        project.getConfigurations().getByName(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME),
+        gosuRuntime.inferGosuClasspath(project.getConfigurations().getByName(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME))));
   }
 
   private void configureGosuDoc( final Project project ) {
@@ -47,8 +47,8 @@ public class GosuPlugin implements Plugin<Project> {
     gosuDoc.setDescription("Generates Gosudoc API documentation for the main source code.");
     gosuDoc.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
 
-    JavaPluginConvention convention = project.getConvention().getPlugin(JavaPluginConvention.class);
-    SourceSet sourceSet = convention.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+    JavaPluginExtension extension = project.getExtensions().getByType(JavaPluginExtension.class);
+    SourceSet sourceSet = extension.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
     gosuDoc.setClasspath(sourceSet.getOutput().plus(sourceSet.getCompileClasspath()));
 
     Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");

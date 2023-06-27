@@ -3,7 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.api.tasks.compile.DebugOptions;
-import org.gradle.api.tasks.compile.ForkOptions;
+import org.gradle.api.tasks.compile.BaseForkOptions;
 
 import java.io.File;
 import java.io.Serializable;
@@ -16,7 +16,7 @@ public class MinimalGosuCompileOptions implements Serializable {
     private List<String> _compilerArgs;
     private String _encoding;
     private String _extensionDirs;
-    private ForkOptions _forkOptions;
+    private BaseForkOptions _forkOptions = new BaseForkOptions();
     private DebugOptions _debugOptions;
     private boolean _debug;
     private boolean _deprecation;
@@ -73,11 +73,11 @@ public class MinimalGosuCompileOptions implements Serializable {
         _extensionDirs = extensionDirs;
     }
 
-    public ForkOptions getForkOptions() {
+    public BaseForkOptions getForkOptions() {
         return _forkOptions;
     }
 
-    public void setForkOptions(ForkOptions forkOptions) {
+    public void setForkOptions(BaseForkOptions forkOptions) {
         _forkOptions = forkOptions;
     }
 
