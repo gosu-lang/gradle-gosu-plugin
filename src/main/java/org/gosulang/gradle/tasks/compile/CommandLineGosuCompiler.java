@@ -7,7 +7,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
-import org.gradle.api.tasks.compile.ForkOptions;
+import org.gradle.api.tasks.compile.BaseForkOptions;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
@@ -91,7 +91,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     return () -> true;
   }
 
-  private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
+  private void setJvmArgs(JavaExecSpec spec, BaseForkOptions forkOptions) {
     if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
       spec.setMinHeapSize(forkOptions.getMemoryInitialSize());
     }

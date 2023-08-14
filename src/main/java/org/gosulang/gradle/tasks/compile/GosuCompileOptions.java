@@ -5,7 +5,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.compile.AbstractOptions;
-import org.gradle.api.tasks.compile.ForkOptions;
+import org.gradle.api.tasks.compile.BaseForkOptions;
 
 public class GosuCompileOptions extends AbstractOptions {
 
@@ -13,7 +13,7 @@ public class GosuCompileOptions extends AbstractOptions {
   private boolean checkedArithmetic = false;
   private boolean failOnError = true;
   private boolean fork = true;
-  private ForkOptions forkOptions = new ForkOptions();
+  private BaseForkOptions forkOptions = new BaseForkOptions();
   private boolean verbose = false;
   private Integer maxwarns;
   private Integer maxerrs;
@@ -55,7 +55,7 @@ public class GosuCompileOptions extends AbstractOptions {
    * if {@code fork} is set to {@code true}.
    */
   @Nested
-  public ForkOptions getForkOptions() {
+  public BaseForkOptions getForkOptions() {
     return forkOptions;
   }
 
@@ -63,7 +63,7 @@ public class GosuCompileOptions extends AbstractOptions {
    * @param forkOptions Set these options for running the Gosu compiler in a separate process. These options only take effect
    * if {@code fork} is set to {@code true}.
    */
-  public void setForkOptions(ForkOptions forkOptions) {
+  public void setForkOptions(BaseForkOptions forkOptions) {
     this.forkOptions = forkOptions;
   }
 

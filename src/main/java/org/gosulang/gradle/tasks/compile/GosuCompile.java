@@ -181,7 +181,7 @@ public FileCollection getSourceRoots() {
     Project project = getProject();
     spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());
-    spec.setDestinationDir(getDestinationDir());
+    spec.setDestinationDir(getDestinationDirectory().get().getAsFile());
     spec.setTempDir(getTemporaryDir());
     spec.setGosuClasspath(getGosuClasspath());
     spec.setCompileOptions(_compileOptions);
@@ -190,7 +190,7 @@ public FileCollection getSourceRoots() {
     if (_orderClasspath == null) {
       spec.setClasspath(asList(getClasspath()));
     } else {
-      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
+      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME))));
       //spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME))));
     }
 

@@ -39,15 +39,14 @@ repositories {
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/' //for Gosu snapshot builds
     }
-	jcenter()
 }
 
 dependencies {
     testImplementation "junit:junit:${junitVersion}"
-    testImplementation "org.easytesting:fest-assert:${festAssertVersion}" 
     testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
     testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
     testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
+    testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
 }
 
 gradlePlugin {
@@ -60,23 +59,23 @@ gradlePlugin {
 }
 
 //Test Helper Tasks
-task gradleVersionHelper(type: VersionWriterTask) {
+tasks.register('gradleVersionHelper', VersionWriterTask) {
     propertyToRead = 'gradleVersion'
     fallbackValue = project.gradle.gradleVersion
 }
 
-task gosuVersionHelper(type: VersionWriterTask) {
+tasks.register('gosuVersionHelper', VersionWriterTask) {
     propertyToRead = 'gosuVersion'
 }
 
-task testedVersionsHelper(type: VersionWriterTask) {
+tasks.register('testedVersionsHelper', VersionWriterTask) {
     propertyToRead = 'testedVersions'
 }
 
 dependencies {
-    testRuntime files(gradleVersionHelper) // Persist a file containing the gradleVersion
-    testRuntime files(gosuVersionHelper) // Persist a file containing the gosuVersion
-    testRuntime files(testedVersionsHelper) // Persist a file containing the testedVersions
+    testRuntimeOnly files(gradleVersionHelper) // Persist a file containing the gradleVersion
+    testRuntimeOnly files(gosuVersionHelper) // Persist a file containing the gosuVersion
+    testRuntimeOnly files(testedVersionsHelper) // Persist a file containing the testedVersions
 }
 
 test {
@@ -86,7 +85,7 @@ test {
   environment('JAVA_TOOL_OPTIONS', '-Duser.language=en')
 }
 
-tasks.withType(AbstractCompile) {
+tasks.withType(AbstractCompile).configureEach {
     options.with {
         compilerArgs += ['-Xlint:unchecked']
         deprecation = true
@@ -96,7 +95,7 @@ tasks.withType(AbstractCompile) {
 
 //constrain memory usage when running on CI server
 if(System.getenv('CI') != null) {
-    tasks.withType(AbstractCompile) { //covers JavaCompile and GroovyCompile
+    tasks.withType(AbstractCompile).configureEach { //covers JavaCompile and GroovyCompile
         options.fork = false
     }
     test {
@@ -105,14 +104,14 @@ if(System.getenv('CI') != null) {
     }
 }
 
-task sourceJar(type: Jar) {
+tasks.register('sourceJar', Jar) {
     archiveClassifier = 'sources'
     description 'generate sources'
     dependsOn 'test'
     from sourceSets.main.allJava
 }
 
-task javadocJar(type: Jar) {
+tasks.register('javadocJar', Jar) {
     archiveClassifier = 'javadoc'
     description 'generate javadoc'
     dependsOn 'test'
@@ -126,7 +125,7 @@ artifacts {
 
 release {
     git {
-        requireBranch = 'rel/.*'
+        requireBranch.set('rel/.*')
     }
     tagTemplate = 'v${version}'
 }
