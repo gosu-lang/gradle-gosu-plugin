@@ -69,5 +69,4 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
   public SourceDirectorySet getAllGosu() {
     return _allGosu;
   }
-  
 }

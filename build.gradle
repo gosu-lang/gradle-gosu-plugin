@@ -15,9 +15,7 @@ wrapper {
 
 description = """Gosu language compiler for Gradle.  Built with Gradle $gradleVersion.
 
-This has also been tested extensively with Gradle version(s): $project.testedVersions
-
-** Gradle versions below 2.12 are no longer supported **
+This has also been tested with Gradle version(s): $project.testedVersions
 
 Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  
 
@@ -73,9 +71,9 @@ tasks.register('testedVersionsHelper', VersionWriterTask) {
 }
 
 dependencies {
-    testRuntimeOnly files(gradleVersionHelper) // Persist a file containing the gradleVersion
-    testRuntimeOnly files(gosuVersionHelper) // Persist a file containing the gosuVersion
-    testRuntimeOnly files(testedVersionsHelper) // Persist a file containing the testedVersions
+    testImplementation files(gradleVersionHelper) // Persist a file containing the gradleVersion
+    testImplementation files(gosuVersionHelper) // Persist a file containing the gosuVersion
+    testImplementation files(testedVersionsHelper) // Persist a file containing the testedVersions
 }
 
 test {

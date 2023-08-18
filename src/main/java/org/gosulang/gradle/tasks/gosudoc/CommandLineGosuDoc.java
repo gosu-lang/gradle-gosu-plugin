@@ -94,8 +94,8 @@ public class CommandLineGosuDoc {
 
       javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _options.getForkOptions());
-      javaExecSpec.setMain("gw.gosudoc.cli.Gosudoc")
-          .setClasspath(_project.files(classpathJar))
+      javaExecSpec.getMainClass().set("gw.gosudoc.cli.Gosudoc");
+      javaExecSpec.setClasspath(_project.files(classpathJar))
           .setArgs((Iterable<?>) gosudocArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);

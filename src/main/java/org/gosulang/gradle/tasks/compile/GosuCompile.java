@@ -47,17 +47,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   @Inject
   public GosuCompile() {
-    VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
-    if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
-    } else {
-      try {
-        Constructor ctor = CompileOptions.class.getConstructor();
-        _compileOptions = (CompileOptions) ctor.newInstance();
-      } catch (ReflectiveOperationException e) {
-        throw new GradleException("Unable to apply Gosu plugin", e);
-      }
-    }
   }
 
   @TaskAction
@@ -177,7 +167,6 @@ public FileCollection getSourceRoots() {
 
   private DefaultGosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
-    spec.setCompileOptions(_compileOptions);
     Project project = getProject();
     spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());

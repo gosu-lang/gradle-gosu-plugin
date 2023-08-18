@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
@@ -15,6 +16,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+
+import java.util.concurrent.Callable
 
 import static org.gradle.util.internal.WrapUtil.toLinkedSet
 import static org.hamcrest.MatcherAssert.assertThat
@@ -45,8 +48,14 @@ class GosuPluginTest {
         project = createRootProject()
         objectFactory = ((ProjectInternal) project).services.get(ObjectFactory)
         project.pluginManager.apply(JavaPlugin)
-        extension = project.getExtensions().getByType(JavaPluginExtension.class)
+        extension = javaPluginExtension(project)
         project.pluginManager.apply(GosuPlugin)
+    }
+    private static JavaPluginExtension javaPluginExtension(Project project) {
+        return extensionOf(project, JavaPluginExtension.class);
+    }
+    private static <T> T extensionOf(ExtensionAware extensionAware, Class<T> type) {
+        return extensionAware.getExtensions().getByType(type);
     }
 
     @Test
@@ -55,8 +64,8 @@ class GosuPluginTest {
     }
 
     @Test
-    void addsGosuConfigurationToTheProject() {
-        def configuration = project.configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)
+    public void addsGosuConfigurationToTheProject() {
+        def configuration = project.configurations.getByName(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
         assertThat(Configurations.getNames(configuration.extendsFrom), Matchers.emptyIterable())
         assertFalse(configuration.visible)
         assertTrue(configuration.transitive)
@@ -92,10 +101,21 @@ class GosuPluginTest {
         File dir = new File('classes-dir')
         extension.sourceSets {
             main {
-                output.resourcesDir = dir
+                System.out.println(output.classesDirs.asPath)
+                output.dir ( new Callable() {
+                    public Object call() {
+                        return dir;
+                    } })
             }
         }
-        assertEquals(extension.sourceSets.main.output.getResourcesDir(), project.file(dir))
+        assert(extension.sourceSets.main.output.dirs.containsAll(project.file(dir)))
+   //     assertThat(convention.sourceSets.main.output.classesDirs.singleFile, equalTo(project.file(dir)))
+
+//        main {
+//                output.resourcesDir = dir
+//            }
+//        }
+//        assertEquals(extension.sourceSets.main.output.getResourcesDir(), project.file(dir))
     }
 
     @Test

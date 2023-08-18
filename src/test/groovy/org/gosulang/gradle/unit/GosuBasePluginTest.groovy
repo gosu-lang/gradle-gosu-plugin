@@ -48,6 +48,7 @@ class GosuBasePluginTest {
         def sourceSet = project.sourceSets.create('custom')
         assertEquals(sourceSet.gosu.displayName, "custom Gosu source")
         assertEquals(sourceSet.gosu.srcDirs, toLinkedSet(project.file("src/custom/gosu")))
+        assertEquals(sourceSet.java.srcDirs, toLinkedSet(project.file("src/custom/java")))
         assertEquals(sourceSet.gosu.getDestinationDirectory().get().asFile, project.file("build/classes/gosu/custom"))
 
     }

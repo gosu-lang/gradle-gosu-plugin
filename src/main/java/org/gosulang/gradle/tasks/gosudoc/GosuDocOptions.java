@@ -14,6 +14,7 @@ public class GosuDocOptions extends AbstractOptions {
   private BaseForkOptions forkOptions = new BaseForkOptions();
   private boolean _verbose;
 
+
   /**
    * Returns the HTML text to appear in the main frame title.
    * @return the HTML text to appear in the main frame title.
