@@ -1,6 +1,9 @@
 package org.gosulang.gradle.tasks;
 
 import org.gradle.api.JavaVersion;
+import org.gradle.api.Project;
+import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.JavaPluginExtension;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -32,6 +35,13 @@ public class Util {
             }
         }
         return  toolsJar.toFile();
+    }
+
+    public static JavaPluginExtension javaPluginExtension(Project project) {
+        return extensionOf(project, JavaPluginExtension.class);
+    }
+    private static <T> T extensionOf(ExtensionAware extensionAware, Class<T> type) {
+        return extensionAware.getExtensions().getByType(type);
     }
 
 

@@ -38,6 +38,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
+ // private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions(getServices().get(ObjectFactory.class));
   private final FileCollection stableSources = getProject().files(new Callable<FileTree>() {
     @Override
     public FileTree call() {
@@ -47,17 +48,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   @Inject
   public GosuCompile() {
-    VersionNumber gradleVersion = VersionNumber.parse(getProject().getGradle().getGradleVersion());
-    if(gradleVersion.compareTo(VersionNumber.parse("4.2")) >= 0) {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
-    } else {
-      try {
-        Constructor ctor = CompileOptions.class.getConstructor();
-        _compileOptions = (CompileOptions) ctor.newInstance();
-      } catch (ReflectiveOperationException e) {
-        throw new GradleException("Unable to apply Gosu plugin", e);
-      }
-    }
   }
 
   @TaskAction
@@ -177,11 +168,11 @@ public FileCollection getSourceRoots() {
 
   private DefaultGosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
-    spec.setCompileOptions(_compileOptions);
+    //spec.setCompileOptions(_compileOptions);
     Project project = getProject();
     spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());
-    spec.setDestinationDir(getDestinationDir());
+    spec.setDestinationDir(getDestinationDirectory().get().getAsFile());
     spec.setTempDir(getTemporaryDir());
     spec.setGosuClasspath(getGosuClasspath());
     spec.setCompileOptions(_compileOptions);
@@ -190,7 +181,7 @@ public FileCollection getSourceRoots() {
     if (_orderClasspath == null) {
       spec.setClasspath(asList(getClasspath()));
     } else {
-      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME))));
+      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))));
       //spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME))));
     }
 

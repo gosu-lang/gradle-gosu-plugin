@@ -15,9 +15,7 @@ wrapper {
 
 description = """Gosu language compiler for Gradle.  Built with Gradle $gradleVersion.
 
-This has also been tested extensively with Gradle version(s): $project.testedVersions
-
-** Gradle versions below 2.12 are no longer supported **
+This has also been tested with Gradle version(s): $project.testedVersions
 
 Projects applying this plugin require a compile-time dependency on the gosu-core-api library.  
 
@@ -44,10 +42,11 @@ repositories {
 
 dependencies {
     testImplementation "junit:junit:${junitVersion}"
-    testImplementation "org.easytesting:fest-assert:${festAssertVersion}" 
+    testImplementation "org.easytesting:fest-assert:${festAssertVersion}"
     testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
     testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
     testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
+    testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
 }
 
 gradlePlugin {
@@ -74,9 +73,9 @@ task testedVersionsHelper(type: VersionWriterTask) {
 }
 
 dependencies {
-    testRuntime files(gradleVersionHelper) // Persist a file containing the gradleVersion
-    testRuntime files(gosuVersionHelper) // Persist a file containing the gosuVersion
-    testRuntime files(testedVersionsHelper) // Persist a file containing the testedVersions
+    testImplementation files(gradleVersionHelper) // Persist a file containing the gradleVersion
+    testImplementation files(gosuVersionHelper) // Persist a file containing the gosuVersion
+    testImplementation files(testedVersionsHelper) // Persist a file containing the testedVersions
 }
 
 test {

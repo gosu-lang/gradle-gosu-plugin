@@ -5,6 +5,7 @@ import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.LogLevel;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
@@ -25,6 +26,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   private FileCollection _classpath;
   private Closure<FileCollection> _gosuClasspath;
   private File _destinationDir;
+ // private GosuDocOptions _gosuDocOptions = new GosuDocOptions(getServices().get(ObjectFactory.class));
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
   private String _title;
 

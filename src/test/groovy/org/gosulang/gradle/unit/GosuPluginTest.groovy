@@ -5,9 +5,9 @@ import org.gosulang.gradle.tasks.compile.GosuCompile
 import org.gradle.api.Project
 import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.plugins.internal.DefaultJavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.model.ObjectFactory
 import org.gradle.testfixtures.ProjectBuilder
@@ -43,16 +43,21 @@ class GosuPluginTest {
 
     private Project project
     private ObjectFactory objectFactory
-    private JavaPluginConvention convention
+    private JavaPluginExtension extension
 
     @Before
     public void applyPlugin() throws IOException {
         project = createRootProject()
         objectFactory = ((ProjectInternal) project).services.get(ObjectFactory)
         project.pluginManager.apply(JavaPlugin)
-        convention = new DefaultJavaPluginConvention(
-                ((ProjectInternal) project), objectFactory)
+        extension = javaPluginExtension(project)
         project.pluginManager.apply(GosuPlugin)
+    }
+    private static JavaPluginExtension javaPluginExtension(Project project) {
+        return extensionOf(project, JavaPluginExtension.class);
+    }
+    private static <T> T extensionOf(ExtensionAware extensionAware, Class<T> type) {
+        return extensionAware.getExtensions().getByType(type);
     }
 
     @Test
@@ -62,7 +67,7 @@ class GosuPluginTest {
 
     @Test
     public void addsGosuConfigurationToTheProject() {
-        def configuration = project.configurations.getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME)
+        def configuration = project.configurations.getByName(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
         assertThat(Configurations.getNames(configuration.extendsFrom), Matchers.emptyIterable())
         assertFalse(configuration.visible)
         assertTrue(configuration.transitive)
@@ -96,16 +101,16 @@ class GosuPluginTest {
     @Test
     public void canConfigureSourceSets() {
         File dir = new File('classes-dir')
-        convention.sourceSets {
+        extension.sourceSets {
             main {
                 System.out.println(output.classesDirs.asPath)
-                output.addClassesDir ( new Callable() {
+                output.dir ( new Callable() {
                     public Object call() {
                         return dir;
                     } })
             }
         }
-        assert(convention.sourceSets.main.output.classesDirs.containsAll(project.file(dir)))
+        assert(extension.sourceSets.main.output.dirs.containsAll(project.file(dir)))
    //     assertThat(convention.sourceSets.main.output.classesDirs.singleFile, equalTo(project.file(dir)))
 
 //        main {
@@ -163,7 +168,8 @@ class GosuPluginTest {
                 }
             }
         }
-        assertThat(project.sourceSets.main.gosu.srcDirs, equalTo(toLinkedSet(project.file('src/main/gosu'), project.file(dirAsString))))
+       // assertThat(project.sourceSets.main.gosu.srcDirs, equalTo(toLinkedSet(project.file('src/main/gosu'), project.file(dirAsString))))
+        assertEquals(project.sourceSets.main.gosu.srcDirs, toLinkedSet(project.file('src/main/gosu'), project.file(dirAsString)))
     }
 
     @Test

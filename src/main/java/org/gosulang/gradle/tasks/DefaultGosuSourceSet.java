@@ -4,12 +4,16 @@ import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.reflect.HasPublicType;
+import org.gradle.api.reflect.TypeOf;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.gradle.api.reflect.TypeOf.typeOf;
 
 public class DefaultGosuSourceSet implements GosuSourceSet {
 
@@ -69,5 +73,5 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
   public SourceDirectorySet getAllGosu() {
     return _allGosu;
   }
-  
+
 }
