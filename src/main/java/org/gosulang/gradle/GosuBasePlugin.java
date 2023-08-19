@@ -74,6 +74,7 @@ public class GosuBasePlugin implements Plugin<Project> {
   //    sourceSet.getExtensions().add(SourceDirectorySet.class, "gosu", gosuSourceSet.getGosu()); //alternative but it's not working
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
       sourceSet.getResources().getFilter().exclude(element -> gosuSourceSet.getGosu().contains(element.getFile()));
+   //   sourceSet.getJava().srcDir(gosuSourceSet.getGosu()); 
       sourceSet.getAllSource().source(gosuSourceSet.getGosu());
       configureGosuCompile(sourceSet, gosuSourceSet);
     });
