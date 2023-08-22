@@ -26,7 +26,7 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
   public DefaultGosuSourceSet( String name, ObjectFactory objectFacotry ) {
 
     this.name = name;
-    this.baseName = name.equals(SourceSet.MAIN_SOURCE_SET_NAME) ? "" : GUtil.toCamelCase(name);
+    this.baseName = name.equals(SourceSet.MAIN_SOURCE_SET_NAME) ? "" : name.toUpperCase();
     displayName = GUtil.toWords(this.name);
     _gosu = objectFacotry.sourceDirectorySet("gosu", displayName + " Gosu source");
     _gosu.getFilter().include(_gosuAndJavaExtensions);
@@ -69,5 +69,4 @@ public class DefaultGosuSourceSet implements GosuSourceSet {
   public SourceDirectorySet getAllGosu() {
     return _allGosu;
   }
-  
 }

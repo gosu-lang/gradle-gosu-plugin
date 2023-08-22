@@ -7,7 +7,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.WorkResult;
-import org.gradle.api.tasks.compile.ForkOptions;
+import org.gradle.api.tasks.compile.BaseForkOptions;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
@@ -64,8 +64,8 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
 
       javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
-      javaExecSpec.setMain("gw.lang.gosuc.cli.CommandLineCompiler")
-              .setClasspath(gosuClasspathJars)
+      javaExecSpec.getMainClass().set("gw.lang.gosuc.cli.CommandLineCompiler");
+      javaExecSpec.setClasspath(gosuClasspathJars)
               .setArgs((Iterable<?>) gosucArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
@@ -91,7 +91,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     return () -> true;
   }
 
-  private void setJvmArgs(JavaExecSpec spec, ForkOptions forkOptions) {
+  private void setJvmArgs(JavaExecSpec spec, BaseForkOptions forkOptions) {
     if(forkOptions.getMemoryInitialSize() != null && !forkOptions.getMemoryInitialSize().isEmpty()) {
       spec.setMinHeapSize(forkOptions.getMemoryInitialSize());
     }

@@ -5,14 +5,15 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.compile.AbstractOptions;
-import org.gradle.api.tasks.compile.ForkOptions;
+import org.gradle.api.tasks.compile.BaseForkOptions;
 
 public class GosuDocOptions extends AbstractOptions {
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
   private String title;
-  private ForkOptions forkOptions = new ForkOptions();
+  private BaseForkOptions forkOptions = new BaseForkOptions();
   private boolean _verbose;
+
 
   /**
    * Returns the HTML text to appear in the main frame title.
@@ -36,14 +37,14 @@ public class GosuDocOptions extends AbstractOptions {
    * @return Options for running the gosudoc generator in a separate process.
    */
   @Nested
-  public ForkOptions getForkOptions() {
+  public BaseForkOptions getForkOptions() {
     return forkOptions;
   }
 
   /**
    * @param forkOptions Options for running the gosudoc generator in a separate process.
    */
-  public void setForkOptions(ForkOptions forkOptions) {
+  public void setForkOptions(BaseForkOptions forkOptions) {
     this.forkOptions = forkOptions;
   }
 

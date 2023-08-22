@@ -10,10 +10,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-import static org.gradle.util.WrapUtil.toLinkedSet
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.instanceOf
-import static org.junit.Assert.assertThat
+import static org.gradle.util.internal.WrapUtil.toLinkedSet
+import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
 class GosuBasePluginTest {
@@ -42,24 +40,33 @@ class GosuBasePluginTest {
 
     @Test
     public void appliesTheJavaBasePluginToTheProject() {
-
         assertTrue(project.plugins.hasPlugin(JavaBasePlugin))
     }
 
     @Test
     void appliesMappingsToNewSourceSet() {
         def sourceSet = project.sourceSets.create('custom')
-        assertThat(sourceSet.gosu.displayName, equalTo("custom Gosu source"))
-        assertThat(sourceSet.gosu.srcDirs, equalTo(toLinkedSet(project.file("src/custom/gosu"))))
+        assertEquals(sourceSet.gosu.displayName, "custom Gosu source")
+        assertEquals(sourceSet.gosu.srcDirs, toLinkedSet(project.file("src/custom/gosu")))
+        assertEquals(sourceSet.java.srcDirs, toLinkedSet(project.file("src/custom/java")))
+        assertEquals(sourceSet.gosu.getDestinationDirectory().get().asFile, project.file("build/classes/gosu/custom"))
+
+    }
+
+    @Test
+    void addsGosuSourceSetOutputsToNewSourceSet() {
+        def sourceSet = project.sourceSets.create("custom")
+        assertTrue(sourceSet.output.classesDirs.contains(project.file("build/classes/java/custom")))
+        assertTrue(sourceSet.output.classesDirs.contains(project.file("build/classes/gosu/custom")))
     }
 
     @Test
     void addsCompileTaskToNewSourceSet() {
-        project.sourceSets.create('custom')
+        def sourceSet = project.sourceSets.create('custom')
 
         def task = project.tasks['compileCustomGosu']
-        assertThat(task, instanceOf(GosuCompile.class))
-        assertThat(task.description, equalTo('Compiles the custom Gosu source.'))
+        assertTrue(task instanceof GosuCompile)
+        assertEquals(task.description, 'Compiles the custom Gosu source.')
         assertTrue(task.dependsOn.contains('compileCustomJava'))
     }
 
