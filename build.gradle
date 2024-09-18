@@ -10,7 +10,7 @@ plugins {
 }
 
 wrapper {
-    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
+    distributionType = Wrapper.DistributionType.BIN // or .ALL
 }
 
 description = """Gosu language compiler for Gradle.  Built with Gradle $gradleVersion.
