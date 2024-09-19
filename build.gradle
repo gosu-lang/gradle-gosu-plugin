@@ -47,6 +47,14 @@ dependencies {
     testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of javaVersion
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
 gradlePlugin {
     plugins {
         gosuPlugin {
@@ -102,25 +110,6 @@ if(System.getenv('CI') != null) {
     }
 }
 
-tasks.register('sourceJar', Jar) {
-    archiveClassifier = 'sources'
-    description 'generate sources'
-    dependsOn 'test'
-    from sourceSets.main.allJava
-}
-
-tasks.register('javadocJar', Jar) {
-    archiveClassifier = 'javadoc'
-    description 'generate javadoc'
-    dependsOn 'test'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourceJar
-    archives javadocJar
-}
-
 release {
     git {
         requireBranch.set('rel/.*')
@@ -145,8 +134,6 @@ afterReleaseBuild.dependsOn publish, publishPlugins
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
-        artifact javadocJar
-        artifact sourceJar
         pom.packaging 'jar'
         pom.withXml { xml -> configurePom(xml) }
     }
