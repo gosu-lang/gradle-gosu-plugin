@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/openjdk:8u171-jdk
+      - image: cimg/openjdk:11.0
 
     environment:
       GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx512m -Dorg.gradle.daemon=false
