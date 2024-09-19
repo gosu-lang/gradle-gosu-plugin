@@ -40,7 +40,10 @@ repositories {
 }
 
 dependencies {
-    testImplementation "junit:junit:${junitVersion}"
+    testImplementation platform("org.junit:junit-bom:${junitPlatformVersion}")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
+    testImplementation "junit:junit:${junitVersion}" //TODO refactor existing unit tests and get rid of junit 4
     testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
     testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
     testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
@@ -85,6 +88,7 @@ dependencies {
 }
 
 test {
+  useJUnitPlatform()
   testLogging {
       events 'passed', 'failed', 'skipped'
   }
