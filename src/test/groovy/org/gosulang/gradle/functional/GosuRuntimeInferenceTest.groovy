@@ -25,8 +25,8 @@ class GosuRuntimeInferenceTest extends AbstractGosuPluginSpecification {
                 }
             }
             dependencies {
-                //compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion' //intentionally commenting-out to cause build failure
-                testCompile group: 'junit', name: 'junit', version: '4.12'
+                //implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion' //intentionally commenting-out to cause build failure
+                testImplementation group: 'junit', name: 'junit', version: '4.12'
             }
             """
         
