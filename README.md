@@ -6,7 +6,7 @@ Specifically, this adds compileGosu and compileTestGosu tasks. These tasks are d
 
 Java 8 is required, as is Gosu version 1.13.9+ or 1.14.2+. Gosu 1.14 and 1.14.1 are not supported.
 
-Build status: [![Circle CI](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master.svg?style=svg)](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/master)
+Build status: [![Circle CI](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/main.svg?style=svg)](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/main)
 
 ## Why would I use this?
 
@@ -105,4 +105,4 @@ gosudoc { // Task type: org.gosulang.gradle.tasks.gosudoc.GosuDoc
 
 ### Changelog
 
-See **[CHANGELOG.md](https://github.com/gosu-lang/gradle-gosu-plugin/blob/master/CHANGELOG.md)**
+See **[CHANGELOG.md](https://github.com/gosu-lang/gradle-gosu-plugin/blob/main/CHANGELOG.md)**
