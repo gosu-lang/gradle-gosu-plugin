@@ -6,10 +6,11 @@ import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.*;
-import org.gradle.api.plugins.internal.JavaPluginHelper;
-import org.gradle.api.plugins.jvm.internal.JvmFeatureInternal;
+import org.gradle.api.plugins.Convention;
+import org.gradle.api.plugins.JavaBasePlugin;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.TaskProvider;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
 
@@ -44,16 +45,18 @@ public class GosuPlugin implements Plugin<Project> {
   }
 
  private void configureGosuDoc( final Project project ) {
-    GosuDoc gosuDoc = project.getTasks().create(GOSUDOC_TASK_NAME, GosuDoc.class);
-    gosuDoc.setDescription("Generates Gosudoc API documentation for the main source code.");
-    gosuDoc.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
-    // JvmFeatureInternal mainFeature = JavaPluginHelper.getJavaComponent(project).getMainFeature();//alternative approach but needs to be tested
-    // gosuDoc.setClasspath(mainFeature.getSourceSet().getOutput().plus(mainFeature.getSourceSet().getCompileClasspath()));
-    SourceSet sourceSet = javaPluginExtension(project).getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
-    gosuDoc.setClasspath(sourceSet.getOutput().plus(sourceSet.getCompileClasspath()));
-    Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
-    GosuSourceSet gosuSourceSet = sourceSetConvention.getPlugin(GosuSourceSet.class);
-    gosuDoc.setSource((Object) gosuSourceSet.getGosu());  // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
+     SourceSet mainSourceSet = javaPluginExtension(project).getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+     Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(mainSourceSet, "convention");
+     GosuSourceSet gosuSourceSet = sourceSetConvention.getPlugin(GosuSourceSet.class);
+
+     TaskProvider<GosuDoc> gosuDoc = project.getTasks().register(GOSUDOC_TASK_NAME, GosuDoc.class, t -> {
+        t.setDescription("Generates Gosudoc API documentation for the main source code.");
+        t.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
+        // JvmFeatureInternal mainFeature = JavaPluginHelper.getJavaComponent(project).getMainFeature();//alternative approach but needs to be tested
+        // gosuDoc.setClasspath(mainFeature.getSourceSet().getOutput().plus(mainFeature.getSourceSet().getCompileClasspath()));
+        t.setClasspath(mainSourceSet.getOutput().plus(mainSourceSet.getCompileClasspath()));
+        t.setSource(gosuSourceSet.getGosu());
+    });
   }
 
 

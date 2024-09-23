@@ -7,10 +7,11 @@ plugins {
     id 'groovy'
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'jvm-test-suite'
 }
 
 wrapper {
-    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
+    distributionType = Wrapper.DistributionType.BIN // or .ALL
 }
 
 description = """Gosu language compiler for Gradle.  Built with Gradle $gradleVersion.
@@ -39,21 +40,23 @@ repositories {
     }
 }
 
-dependencies {
-    testImplementation "junit:junit:${junitVersion}"
-    testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
-    testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
-    testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
-    testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
-}
+//dependencies {
+//    testImplementation platform("org.junit:junit-bom:${junitPlatformVersion}")
+//    testImplementation "org.junit.jupiter:junit-jupiter"
+//    testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
+//    testImplementation "junit:junit:${junitVersion}" //TODO refactor existing unit tests and get rid of junit 4
+//    testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
+//    testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
+//    testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
+//    testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
+//}
 
-gradlePlugin {
-    plugins {
-        gosuPlugin {
-            id = 'org.gosu-lang.gosu'
-            implementationClass = 'org.gosulang.gradle.GosuPlugin'
-        }
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of javaVersion
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 //Test Helper Tasks
@@ -70,13 +73,65 @@ tasks.register('testedVersionsHelper', VersionWriterTask) {
     propertyToRead = 'testedVersions'
 }
 
-dependencies {
-    testImplementation files(gradleVersionHelper) // Persist a file containing the gradleVersion
-    testImplementation files(gosuVersionHelper) // Persist a file containing the gosuVersion
-    testImplementation files(testedVersionsHelper) // Persist a file containing the testedVersions
+testing {
+    suites {
+        test {
+            useJUnitJupiter(junitPlatformVersion)
+            dependencies {
+                implementation "junit:junit:${junitVersion}"
+                implementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
+                implementation "org.spockframework:spock-core:${spockCoreVersion}"
+                implementation "org.assertj:assertj-core:${assertjCoreVersion}"
+                implementation "org.opentest4j:opentest4j:${opentest4jVersion}"
+                runtimeOnly "org.junit.vintage:junit-vintage-engine"
+            }
+        }
+        functionalTest(JvmTestSuite) {
+            useJUnitJupiter(junitPlatformVersion)
+            dependencies {
+                implementation "junit:junit:${junitVersion}" //TODO refactor existing unit tests and get rid of junit 4
+                implementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
+                implementation "org.spockframework:spock-core:${spockCoreVersion}"
+                implementation "org.assertj:assertj-core:${assertjCoreVersion}"
+                implementation "org.opentest4j:opentest4j:${opentest4jVersion}"
+                runtimeOnly files(gradleVersionHelper) // Persist a file containing the gradleVersion
+                runtimeOnly files(gosuVersionHelper) // Persist a file containing the gosuVersion
+                runtimeOnly files(testedVersionsHelper) // Persist a file containing the testedVersions
+            }
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
+    }
 }
 
-test {
+gradlePlugin {
+    plugins {
+        gosuPlugin {
+            id = 'org.gosu-lang.gosu'
+            implementationClass = 'org.gosulang.gradle.GosuPlugin'
+        }
+    }
+}
+
+// adds gradleTestKit() dependency to the functionalTest test suite
+gradlePlugin.testSourceSets.add(sourceSets.functionalTest)
+
+tasks.named('check') {
+    dependsOn(testing.suites.functionalTest)
+}
+
+//dependencies {
+//    testImplementation files(gradleVersionHelper) // Persist a file containing the gradleVersion
+//    testImplementation files(gosuVersionHelper) // Persist a file containing the gosuVersion
+//    testImplementation files(testedVersionsHelper) // Persist a file containing the testedVersions
+//}
+
+tasks.withType(Test) {
   testLogging {
       events 'passed', 'failed', 'skipped'
   }
@@ -96,29 +151,10 @@ if(System.getenv('CI') != null) {
     tasks.withType(AbstractCompile).configureEach { //covers JavaCompile and GroovyCompile
         options.fork = false
     }
-    test {
+    tasks.withType(Test) {
         maxHeapSize = '1g'
         systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit from spawning daemons and running out of memory
     }
-}
-
-tasks.register('sourceJar', Jar) {
-    archiveClassifier = 'sources'
-    description 'generate sources'
-    dependsOn 'test'
-    from sourceSets.main.allJava
-}
-
-tasks.register('javadocJar', Jar) {
-    archiveClassifier = 'javadoc'
-    description 'generate javadoc'
-    dependsOn 'test'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourceJar
-    archives javadocJar
 }
 
 release {
@@ -145,8 +181,6 @@ afterReleaseBuild.dependsOn publish, publishPlugins
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
-        artifact javadocJar
-        artifact sourceJar
         pom.packaging 'jar'
         pom.withXml { xml -> configurePom(xml) }
     }

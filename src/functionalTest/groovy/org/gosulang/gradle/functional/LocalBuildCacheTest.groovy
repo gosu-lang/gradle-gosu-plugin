@@ -3,7 +3,6 @@ package org.gosulang.gradle.functional
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.VersionNumber
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Unroll
@@ -12,7 +11,6 @@ import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Unroll
-
 class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
 
     /**
@@ -31,6 +29,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
      */
     @Override
     def setup() {
+        testKitDir.create()
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
     }
 
@@ -50,13 +49,13 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
-                .withArguments('compileGosu', '--build-cache') //Should be reverted to gosudoc when gosudoc is ready
+                .withArguments('gosudoc', '--build-cache')
 
         BuildResult result = runner.build()
 
         then:
         result.task(":compileGosu").outcome == SUCCESS
-        //result.task(":gosudoc").outcome == SUCCESS
+        result.task(":gosudoc").outcome == SUCCESS
 
         if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
             result.output.contains('2 actionable tasks: 2 executed')
@@ -76,13 +75,13 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
-                .withArguments('clean', 'compileGosu', '--build-cache') //Should be reverted to gosudoc when gosudoc is ready
+                .withArguments('clean', 'gosudoc', '--build-cache')
 
         result = runner.build()
 
         then:
         result.task(":compileGosu").outcome == FROM_CACHE
-        //result.task(":gosudoc").outcome == FROM_CACHE
+        result.task(":gosudoc").outcome == FROM_CACHE
 
         if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
             result.output.contains('2 actionable tasks: 0 executed')
@@ -104,9 +103,9 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
 
     private boolean assertTaskOutputs() {
         //did we actually compile anything?
-        return new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists() // &&
+        return new File(testProjectDir.root, asPath(expectedOutputDir(gradleVersion) + ['main', 'example', 'gradle', 'SimplePogo.class'])).exists() &&
         //did we actually doc anything?
-       // new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc', 'index.html')).exists()
+        new File(testProjectDir.root, asPath('build', 'docs', 'gosudoc', 'index.html')).exists()
 
     }
     
