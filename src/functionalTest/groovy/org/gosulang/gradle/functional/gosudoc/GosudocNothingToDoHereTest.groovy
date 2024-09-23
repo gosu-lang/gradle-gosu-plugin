@@ -3,7 +3,6 @@ package org.gosulang.gradle.functional.gosudoc
 import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
-import org.junit.Ignore
 import spock.lang.Unroll
 
 @Unroll
