@@ -1,6 +1,7 @@
 package org.gosulang.gradle.functional.classpath
 
 import org.gosulang.gradle.functional.AbstractGosuPluginSpecification
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
@@ -32,6 +33,15 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
     File baseTestFoo
     File appFoo
     File fooTest
+
+    def setupSpec() {
+        // ensures that the jar, not build/classes/main, ends up on the classpath
+        System.setProperty(JavaBasePlugin.COMPILE_CLASSPATH_PACKAGING_SYSTEM_PROPERTY, "true")
+    }
+
+    def cleanupSpec() {
+        System.setProperty(JavaBasePlugin.COMPILE_CLASSPATH_PACKAGING_SYSTEM_PROPERTY, "")
+    }
 
     /**
      * super#setup is invoked automatically
@@ -71,8 +81,8 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                     }
                 }
                 dependencies {
-                    compile 'org.gosu-lang.gosu:gosu-core-api:$gosuVersion'
-                    testCompile 'junit:junit:4.12'
+                    implementation 'org.gosu-lang.gosu:gosu-core-api:$gosuVersion'
+                    testImplementation 'junit:junit:4.12'
                 }
                 task printClasspath  {
                     doLast{
@@ -92,16 +102,19 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
 
         appExtBuildScript << 
             """
+            plugins {
+              id 'java-library'
+            }
             dependencies {
-                compile project(':app')
+                api project(':app')
             }
             """
 
         appTestBuildScript <<
             """
             dependencies {
-                compile project(':appExt')
-                compile project(':baseTest')
+                implementation project(':appExt')
+                implementation project(':baseTest')
             }
             """
 
@@ -144,13 +157,12 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
                 .withGradleVersion(gradleVersion)
-                .forwardOutput()
+                //.forwardOutput()
 
         BuildResult result = runner.build()
 
         then:
         notThrown(UnexpectedBuildFailure)
-        println(result.output)
 
         String[] expected = ['appExt.jar', 'baseTest.jar', 'app.jar']
 
@@ -202,10 +214,10 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
 
             sourceSets {
                 main {
-                    compileClasspath = putAppAheadOfBaseTest(configurations.compile)
+                    compileClasspath = putAppAheadOfBaseTest(configurations.compileClasspath)
                 }
                 test {
-                   runtimeClasspath = putAppAheadOfBaseTest(configurations.testRuntime) + sourceSets.test.runtimeClasspath
+                    runtimeClasspath = putAppAheadOfBaseTest(configurations.testRuntimeClasspath) + sourceSets.test.runtimeClasspath
                 }
             }
             """
@@ -216,13 +228,12 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                 .withPluginClasspath()
                 .withArguments(':appTest:printClasspath', ':appTest:test', '-is')
                 .withGradleVersion(gradleVersion)
-                .forwardOutput()
+                //.forwardOutput()
         
         BuildResult result = runner.build()
 
         then:
         notThrown(UnexpectedBuildFailure)
-        println(result.output)
 
         String[] expected = ['appExt.jar', 'app.jar', 'baseTest.jar']
 
@@ -249,7 +260,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
         //get the line starting with 'The classpath is: '
         Matcher matcher = stdOut =~ /The classpath is: \[(.*)\]/
         matcher.find()
-        matcher.groupCount() == 1
+        assert matcher.groupCount() == 1
         return matcher.group(1).split(', ')
     }
 

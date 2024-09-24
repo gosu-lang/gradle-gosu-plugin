@@ -17,7 +17,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     protected static final String FS = File.separator
 
     @Rule
-     TemporaryFolder testProjectDir = new TemporaryFolder()
+    TemporaryFolder testProjectDir = new TemporaryFolder()
 
     protected  URL _gosuVersionResource = this.class.classLoader.getResource("gosuVersion.txt")
 
@@ -45,8 +45,8 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
                 }
             }
             dependencies {
-                compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-                testCompile group: 'junit', name: 'junit', version: '4.12'
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+                testImplementation group: 'junit', name: 'junit', version: '4.12'
             }
             //compileGosu.gosuOptions.forkOptions.jvmArgs += ['-Xdebug', '-Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y'] //debug on linux/OS X
             gosudoc {

@@ -10,7 +10,7 @@ plugins {
 }
 
 wrapper {
-    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
+    distributionType = Wrapper.DistributionType.BIN // or .ALL
 }
 
 description = """Gosu language compiler for Gradle.  Built with Gradle $gradleVersion.
@@ -40,11 +40,22 @@ repositories {
 }
 
 dependencies {
-    testImplementation "junit:junit:${junitVersion}"
+    testImplementation platform("org.junit:junit-bom:${junitPlatformVersion}")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
+    testImplementation "junit:junit:${junitVersion}" //TODO refactor existing unit tests and get rid of junit 4
     testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
     testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
     testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
     testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of javaVersion
+    }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 gradlePlugin {
@@ -77,6 +88,7 @@ dependencies {
 }
 
 test {
+  useJUnitPlatform()
   testLogging {
       events 'passed', 'failed', 'skipped'
   }
@@ -100,25 +112,6 @@ if(System.getenv('CI') != null) {
         maxHeapSize = '1g'
         systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit from spawning daemons and running out of memory
     }
-}
-
-tasks.register('sourceJar', Jar) {
-    archiveClassifier = 'sources'
-    description 'generate sources'
-    dependsOn 'test'
-    from sourceSets.main.allJava
-}
-
-tasks.register('javadocJar', Jar) {
-    archiveClassifier = 'javadoc'
-    description 'generate javadoc'
-    dependsOn 'test'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourceJar
-    archives javadocJar
 }
 
 release {
@@ -145,8 +138,6 @@ afterReleaseBuild.dependsOn publish, publishPlugins
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
-        artifact javadocJar
-        artifact sourceJar
         pom.packaging 'jar'
         pom.withXml { xml -> configurePom(xml) }
     }

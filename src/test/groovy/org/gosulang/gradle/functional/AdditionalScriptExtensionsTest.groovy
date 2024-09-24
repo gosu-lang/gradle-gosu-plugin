@@ -36,12 +36,12 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
                 filter.include 'rules/**/*.grs', 'rules/**/*.gr'
               }
             }
-            task copyRuleMetadata(type: Copy) {
+            def copyRuleMetadata = tasks.register('copyRuleMetadata', Copy) {
               from 'src/main/config'
               into $apiAwareOutputDir
               include 'rules/**/order.txt'
             }
-            tasks.processResources.dependsOn(tasks.copyRuleMetadata)
+            tasks.processResources.dependsOn(copyRuleMetadata)
         """
 
         simplePogo << """
@@ -106,8 +106,20 @@ class AdditionalScriptExtensionsTest extends AbstractGosuPluginSpecification {
 
         where:
         gradleVersion << gradleVersionsToTest
-        apiAwareOutputDir = VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0') ? 'sourceSets.main.gosu.outputDir' : 'sourceSets.main.output.classesDir'
-
+        apiAwareOutputDir = calculateApiAwareOutputDir(VersionNumber.parse(gradleVersion).major)
     }
 
+    /**
+     * if Gradle 8 or above, use sourceSets.main.gosu.classesDirectory
+     */
+    static String calculateApiAwareOutputDir(int gradleMajorVersion) {
+        switch(gradleMajorVersion) {
+            case 1..4:
+                return 'sourceSets.main.output.classesDir'
+            case 5..7:
+                return 'sourceSets.main.gosu.outputDir'
+            default:
+                return 'sourceSets.main.gosu.classesDirectory'
+        }
+    }
 }

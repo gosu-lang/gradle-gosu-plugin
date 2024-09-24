@@ -9,22 +9,19 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.Directory;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.*;
-import org.gradle.api.internal.ConventionMapping;
-import org.gradle.api.plugins.internal.JvmPluginsHelper;
+import org.gradle.api.plugins.Convention;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.internal.Cast;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.util.concurrent.Callable;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
 
@@ -85,10 +82,10 @@ public class GosuBasePlugin implements Plugin<Project> {
    */
   private void configureGosuCompile(SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
-    GosuCompile gosuCompile = _project.getTasks().create(compileTaskName, GosuCompile.class);
+    TaskProvider<? extends AbstractCompile> gosuCompile = _project.getTasks().register(compileTaskName, GosuCompile.class);
     configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
-    gosuCompile.dependsOn(sourceSet.getCompileJavaTaskName());
-    gosuCompile.setSource((Object) gosuSourceSet.getGosu()); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
+    gosuCompile.configure(t -> t.dependsOn(sourceSet.getCompileJavaTaskName()));
+    gosuCompile.configure(t -> t.setSource((Object) gosuSourceSet.getGosu())); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 
@@ -101,19 +98,21 @@ public class GosuBasePlugin implements Plugin<Project> {
     });
   }
 
-  private static void configureForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, AbstractCompile compile, final Project target) {
-    compile.setDescription("Compiles the " + sourceDirectorySet.getDisplayName() + ".");
-    compile.setSource(sourceSet.getJava());
-    compile.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath().plus(target.files(sourceSet.getJava().getDestinationDirectory())));
-    configureOutputDirectoryForSourceSet(sourceSet, sourceDirectorySet, compile, target);
+  private static void configureForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, TaskProvider<? extends AbstractCompile> compile, final Project target) {
+    compile.configure(t -> {
+      t.setDescription("Compiles the " + sourceDirectorySet.getDisplayName() + ".");
+      t.setSource(sourceSet.getJava());
+      t.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath().plus(target.files(sourceSet.getJava().getDestinationDirectory())));
+    });
+    configureOutputDirectoryForSourceSet(sourceSet, sourceDirectorySet, target, compile);
   }
 
- private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, AbstractCompile compile, final Project target) {
+ private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, final Project target, TaskProvider<? extends AbstractCompile> compileTask) {
     final String sourceSetChildPath = "classes/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
     sourceDirectorySet.getDestinationDirectory().convention(target.getLayout().getBuildDirectory().dir(sourceSetChildPath));
     DefaultSourceSetOutput sourceSetOutput = Cast.cast(DefaultSourceSetOutput.class, sourceSet.getOutput());
-    sourceSetOutput.getClassesDirs().from(sourceDirectorySet.getDestinationDirectory()).builtBy(compile);
-    compile.getDestinationDirectory().set(sourceDirectorySet.getDestinationDirectory());
+    sourceSetOutput.getClassesDirs().from(sourceDirectorySet.getDestinationDirectory()).builtBy(compileTask);
+    sourceDirectorySet.compiledBy(compileTask, AbstractCompile::getDestinationDirectory);
   }
 
 }
