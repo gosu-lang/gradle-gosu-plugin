@@ -135,6 +135,12 @@ pluginBundle {
 }
 
 afterReleaseBuild.dependsOn publish, publishPlugins
+afterEvaluate {
+    tasks.named("generateMetadataFileForPluginMavenPublication") {
+        dependsOn("publishPluginJar")
+        dependsOn("publishPluginJavaDocsJar")
+    }
+}
 
 publishing {
     publications.maybeCreate('pluginMaven', MavenPublication).with {
