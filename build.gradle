@@ -2,8 +2,9 @@ import org.gosulang.gradle.build.VersionWriterTask
 import java.nio.charset.StandardCharsets
 
 plugins {
-    id 'com.gradle.plugin-publish' version "${gradlePublishPluginVersion}"
-    id 'net.researchgate.release' version "${researchgateReleaseGradlePluginVersion}"
+    alias(libs.plugins.plugin.publish)
+    alias(libs.plugins.release)
+    alias(libs.plugins.reproducible.builds)
     id 'groovy'
     id 'java-gradle-plugin'
     id 'maven-publish'
@@ -40,14 +41,18 @@ repositories {
 }
 
 dependencies {
-    testImplementation platform("org.junit:junit-bom:${junitPlatformVersion}")
-    testImplementation "org.junit.jupiter:junit-jupiter"
-    testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
-    testImplementation "junit:junit:${junitVersion}" //TODO refactor existing unit tests and get rid of junit 4
-    testImplementation "org.hamcrest:hamcrest-library:${hamcrestLibraryVersion}"
-    testImplementation "org.spockframework:spock-core:${spockCoreVersion}"
-    testImplementation "org.assertj:assertj-core:${assertjCoreVersion}"
-    testImplementation "org.opentest4j:opentest4j:${opentest4jVersion}"
+    testImplementation platform(libs.junit.platform)
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.vintageEngine
+    testImplementation libs.junit4
+    testImplementation libs.hamcrest
+    testImplementation(libs.spock.core) {
+        artifact {
+            type =  "jar"
+        }
+    }
+    testImplementation libs.assertj
+    testImplementation libs.opentest4j
 }
 
 java {
