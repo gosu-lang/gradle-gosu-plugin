@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 plugins {
     id 'com.gradle.plugin-publish' version "${gradlePublishPluginVersion}"
     id 'net.researchgate.release' version "${researchgateReleaseGradlePluginVersion}"
+    id "org.gradlex.reproducible-builds" version "${reproducibleBuildsPluginVersion}"
     id 'groovy'
     id 'java-gradle-plugin'
     id 'maven-publish'
