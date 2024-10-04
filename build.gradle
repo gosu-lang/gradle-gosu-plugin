@@ -6,8 +6,6 @@ plugins {
     id 'net.researchgate.release' version "${researchgateReleaseGradlePluginVersion}"
     id "org.gradlex.reproducible-builds" version "${reproducibleBuildsPluginVersion}"
     id 'groovy'
-    id 'java-gradle-plugin'
-    id 'maven-publish'
 }
 
 wrapper {
@@ -64,6 +62,9 @@ gradlePlugin {
         gosuPlugin {
             id = 'org.gosu-lang.gosu'
             implementationClass = 'org.gosulang.gradle.GosuPlugin'
+            displayName = 'Gosu Gradle Plugin'
+            description = project.description
+            tags.set(['gosu'])
         }
     }
 }
@@ -122,80 +123,51 @@ release {
     tagTemplate = 'v${version}'
 }
 
-pluginBundle {
-    website = 'http://gosu-lang.org'
-    vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
-    description = project.description
-    tags = ['gosu']
-    plugins {
-        gosuPlugin {
-            id = 'org.gosu-lang.gosu'
-            displayName = 'Gosu Gradle Plugin'
-        }
-    }
-}
-
 afterReleaseBuild.dependsOn publish, publishPlugins
-afterEvaluate {
-    tasks.named("generateMetadataFileForPluginMavenPublication") {
-        dependsOn("publishPluginJar")
-        dependsOn("publishPluginJavaDocsJar")
-    }
-}
 
 publishing {
-    publications.maybeCreate('pluginMaven', MavenPublication).with {
-        pom.packaging 'jar'
-        pom.withXml { xml -> configurePom(xml) }
+    publications {
+        pluginMaven(MavenPublication) {
+            pom {
+                name = project.name
+                description = project.description
+                url = 'http://gosu-lang.github.io/'
+                scm {
+                    connection = 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
+                    developerConnection = 'scm:git:git@github.com:gosu-lang/gosu-lang.git'
+                    url = 'git@github.com:gosu-lang/gosu-lang.git'
+                }
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        name = 'Kyle Moore'
+                        email = 'github@kylemoore.com'
+                        organization = 'gosu-lang.org'
+                    }
+                    developer {
+                        name = 'The Gosu Team'
+                        email = 'gosu.lang.team@gmail.com'
+                        organization = 'Guidewire Software, Inc.'
+                    }
+                }
+            }
+        }
     }
-    if (publishSnapshotToGwArtifactory){
+
+    if (isSnapshot && publishSnapshotToGwArtifactory){
         repositories {
             maven {
-                if(isSnapshot) {
-                    url System.getenv('PUBLISH_TO_REPOSITORY_URL')
-                    credentials {
-                        username System.getenv('PUBLISH_WITH_USERNAME')
-                        password System.getenv('PUBLISH_WITH_PASSWORD')
-                    } 
+                url System.getenv('PUBLISH_TO_REPOSITORY_URL')
+                credentials {
+                    username System.getenv('PUBLISH_WITH_USERNAME')
+                    password System.getenv('PUBLISH_WITH_PASSWORD')
                 }
             }
         }
     }    
-}
-
-model {
-    tasks.generatePomFileForGosuPluginPluginMarkerMavenPublication {
-        pom.withXml { xml -> configurePom(xml) }
-    }
-}
-
-void configurePom(XmlProvider xml) {
-    xml.asNode().appendNode('name', project.name)
-    xml.asNode().appendNode('description', project.description)
-    xml.asNode().appendNode('url', 'http://gosu-lang.github.io/')
-
-    xml.asNode().appendNode('scm').with {
-        appendNode('connection', 'scm:git:git@github.com:gosu-lang/gosu-lang.git')
-        appendNode('developerConnection', 'scm:git:git@github.com:gosu-lang/gosu-lang.git')
-        appendNode('url', 'git@github.com:gosu-lang/gosu-lang.git')
-    }
-
-    xml.asNode().appendNode('licenses')
-            .appendNode('license').with {
-        appendNode('name', 'The Apache License, Version 2.0')
-        appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt')
-    }
-
-    xml.asNode().appendNode('developers').with {
-        appendNode('developer').with {
-            appendNode('name', 'Kyle Moore')
-            appendNode('email', 'github@kylemoore.com')
-            appendNode('organization', 'gosu-lang.org')
-        }
-        appendNode('developer').with {
-            appendNode('name', 'The Gosu Team')
-            appendNode('email', 'gosu.lang.team@gmail.com')
-            appendNode('organization', 'Guidewire')
-        }
-    }
 }
