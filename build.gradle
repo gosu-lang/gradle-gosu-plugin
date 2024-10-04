@@ -22,10 +22,10 @@ Projects applying this plugin require a compile-time dependency on the gosu-core
 
 This version requires $gosuVersion or greater. 
 
-Please include this in the depencencies closure:
+Please include this in the dependencies closure:
 
 dependencies {
-    compile group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$project.gosuVersion'
+    implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$project.gosuVersion'
 }
 """
 
