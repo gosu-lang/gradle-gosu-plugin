@@ -2,13 +2,20 @@ package org.gosulang.gradle.tasks.gosudoc;
 
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
+import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
+import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.logging.LogLevel;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
@@ -17,10 +24,11 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
 
+import javax.inject.Inject;
 import java.io.File;
 
 @CacheableTask
-public class GosuDoc extends SourceTask implements InfersGosuRuntime {
+public abstract class GosuDoc extends SourceTask implements InfersGosuRuntime {
 
   private FileCollection _classpath;
   private Closure<FileCollection> _gosuClasspath;
@@ -28,9 +36,27 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
   private String _title;
 
+//  private final String _projectName;
+//  private final Directory _projectDir;
+//  private final DirectoryProperty _buildDir;
+//  private final ProjectLayout _layout;
+
+  @Inject
+  public abstract ObjectFactory getObjectFactory();
+
+  @Inject
   public GosuDoc() {
     getLogging().captureStandardOutput(LogLevel.INFO);
   }
+
+  @Internal
+  public abstract Property<String> getProjectName();
+
+  @Internal
+  public abstract DirectoryProperty getProjectDir();
+
+  @Internal
+  public abstract DirectoryProperty getBuildDir();
 
   /**
    * {@inheritDoc}
@@ -118,6 +144,6 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
       options.setTitle(getTitle());
     }
-    new CommandLineGosuDoc(getSource(), getDestinationDir(), getGosuClasspath().call(), getClasspath(), options, getProject()).execute();
+    getObjectFactory().newInstance(CommandLineGosuDoc.class, getSource(), getDestinationDir(), getGosuClasspath().call(), getClasspath(), options, getProjectName().get(), getProjectDir().get(), getBuildDir().get()).execute();
   }
 }

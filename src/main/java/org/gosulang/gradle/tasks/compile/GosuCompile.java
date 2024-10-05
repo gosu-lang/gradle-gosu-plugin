@@ -4,7 +4,11 @@ import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.FileTreeInternal;
@@ -12,6 +16,8 @@ import org.gradle.api.internal.tasks.compile.CompilationSourceDirs;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
@@ -26,15 +32,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.BiFunction;
 
 import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
 @CacheableTask
-public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
+public abstract class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   private GosuCompiler<GosuCompileSpec> _compiler;
   private Closure<FileCollection> _gosuClasspath;
-  private Closure<FileCollection> _orderClasspath;
+//  private Closure<FileCollection> _orderClasspath;
+  private BiFunction<Project, Configuration, FileCollection> _orderClasspathFunction;
 
   private final CompileOptions _compileOptions;
   private final GosuCompileOptions _gosuCompileOptions = new GosuCompileOptions();
@@ -46,8 +54,11 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   });
 
   @Inject
+  public abstract ObjectFactory getObjectFactory();
+
+  @Inject
   public GosuCompile() {
-      _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
+      _compileOptions = getObjectFactory().newInstance(CompileOptions.class);
   }
 
   @TaskAction
@@ -56,6 +67,12 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
   }
+
+  @Internal
+  public abstract DirectoryProperty getProjectDir();
+
+  @Internal
+  public abstract Property<String> getProjectName();
 
   /**
    * {@inheritDoc}
@@ -109,25 +126,34 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     _gosuClasspath = gosuClasspathClosure;
   }
 
-  /**
-   * Annotating as @Input or @InputFiles causes errors in Guidewire applications, even when paired with @Optional.
-   * Marking as @Internal instead to skip warning thrown by :validateTaskProperties (org.gradle.plugin.devel.tasks.ValidateTaskProperties)
-   * @return a Closure returning a classpath to be passed to the GosuCompile task
-   */
+//  /**
+//   * Annotating as @Input or @InputFiles causes errors in Guidewire applications, even when paired with @Optional.
+//   * Marking as @Internal instead to skip warning thrown by :validateTaskProperties (org.gradle.plugin.devel.tasks.ValidateTaskProperties)
+//   * @return a Closure returning a classpath to be passed to the GosuCompile task
+//   */
+//  @Internal
+//  public Closure<FileCollection> getOrderClasspath() {
+//    return _orderClasspath;
+//  }
+
+//  /**
+//   * Normally setting this value is not required.
+//   * Certain projects relying on depth-first resolution of module dependencies can use this
+//   * Closure to reorder the classpath as needed.
+//   *
+//   * @param orderClasspath a Closure returning a classpath to be passed to the GosuCompile task
+//   */
+//  public void setOrderClasspath(Closure<FileCollection> orderClasspath) {
+//    _orderClasspath = orderClasspath;
+//  }
+
   @Internal
-  public Closure<FileCollection> getOrderClasspath() {
-    return _orderClasspath;
+  public BiFunction<Project, Configuration, FileCollection> getOrderClasspathFunction() {
+    return _orderClasspathFunction;
   }
 
-  /**
-   * Normally setting this value is not required.
-   * Certain projects relying on depth-first resolution of module dependencies can use this
-   * Closure to reorder the classpath as needed.
-   *
-   * @param orderClasspath a Closure returning a classpath to be passed to the GosuCompile task
-   */
-  public void setOrderClasspath(Closure<FileCollection> orderClasspath) {
-    _orderClasspath = orderClasspath;
+  public void setOrderClasspathFunction(BiFunction<Project, Configuration, FileCollection> orderClasspathFunction) {
+    _orderClasspathFunction = orderClasspathFunction;
   }
 
 /*  @Internal
@@ -148,26 +174,26 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 public FileCollection getSourceRoots() {
   FileTreeInternal stableSourcesAsFileTree = (FileTreeInternal) getStableSources().getAsFileTree();
   List<File> sourceRoots = CompilationSourceDirs.inferSourceRoots(stableSourcesAsFileTree);
-  return getProject().getLayout().files(sourceRoots);
+  return getObjectFactory().fileCollection().from(sourceRoots); // TODO FIXME ObjectFactory.fileCollection().from(sourceRoots)
 }
 
 
 
-  //!! todo: find a better way to iterate the FileTree
-  private Iterable getSourceReflectively() {
-    try {
-     // Field field = SourceTask.class.getDeclaredField("source");
-      Field field = SourceTask.class.getDeclaredField("sourceFiles");
-      field.setAccessible(true);
-      return (Iterable)field.get(this);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
+//  //!! todo: find a better way to iterate the FileTree
+//  private Iterable getSourceReflectively() {
+//    try {
+//     // Field field = SourceTask.class.getDeclaredField("source");
+//      Field field = SourceTask.class.getDeclaredField("sourceFiles");
+//      field.setAccessible(true);
+//      return (Iterable)field.get(this);
+//    } catch (Exception e) {
+//      throw new RuntimeException(e);
+//    }
+//  }
 
   private DefaultGosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
-    Project project = getProject();
+//    Project project = getProject(); // FIXME
     spec.setSource(getSource());
     spec.setSourceRoots(getSourceRoots());
     spec.setDestinationDir(getDestinationDirectory().get().getAsFile());
@@ -176,17 +202,24 @@ public FileCollection getSourceRoots() {
     spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
 
-    if (_orderClasspath == null) {
+//    if (_orderClasspath == null) {
+//      spec.setClasspath(asList(getClasspath()));
+//    } else {
+//      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)))); // FIXME
+//      //spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME))));
+//    }
+
+    if (_orderClasspathFunction == null) {
       spec.setClasspath(asList(getClasspath()));
     } else {
-      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME))));
-      //spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME))));
+//      spec.setClasspath(asList(_orderClasspathFunction.apply(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME))));
     }
 
-    Logger logger = project.getLogger();
+    Logger logger = getLogger();
+    String projectName = getProjectName().get();
 
     if(logger.isInfoEnabled()) {
-      logger.info("Gosu Compiler source roots for {} are:", project.getName());
+      logger.info("Gosu Compiler source roots for {} are:", projectName);
       if(spec.getSourceRoots().isEmpty()) {
         logger.info("<empty>");
       } else {
@@ -195,7 +228,7 @@ public FileCollection getSourceRoots() {
         }
       }
 
-      logger.info("Gosu Compiler Spec classpath for {} is:", project.getName());
+      logger.info("Gosu Compiler Spec classpath for {} is:", projectName);
       if(!spec.getClasspath().iterator().hasNext()) {
         logger.info("<empty>");
       } else {
@@ -204,7 +237,7 @@ public FileCollection getSourceRoots() {
         }
       }
 
-      logger.info("Gosu Compile Spec gosuClasspath for {} is:", project.getName());
+      logger.info("Gosu Compile Spec gosuClasspath for {} is:", projectName);
       FileCollection gosuClasspath = spec.getGosuClasspath().call();
       if(gosuClasspath.isEmpty()) {
         logger.info("<empty>");
@@ -220,7 +253,7 @@ public FileCollection getSourceRoots() {
 
   private GosuCompiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
     if(_compiler == null) {
-      GosuCompilerFactory gosuCompilerFactory = new GosuCompilerFactory(getProject(), this.getPath());
+      GosuCompilerFactory gosuCompilerFactory = getServices().get(ObjectFactory.class).newInstance(GosuCompilerFactory.class, getProjectDir().get(), this.getPath()); // FIXME don't call getProject()
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;

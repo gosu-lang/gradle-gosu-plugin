@@ -37,6 +37,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
     def 'apply gosu plugin and compile [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
+//        testProjectDir.newFile('settings.gradle') << 'enableFeaturePreview "STABLE_CONFIGURATION_CACHE"'
 
         simplePogo = new File(srcMainGosu, asPath('example', 'gradle', 'SimplePogo.gs'))
         simplePogo.getParentFile().mkdirs()
@@ -51,6 +52,8 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
                 .withArguments('gosudoc', '--build-cache')
+//                .withArguments('gosudoc', '--build-cache', '--configuration-cache')
+//                .forwardOutput()
 
         BuildResult result = runner.build()
 
@@ -77,6 +80,8 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
                 .withArguments('clean', 'gosudoc', '--build-cache')
+//                .withArguments('clean', 'gosudoc', '--build-cache', '--configuration-cache')
+//                .forwardOutput()
 
         result = runner.build()
 

@@ -63,7 +63,7 @@ public class GosuBasePlugin implements Plugin<Project> {
 
  private void configureSourceSetDefaults() {
      javaPluginExtension(_project).getSourceSets().all(sourceSet -> {
-      DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _objectFactory);
+      DefaultGosuSourceSet gosuSourceSet = _objectFactory.newInstance(DefaultGosuSourceSet.class, sourceSet.getName());
      //have to be revisit to avoid using the covention here
       Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
       sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
@@ -82,15 +82,22 @@ public class GosuBasePlugin implements Plugin<Project> {
    */
   private void configureGosuCompile(SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
-    TaskProvider<? extends AbstractCompile> gosuCompile = _project.getTasks().register(compileTaskName, GosuCompile.class);
+    TaskProvider<GosuCompile> gosuCompile = _project.getTasks().register(compileTaskName, GosuCompile.class);
     configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
     gosuCompile.configure(t -> t.dependsOn(sourceSet.getCompileJavaTaskName()));
     gosuCompile.configure(t -> t.setSource((Object) gosuSourceSet.getGosu())); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
+    gosuCompile.configure(t -> {
+        t.getProjectName().set(t.getProject().getName());
+        t.getProjectDir().set(t.getProject().getLayout().getProjectDirectory());
+    });
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 
   private void configureGosuDoc() {
     _project.getTasks().withType(GosuDoc.class, gosudoc -> {
+      gosudoc.getProjectName().set(_project.getName());
+      gosudoc.getProjectDir().set(_project.getLayout().getProjectDirectory());
+      gosudoc.getBuildDir().set(_project.getLayout().getBuildDirectory());
       gosudoc.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
       gosudoc.getConventionMapping().map("destinationDir", () -> new File(javaPluginExtension(_project).getDocsDir().get().getAsFile(), "gosudoc"));
       gosudoc.getConventionMapping().map("title", () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());

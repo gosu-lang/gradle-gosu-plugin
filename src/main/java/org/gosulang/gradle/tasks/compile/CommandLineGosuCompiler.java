@@ -3,16 +3,21 @@ package org.gosulang.gradle.tasks.compile;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.Project;
+import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.BaseForkOptions;
+import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
 import org.gradle.api.JavaVersion;
 
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -21,15 +26,27 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
+public abstract class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuCompiler.class);
-  
-  private final Project _project;
+
+  private final Directory _projectDir; // TODO replace, all we need is workingDir
   private final GosuCompileSpec _spec;
   private final String _projectName;
-  
-  public CommandLineGosuCompiler(Project project, GosuCompileSpec spec, String projectName ) {
-    _project = project;
+
+  @Inject
+  public abstract ObjectFactory getObjectFactory();
+
+  @Inject
+  public abstract ExecOperations getExecOperations();
+
+//  @Inject
+//  public FileSystemOperations getFs() {
+//    throw new UnsupportedOperationException("method implementation injected by Gradle");
+//  }
+
+  @Inject
+  public CommandLineGosuCompiler(Directory projectDir, GosuCompileSpec spec, String projectName ) {
+    _projectDir = projectDir;
     _spec = spec;
     _projectName = projectName;
   }
@@ -56,13 +73,13 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    ExecResult result = _project.javaexec(javaExecSpec -> {
+    ExecResult result = getExecOperations().javaexec(javaExecSpec -> {
       FileCollection gosuClasspathJars =  spec.getGosuClasspath().call();
       if (!JavaVersion.current().isJava11Compatible()) { //if it is not java 11
-        gosuClasspathJars = gosuClasspathJars.plus(_project.files(Util.findToolsJar()));
+        gosuClasspathJars = gosuClasspathJars.plus(getObjectFactory().fileCollection().from(Util.findToolsJar()));
       }
 
-      javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
+      javaExecSpec.setWorkingDir(_projectDir);
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.getMainClass().set("gw.lang.gosuc.cli.CommandLineCompiler");
       javaExecSpec.setClasspath(gosuClasspathJars)

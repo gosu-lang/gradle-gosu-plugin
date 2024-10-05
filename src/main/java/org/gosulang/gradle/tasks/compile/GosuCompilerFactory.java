@@ -1,14 +1,22 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.Project;
+import org.gradle.api.file.Directory;
+import org.gradle.api.model.ObjectFactory;
 
-public class GosuCompilerFactory implements IGosuCompilerFactory<GosuCompileSpec> {
+import javax.inject.Inject;
 
-  private final Project _project;
+public abstract class GosuCompilerFactory implements IGosuCompilerFactory<GosuCompileSpec> {
+
+  private final Directory _projectDir;
   private final String _taskPath;
 
-  public GosuCompilerFactory(Project project, String forTask) {
-    _project = project;
+  @Inject
+  public abstract ObjectFactory getObjectFactory();
+
+  @Inject
+  public GosuCompilerFactory(Directory projectDir, String forTask) {
+    _projectDir = projectDir;
     _taskPath = forTask;
   }
 
@@ -17,7 +25,7 @@ public class GosuCompilerFactory implements IGosuCompilerFactory<GosuCompileSpec
     GosuCompileOptions gosuOptions = spec.getGosuCompileOptions();
     GosuCompiler<GosuCompileSpec> gosuCompiler;
     if(gosuOptions.isFork()) {
-      gosuCompiler = new CommandLineGosuCompiler(_project, spec, _taskPath);
+      gosuCompiler = getObjectFactory().newInstance(CommandLineGosuCompiler.class, _projectDir, spec, _taskPath);
     } else {
       gosuCompiler = new InProcessGosuCompiler();
     }

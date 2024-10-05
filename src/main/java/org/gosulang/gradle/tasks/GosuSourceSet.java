@@ -4,6 +4,11 @@ import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.file.SourceDirectorySet;
 
+/**
+ * @deprecated Using convention to contribute to source sets is deprecated. You can configure the groovy sources via the {@code GosuSourceDirectorySet} extension (e.g.
+ * {@code sourceSet.getExtensions().getByType(GosuSourceDirectorySet.class).setSrcDirs(...)}).
+ */
+@Deprecated
 public interface GosuSourceSet {
 
   /**
