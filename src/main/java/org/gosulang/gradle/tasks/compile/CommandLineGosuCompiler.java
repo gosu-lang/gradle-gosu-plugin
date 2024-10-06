@@ -74,7 +74,7 @@ public abstract class CommandLineGosuCompiler implements GosuCompiler<GosuCompil
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     ExecResult result = getExecOperations().javaexec(javaExecSpec -> {
-      FileCollection gosuClasspathJars =  spec.getGosuClasspath().call();
+      FileCollection gosuClasspathJars = getObjectFactory().fileCollection().from(spec.getGosuClasspath());
       if (!JavaVersion.current().isJava11Compatible()) { //if it is not java 11
         gosuClasspathJars = gosuClasspathJars.plus(getObjectFactory().fileCollection().from(Util.findToolsJar()));
       }

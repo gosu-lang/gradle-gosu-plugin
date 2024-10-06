@@ -20,7 +20,7 @@ import static org.gradle.api.reflect.TypeOf.typeOf;
 @Deprecated
 public abstract class DefaultGosuSourceSet implements GosuSourceSet, HasPublicType {
 
-  private final SourceDirectorySet _gosu;
+  private final GosuSourceDirectorySet _gosu;
   private final SourceDirectorySet _allGosu;
 
   private static final List<String> _gosuAndJavaExtensions = Arrays.asList("**/*.java", "**/*.gs", "**/*.gsx", "**/*.gst", "**/*.gsp");
@@ -39,7 +39,7 @@ public abstract class DefaultGosuSourceSet implements GosuSourceSet, HasPublicTy
     this.name = name;
     this.baseName = name.equals(SourceSet.MAIN_SOURCE_SET_NAME) ? "" : name.toUpperCase();
     displayName = GUtil.toWords(this.name);
-    _gosu = getObjectFactory().sourceDirectorySet("gosu", displayName + " Gosu source");
+    _gosu = getObjectFactory().newInstance(DefaultGosuSourceDirectorySet.class, getObjectFactory().sourceDirectorySet("gosu", displayName + " Gosu source"));
     _gosu.getFilter().include(_gosuAndJavaExtensions);
     _allGosu = getObjectFactory().sourceDirectorySet("gosu", displayName + " Gosu source");
     _allGosu.getFilter().include(_gosuExtensionsOnly);
@@ -60,7 +60,7 @@ public abstract class DefaultGosuSourceSet implements GosuSourceSet, HasPublicTy
   }
 
   @Override
-  public SourceDirectorySet getGosu() {
+  public GosuSourceDirectorySet getGosu() {
     return _gosu;
   }
 

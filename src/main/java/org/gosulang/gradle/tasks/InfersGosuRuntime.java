@@ -1,12 +1,14 @@
 package org.gosulang.gradle.tasks;
 
-import groovy.lang.Closure;
 import org.gradle.api.file.FileCollection;
+
+import java.io.File;
+import java.util.List;
 
 public interface InfersGosuRuntime {
 
-  Closure<FileCollection> getGosuClasspath();
+  FileCollection getGosuClasspath();
 
-  void setGosuClasspath(Closure<FileCollection> gosuClasspathClosure);
+  void setGosuClasspath(FileCollection gosuClasspath);
 
 }

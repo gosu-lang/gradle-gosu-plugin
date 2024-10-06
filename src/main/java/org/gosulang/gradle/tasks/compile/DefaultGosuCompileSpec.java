@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks.compile;
 
-import groovy.lang.Closure;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.compile.CompileOptions;
 
@@ -12,7 +11,7 @@ import java.util.List;
 public class DefaultGosuCompileSpec implements GosuCompileSpec {
 
   private GosuCompileOptions _gosuCompileOptions;
-  private transient Closure<FileCollection> _gosuClasspath;
+  private FileCollection _gosuClasspath;
   private FileCollection _srcDirSet;
 
   @Override
@@ -26,13 +25,13 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   }
 
   @Override
-  public Closure<FileCollection> getGosuClasspath() {
+  public FileCollection getGosuClasspath() {
     return _gosuClasspath;
   }
 
   @Override
-  public void setGosuClasspath(Closure<FileCollection> _gosuClasspathClosure) {
-    _gosuClasspath = _gosuClasspathClosure;
+  public void setGosuClasspath(FileCollection gosuClasspath) {
+    _gosuClasspath = gosuClasspath;
   }
 
   public GosuCompileOptions getGosuCompileOptions() {

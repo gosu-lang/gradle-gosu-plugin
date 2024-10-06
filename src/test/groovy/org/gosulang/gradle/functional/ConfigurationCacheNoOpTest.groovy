@@ -5,7 +5,7 @@ import org.gradle.testkit.runner.GradleRunner
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-class ConfigurationCacheTest extends AbstractGosuPluginSpecification {
+class ConfigurationCacheNoOpTest extends AbstractGosuPluginSpecification {
 
     def 'apply gosu plugin and run help with configuration cache in strict mode'() {
         given:

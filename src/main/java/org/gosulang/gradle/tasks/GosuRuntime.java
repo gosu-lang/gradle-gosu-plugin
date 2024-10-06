@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GosuRuntime {
+public abstract class GosuRuntime {
 
   private static final Pattern GOSU_JAR_PATTERN = Pattern.compile("gosu-(\\w.*?)-(\\d.*).jar");
   private static final String LF = System.lineSeparator();
@@ -37,6 +37,7 @@ public class GosuRuntime {
    * @param classpath a classpath containing a 'gosu-core-api' Jar
    * @return a classpath containing a corresponding 'gosu-doc' Jar and its dependencies
    */
+  // TODO modernize this
   public Closure<FileCollection> inferGosuClasspath(final Iterable<File> classpath) {
     return new Closure<FileCollection>(this, this) {
       private FileCollection resolved;
@@ -72,7 +73,7 @@ public class GosuRuntime {
               "An example dependencies closure may resemble the following:" + LF +
               LF +
               "dependencies {" + LF +
-              "    compile 'org.gosu-lang.gosu:gosu-core-api:1.14.3' //a newer version may be available" + LF +
+              "    implementation 'org.gosu-lang.gosu:gosu-core-api:1.14.3' //a newer version may be available" + LF +
               "}" + LF;
       _project.getLogger().quiet(errorMsg);
       throw new GradleException(errorMsg);
