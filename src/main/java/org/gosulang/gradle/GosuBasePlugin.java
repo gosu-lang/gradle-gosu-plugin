@@ -12,6 +12,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.ConventionMapping;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 import org.gradle.api.model.ObjectFactory;
@@ -25,6 +26,7 @@ import org.gradle.internal.Cast;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.util.concurrent.Callable;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
 import static org.gradle.api.internal.lambdas.SerializableLambdas.spec;
@@ -47,22 +49,25 @@ public class GosuBasePlugin implements Plugin<Project> {
     _project = project;
     _project.getPluginManager().apply(JavaBasePlugin.class);
 
-    configureGosuRuntimeExtension();
-    configureCompileDefaults();
+    _gosuRuntime = _project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class);
+    configureCompileDefaults(_project, _gosuRuntime);
     configureSourceSetDefaults();
-    configureGosuDoc();
+    configureGosuDoc(_project, _gosuRuntime);
   }
 
   private void configureGosuRuntimeExtension() {
-    _gosuRuntime = _project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class);
+
   }
 
   /**
    * Sets the gosuClasspath property for all GosuCompile tasks: compileGosu and compileTestGosu
    */
-  private void configureCompileDefaults() {
-    _project.getTasks().withType(GosuCompile.class, gosuCompile ->
-        gosuCompile.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath())));
+  private static void configureCompileDefaults(Project project, GosuRuntime gosuRuntime) {
+    project.getTasks().withType(GosuCompile.class).configureEach(gosuCompile -> {
+        gosuCompile.getGosuClasspath().convention((Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath()));
+//        ConventionMapping conventionMapping = gosuCompile.getConventionMapping();
+//        conventionMapping.map("gosuClasspath", (Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath()));
+    });
   }
 
  private void configureSourceSetDefaults() {
@@ -116,14 +121,18 @@ public class GosuBasePlugin implements Plugin<Project> {
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 
-  private void configureGosuDoc() {
-    _project.getTasks().withType(GosuDoc.class, gosudoc -> {
-      gosudoc.getProjectName().set(_project.getName());
-      gosudoc.getProjectDir().set(_project.getLayout().getProjectDirectory());
-      gosudoc.getBuildDir().set(_project.getLayout().getBuildDirectory());
-      gosudoc.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
-      gosudoc.getConventionMapping().map("destinationDir", () -> new File(javaPluginExtension(_project).getDocsDir().get().getAsFile(), "gosudoc"));
-      gosudoc.getConventionMapping().map("title", () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
+  private static void configureGosuDoc(Project project, GosuRuntime gosuRuntime) {
+    project.getTasks().withType(GosuDoc.class, gosudoc -> {
+      gosudoc.getProjectName().set(project.getName());
+      gosudoc.getProjectDir().set(project.getLayout().getProjectDirectory());
+      gosudoc.getBuildDir().set(project.getLayout().getBuildDirectory());
+      gosudoc.getGosuClasspath().convention((Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
+      gosudoc.getDestinationDir().convention(javaPluginExtension(project).getDocsDir().dir("gosudoc"));
+      gosudoc.getTitle().convention(project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
+//      ConventionMapping conventionMapping = gosudoc.getConventionMapping();
+//      conventionMapping.map("gosuClasspath", (Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
+//      conventionMapping.map("destinationDir", () -> new File(javaPluginExtension(_project).getDocsDir().get().getAsFile(), "gosudoc"));
+//      conventionMapping.map("title", () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
       //gosudoc.getConventionMapping().map("windowTitle", (Callable<Object>) () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
     });
   }

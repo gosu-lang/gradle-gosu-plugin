@@ -1,19 +1,21 @@
 package org.gosulang.gradle.tasks;
 
-import groovy.lang.Closure;
 import org.gradle.api.Buildable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.internal.file.collections.FailingFileCollection;
+import org.gradle.api.internal.file.collections.LazilyInitializedFileCollection;
+import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.internal.tasks.TaskDependencyResolveContext;
+import org.gradle.api.plugins.jvm.internal.JvmPluginServices;
 import org.gradle.util.VersionNumber;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,9 +25,11 @@ public abstract class GosuRuntime {
   private static final String LF = System.lineSeparator();
 
   private final Project _project;
+  private final JvmPluginServices _jvmPluginServices;
 
   public GosuRuntime(Project project) {
     _project = project;
+    _jvmPluginServices = ((ProjectInternal) project).getServices().get(JvmPluginServices.class);
   }
 
   /**
@@ -37,65 +41,66 @@ public abstract class GosuRuntime {
    * @param classpath a classpath containing a 'gosu-core-api' Jar
    * @return a classpath containing a corresponding 'gosu-doc' Jar and its dependencies
    */
-  // TODO modernize this
-  public Closure<FileCollection> inferGosuClasspath(final Iterable<File> classpath) {
-    return new Closure<FileCollection>(this, this) {
-      private FileCollection resolved;
+  public FileCollection inferGosuClasspath(final Iterable<File> classpath) {
+    return new LazilyInitializedFileCollection(((ProjectInternal) _project).getTaskDependencyFactory()) {
+      @Override
+      public String getDisplayName() {
+        return "Gosu runtime classpath";
+      }
 
-      public FileCollection doCall(Object ignore) {
-        ConfigurableFileCollection fileCollection = _project.files((Callable<FileCollection>) () -> {
-          if (resolved == null) {
-            resolved = doInfer(classpath);
-          }
-          return resolved;
-        });
-        if (classpath instanceof Buildable) {
-          fileCollection.builtBy(((Buildable) classpath).getBuildDependencies());
+      @Override
+      public FileCollection createDelegate() {
+        try {
+          return inferGosuClasspath();
+        } catch (RuntimeException e) {
+          return new FailingFileCollection(getDisplayName(), e);
         }
-        return fileCollection;
+      }
+
+      private Configuration inferGosuClasspath() {
+        File gosuCoreApiJar = findGosuJar(classpath, "core-api");
+        if (gosuCoreApiJar == null) {
+          List<String> classpathAsStrings = new ArrayList<>();
+          classpath.forEach(file -> classpathAsStrings.add(file.getAbsolutePath()));
+          String flattenedClasspath = String.join(":", classpathAsStrings);
+          String errorMsg = String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
+                  "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, flattenedClasspath) + LF +
+                  "An example dependencies closure may resemble the following:" + LF +
+                  LF +
+                  "dependencies {" + LF +
+                  "    implementation 'org.gosu-lang.gosu:gosu-core-api:1.14.3' //a newer version may be available" + LF +
+                  "}" + LF;
+          _project.getLogger().quiet(errorMsg);
+          throw new GradleException(errorMsg);
+        }
+
+        String gosuCoreApiRawVersion = getGosuVersion(gosuCoreApiJar);
+
+        if (gosuCoreApiRawVersion == null) {
+          throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
+        }
+
+        //Use Gradle's VersionNumber construct, which implements Comparable
+        VersionNumber gosuCoreApiVersion = VersionNumber.parse(gosuCoreApiRawVersion);
+
+        //Gosu dist with gosuc executable is required
+        if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && !hasGosuc(gosuCoreApiVersion)) {
+          throw new GradleException(String.format("Please declare a dependency on Gosu version 1.13.9, 1.14.2 or greater. Found: %s", gosuCoreApiRawVersion));
+        }
+
+        Configuration gosuRuntimeClasspath = _project.getConfigurations().detachedConfiguration();
+        gosuRuntimeClasspath.getDependencies().add(_project.getDependencies().create("org.gosu-lang.gosu:gosu-doc:" + gosuCoreApiRawVersion));
+        _jvmPluginServices.configureAsRuntimeClasspath(gosuRuntimeClasspath);
+        return gosuRuntimeClasspath;
+      }
+
+      @Override
+      public void visitDependencies(TaskDependencyResolveContext context) {
+        if (classpath instanceof Buildable) {
+          context.add(classpath);
+        }
       }
     };
-  }
-
-  private FileCollection doInfer(Iterable<File> classpath) {
-    if (_project.getRepositories().isEmpty()) {
-      throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
-    }
-
-    File gosuCoreApiJar = findGosuJar(classpath, "core-api");
-
-    if (gosuCoreApiJar == null) {
-      List<String> classpathAsStrings = new ArrayList<>();
-      classpath.forEach(file -> classpathAsStrings.add(file.getAbsolutePath()));
-      String flattenedClasspath = String.join(":", classpathAsStrings);
-      String errorMsg = String.format("Cannot infer Gosu classpath because the Gosu Core API Jar was not found." + LF +
-              "Does %s declare dependency to gosu-core-api? Searched classpath: %s.", _project, flattenedClasspath) + LF +
-              "An example dependencies closure may resemble the following:" + LF +
-              LF +
-              "dependencies {" + LF +
-              "    implementation 'org.gosu-lang.gosu:gosu-core-api:1.14.3' //a newer version may be available" + LF +
-              "}" + LF;
-      _project.getLogger().quiet(errorMsg);
-      throw new GradleException(errorMsg);
-    }
-
-    String gosuCoreApiRawVersion = getGosuVersion(gosuCoreApiJar);
-
-    if (gosuCoreApiRawVersion == null) {
-      throw new AssertionError(String.format("Unexpectedly failed to parse version of Gosu Jar file: %s in %s", gosuCoreApiJar, _project));
-    }
-
-    //Use Gradle's VersionNumber construct, which implements Comparable
-    VersionNumber gosuCoreApiVersion = VersionNumber.parse(gosuCoreApiRawVersion);
-
-    //Gosu dist with gosuc executable is required
-    if (!gosuCoreApiRawVersion.endsWith("-SNAPSHOT") && !hasGosuc(gosuCoreApiVersion)) {
-      throw new GradleException(String.format("Please declare a dependency on Gosu version 1.13.9, 1.14.2 or greater. Found: %s", gosuCoreApiRawVersion));
-    }
-
-    Configuration detachedConfiguration = _project.getConfigurations().detachedConfiguration();
-    detachedConfiguration.getDependencies().add(_project.getDependencies().create("org.gosu-lang.gosu:gosu-doc:" + gosuCoreApiRawVersion));
-    return detachedConfiguration;
   }
 
   /**

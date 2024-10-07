@@ -36,7 +36,7 @@ public abstract class CommandLineGosuDoc {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuDoc.class);
   
   private final FileCollection _source;
-  private final File _targetDir;
+  private final Directory _targetDir;
   private final FileCollection _projectClasspath;
   private final FileCollection _gosuClasspath;
   private final GosuDocOptions _options;
@@ -54,7 +54,7 @@ public abstract class CommandLineGosuDoc {
   public abstract FileSystemOperations getFs();
 
   @Inject
-  public CommandLineGosuDoc(FileCollection source, File targetDir, FileCollection gosuClasspath, FileCollection projectClasspath, GosuDocOptions options, String projectName, Directory projectDir, Directory buildDir) {
+  public CommandLineGosuDoc(FileCollection source, Directory targetDir, FileCollection gosuClasspath, FileCollection projectClasspath, GosuDocOptions options, String projectName, Directory projectDir, Directory buildDir) {
     _source = source;
     _targetDir = targetDir;
     _gosuClasspath = gosuClasspath;
@@ -86,7 +86,7 @@ public abstract class CommandLineGosuDoc {
     gosudocArgs.add(tmpDir.getAsFile().getAbsolutePath());
     
     gosudocArgs.add("-output");
-    gosudocArgs.add(_targetDir.getAbsolutePath());
+    gosudocArgs.add(_targetDir.getAsFile().getAbsolutePath());
     
     if(_options.isVerbose()) {
       gosudocArgs.add("-verbose");
@@ -140,7 +140,7 @@ public abstract class CommandLineGosuDoc {
   private File createClasspathJarFromFileCollection(FileCollection classpath) throws IOException {
     File tempFile;
     if (LOGGER.isDebugEnabled()) {
-      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar", new File(_targetDir.getAbsolutePath()));
+      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar", new File(_targetDir.getAsFile().getAbsolutePath()));
     } else {
       tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar");
       tempFile.deleteOnExit();

@@ -1,8 +1,10 @@
 package org.gosulang.gradle.tasks.compile;
 
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
@@ -25,10 +27,10 @@ import java.util.function.BiFunction;
 import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
 
 @CacheableTask
-public abstract class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
+public abstract class GosuCompile extends AbstractCompile {
 
   private GosuCompiler<GosuCompileSpec> _compiler;
-  private FileCollection _gosuClasspath;
+//  private FileCollection _gosuClasspath;
 //  private Closure<FileCollection> _orderClasspath;
   private BiFunction<Project, Configuration, FileCollection> _orderClasspathFunction;
 
@@ -51,7 +53,7 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
 
   @TaskAction
   protected void compile() {
-    DefaultGosuCompileSpec spec = createSpec();
+    GosuCompileSpec spec = createSpec();
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
   }
@@ -102,16 +104,15 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   /**
    * @return the classpath to use to load the Gosu compiler.
    */
-  @Override
   @Classpath
-  public FileCollection getGosuClasspath() {
-    return _gosuClasspath;
-  }
+//  @Optional
+  public abstract ConfigurableFileCollection getGosuClasspath(); // {
+//    return _gosuClasspath;
+//  }
 
-  @Override
-  public void setGosuClasspath(FileCollection gosuClasspath) {
-    _gosuClasspath = gosuClasspath;
-  }
+//  public void setGosuClasspath(FileCollection gosuClasspath) {
+//    _gosuClasspath = gosuClasspath;
+//  }
 
 //  /**
 //   * Annotating as @Input or @InputFiles causes errors in Guidewire applications, even when paired with @Optional.
@@ -178,7 +179,7 @@ public FileCollection getSourceRoots() {
 //    }
 //  }
 
-  private DefaultGosuCompileSpec createSpec() {
+  private GosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
 //    Project project = getProject(); // FIXME
     spec.setSource(getSource());
@@ -239,11 +240,18 @@ public FileCollection getSourceRoots() {
   }
 
   private GosuCompiler<GosuCompileSpec> getCompiler(GosuCompileSpec spec) {
+    assertGosuClasspathIsNotEmpty();
     if(_compiler == null) {
       GosuCompilerFactory gosuCompilerFactory = getServices().get(ObjectFactory.class).newInstance(GosuCompilerFactory.class, getProjectDir().get(), this.getPath()); // FIXME don't call getProject()
       _compiler = gosuCompilerFactory.newCompiler(spec);
     }
     return _compiler;
+  }
+
+  protected void assertGosuClasspathIsNotEmpty() {
+    if (getGosuClasspath().isEmpty()) {
+      throw new InvalidUserDataException("fail");
+    }
   }
 
   private List<File> asList(final FileCollection files) {
