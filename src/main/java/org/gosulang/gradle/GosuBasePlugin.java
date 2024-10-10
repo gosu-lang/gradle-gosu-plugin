@@ -31,32 +31,27 @@ import java.util.concurrent.Callable;
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
 import static org.gradle.api.internal.lambdas.SerializableLambdas.spec;
 
-public class GosuBasePlugin implements Plugin<Project> {
+public abstract class GosuBasePlugin implements Plugin<Project> {
   public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
 
-  private final ObjectFactory _objectFactory;
-
-  private Project _project;
-  private GosuRuntime _gosuRuntime;
+//  private final ObjectFactory _objectFactory;
+//
+//  @Inject
+//  GosuBasePlugin(ObjectFactory objectFactory){
+//  _objectFactory = objectFactory;
+//  }
 
   @Inject
-  GosuBasePlugin(ObjectFactory objectFactory){
-  _objectFactory = objectFactory;
-  }
+  public abstract ObjectFactory getObjectFactory();
 
   @Override
   public void apply(Project project) {
-    _project = project;
-    _project.getPluginManager().apply(JavaBasePlugin.class);
+    project.getPluginManager().apply(JavaBasePlugin.class);
 
-    _gosuRuntime = _project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class);
-    configureCompileDefaults(_project, _gosuRuntime);
-    configureSourceSetDefaults();
-    configureGosuDoc(_project, _gosuRuntime);
-  }
-
-  private void configureGosuRuntimeExtension() {
-
+    GosuRuntime gosuRuntime = project.getExtensions().create(GOSU_RUNTIME_EXTENSION_NAME, GosuRuntime.class);
+    configureCompileDefaults(project, gosuRuntime);
+    configureSourceSetDefaults(project);
+    configureGosuDoc(project, gosuRuntime);
   }
 
   /**
@@ -70,8 +65,8 @@ public class GosuBasePlugin implements Plugin<Project> {
     });
   }
 
- private void configureSourceSetDefaults() {
-     javaPluginExtension(_project).getSourceSets().all(sourceSet -> {
+ private void configureSourceSetDefaults(Project project) {
+     javaPluginExtension(project).getSourceSets().all(sourceSet -> {
 
          GosuSourceDirectorySet gosuSource = getGosuSourceDirectorySet(sourceSet);
          sourceSet.getExtensions().add(GosuSourceDirectorySet.class, "gosu", gosuSource);
@@ -84,18 +79,18 @@ public class GosuBasePlugin implements Plugin<Project> {
          );
          sourceSet.getAllSource().source(gosuSource);
 
-         //have to be revisit to avoid using the covention here
+         //have to be revisit to avoid using the convention here
 //      Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
 //      sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
   //    sourceSet.getExtensions().add(SourceDirectorySet.class, "gosu", gosuSourceSet.getGosu()); //alternative but it's not working
 //      sourceSet.getResources().getFilter().exclude(element -> gosuSourceSet.getGosu().contains(element.getFile()));
 //      sourceSet.getAllSource().source(gosuSourceSet.getGosu());
-      configureGosuCompile(sourceSet, gosuSource);
+      configureGosuCompile(project, sourceSet, gosuSource);
     });
   }
 
   private GosuSourceDirectorySet getGosuSourceDirectorySet(SourceSet sourceSet) {
-      final DefaultGosuSourceSet gosuSourceSet = _objectFactory.newInstance(DefaultGosuSourceSet.class, sourceSet.getName());
+      final DefaultGosuSourceSet gosuSourceSet = getObjectFactory().newInstance(DefaultGosuSourceSet.class, sourceSet.getName());
 
       // TODO remove in Gradle 9.0?
       new DslObject(sourceSet).getConvention().getPlugins().put("gosu", gosuSourceSet);
@@ -108,17 +103,17 @@ public class GosuBasePlugin implements Plugin<Project> {
    * Gradle 4.0+: call local equivalent of o.g.a.p.i.SourceSetUtil.configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project)
    * Gradle 2.x, 3.x: call javaPlugin.configureForSourceSet(sourceSet, gosuCompile);
    */
-  private void configureGosuCompile(SourceSet sourceSet, GosuSourceDirectorySet gosuSourceSet) {
+  private void configureGosuCompile(Project project, SourceSet sourceSet, GosuSourceDirectorySet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
-    TaskProvider<GosuCompile> gosuCompile = _project.getTasks().register(compileTaskName, GosuCompile.class);
-    configureForSourceSet(sourceSet, gosuSourceSet, gosuCompile, _project);
+    TaskProvider<GosuCompile> gosuCompile = project.getTasks().register(compileTaskName, GosuCompile.class);
+    configureForSourceSet(sourceSet, gosuSourceSet, gosuCompile, project);
     gosuCompile.configure(t -> t.dependsOn(sourceSet.getCompileJavaTaskName()));
     gosuCompile.configure(t -> t.setSource((Object) gosuSourceSet)); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
     gosuCompile.configure(t -> {
         t.getProjectName().set(t.getProject().getName());
         t.getProjectDir().set(t.getProject().getLayout().getProjectDirectory());
     });
-    _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
+    project.getTasks().named(sourceSet.getClassesTaskName()).configure(task -> task.dependsOn(compileTaskName));
   }
 
   private static void configureGosuDoc(Project project, GosuRuntime gosuRuntime) {

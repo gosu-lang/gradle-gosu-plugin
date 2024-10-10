@@ -28,7 +28,7 @@ import java.util.List;
 @CacheableTask
 public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*/ {
 
-  private FileCollection _classpath;
+//  private FileCollection _classpath;
 //  private FileCollection _gosuClasspath;
   private File _destinationDir;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
@@ -83,15 +83,18 @@ public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*
    *
    * @return The classpath.
    */
-  @Classpath
-  @InputFiles
-  public FileCollection getClasspath() {
-    return _classpath;
-  }
+//  @Classpath
+//  @InputFiles
+//  public FileCollection getClasspath() {
+//    return _classpath;
+//  }
+//
+//  public void setClasspath( FileCollection classpath ) {
+//    _classpath = classpath;
+//  }
 
-  public void setClasspath( FileCollection classpath ) {
-    _classpath = classpath;
-  }
+  @Classpath
+  public abstract ConfigurableFileCollection getClasspath();
 
   /**
    * Returns the classpath to use to load the gosudoc tool.

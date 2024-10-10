@@ -1,14 +1,11 @@
 package org.gosulang.gradle;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceDirectorySet;
-import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.internal.JavaPluginHelper;
@@ -18,7 +15,7 @@ import org.gradle.api.tasks.TaskProvider;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
 
-public class GosuPlugin implements Plugin<Project> {
+public abstract class GosuPlugin implements Plugin<Project> {
 
     @SuppressWarnings("WeakerAccess")
     public static final String GOSUDOC_TASK_NAME = "gosudoc";
@@ -58,7 +55,7 @@ public class GosuPlugin implements Plugin<Project> {
             t.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP);
 
             JvmFeatureInternal mainFeature = JavaPluginHelper.getJavaComponent(project).getMainFeature(); //alternative approach but needs to be tested
-            t.setClasspath(mainFeature.getSourceSet().getOutput().plus(mainFeature.getSourceSet().getCompileClasspath()));
+            t.getClasspath().from(mainFeature.getSourceSet().getOutput().plus(mainFeature.getSourceSet().getCompileClasspath()));
 
             SourceDirectorySet gosuSourceSet = mainFeature.getSourceSet().getExtensions().getByType(GosuSourceDirectorySet.class);
             t.setSource(gosuSourceSet);
