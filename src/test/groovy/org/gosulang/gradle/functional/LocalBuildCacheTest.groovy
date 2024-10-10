@@ -80,7 +80,6 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
-//                .withArguments('clean', 'gosudoc', '--build-cache')
                 .withArguments('gosudoc', '--build-cache', '--configuration-cache')
 //                .forwardOutput()
 //                .withDebug(true)

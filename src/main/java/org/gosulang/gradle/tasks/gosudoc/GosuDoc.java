@@ -1,9 +1,7 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
-import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.model.ObjectFactory;
@@ -11,7 +9,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -23,21 +20,11 @@ import org.gradle.api.tasks.TaskAction;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.util.List;
 
 @CacheableTask
 public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*/ {
 
-//  private FileCollection _classpath;
-//  private FileCollection _gosuClasspath;
-  private File _destinationDir;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
-  private String _title;
-
-//  private final String _projectName;
-//  private final Directory _projectDir;
-//  private final DirectoryProperty _buildDir;
-//  private final ProjectLayout _layout;
 
   @Inject
   public abstract ObjectFactory getObjectFactory();
@@ -70,29 +57,13 @@ public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*
    * @return the target directory to generate the API documentation.
    */
   @OutputDirectory
-  public abstract DirectoryProperty getDestinationDir();// {
-//    return _destinationDir;
-//  }
-
-//  public void setDestinationDir( File destinationDir ) {
-//    _destinationDir = destinationDir;
-//  }
+  public abstract DirectoryProperty getDestinationDir();
 
   /**
    * <p>Returns the classpath to use to locate classes referenced by the documented source.</p>
    *
    * @return The classpath.
    */
-//  @Classpath
-//  @InputFiles
-//  public FileCollection getClasspath() {
-//    return _classpath;
-//  }
-//
-//  public void setClasspath( FileCollection classpath ) {
-//    _classpath = classpath;
-//  }
-
   @Classpath
   public abstract ConfigurableFileCollection getClasspath();
 
@@ -101,16 +72,8 @@ public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*
    *
    * @return the classpath to use to load the gosudoc tool.
    */
-//  @Override
   @Classpath
-  public abstract ConfigurableFileCollection getGosuClasspath();// {
-//    return _gosuClasspath;
-//  }
-
-//  @Override
-//  public void setGosuClasspath(FileCollection gosuClasspath) {
-//    _gosuClasspath = gosuClasspath;
-//  }
+  public abstract ConfigurableFileCollection getGosuClasspath();
 
   /**
    * Returns the gosudoc generation options.
@@ -131,13 +94,7 @@ public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*
    */
   @Input
   @Optional
-  public abstract Property<String> getTitle();// {
-//    return _title;
-//  }
-
-//  public void setTitle( String title ) {
-//    this._title = title;
-//  }
+  public abstract Property<String> getTitle();
 
   @TaskAction
   protected void generate() {

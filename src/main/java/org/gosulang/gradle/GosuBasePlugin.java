@@ -1,22 +1,18 @@
 package org.gosulang.gradle;
 
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceDirectorySet;
-import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.ConventionMapping;
 import org.gradle.api.internal.plugins.DslObject;
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.tasks.SourceSet;
@@ -25,7 +21,6 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.internal.Cast;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.util.concurrent.Callable;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
@@ -33,13 +28,6 @@ import static org.gradle.api.internal.lambdas.SerializableLambdas.spec;
 
 public abstract class GosuBasePlugin implements Plugin<Project> {
   public static final String GOSU_RUNTIME_EXTENSION_NAME = "gosuRuntime";
-
-//  private final ObjectFactory _objectFactory;
-//
-//  @Inject
-//  GosuBasePlugin(ObjectFactory objectFactory){
-//  _objectFactory = objectFactory;
-//  }
 
   @Inject
   public abstract ObjectFactory getObjectFactory();
@@ -60,8 +48,6 @@ public abstract class GosuBasePlugin implements Plugin<Project> {
   private static void configureCompileDefaults(Project project, GosuRuntime gosuRuntime) {
     project.getTasks().withType(GosuCompile.class).configureEach(gosuCompile -> {
         gosuCompile.getGosuClasspath().convention((Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath()));
-//        ConventionMapping conventionMapping = gosuCompile.getConventionMapping();
-//        conventionMapping.map("gosuClasspath", (Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath()));
     });
   }
 
@@ -78,13 +64,6 @@ public abstract class GosuBasePlugin implements Plugin<Project> {
              spec(element -> gosuSourceFiles.contains(element.getFile()))
          );
          sourceSet.getAllSource().source(gosuSource);
-
-         //have to be revisit to avoid using the convention here
-//      Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
-//      sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
-  //    sourceSet.getExtensions().add(SourceDirectorySet.class, "gosu", gosuSourceSet.getGosu()); //alternative but it's not working
-//      sourceSet.getResources().getFilter().exclude(element -> gosuSourceSet.getGosu().contains(element.getFile()));
-//      sourceSet.getAllSource().source(gosuSourceSet.getGosu());
       configureGosuCompile(project, sourceSet, gosuSource);
     });
   }
@@ -124,11 +103,6 @@ public abstract class GosuBasePlugin implements Plugin<Project> {
       gosudoc.getGosuClasspath().convention((Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
       gosudoc.getDestinationDir().convention(javaPluginExtension(project).getDocsDir().dir("gosudoc"));
       gosudoc.getTitle().convention(project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
-//      ConventionMapping conventionMapping = gosudoc.getConventionMapping();
-//      conventionMapping.map("gosuClasspath", (Callable<FileCollection>) () -> gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
-//      conventionMapping.map("destinationDir", () -> new File(javaPluginExtension(_project).getDocsDir().get().getAsFile(), "gosudoc"));
-//      conventionMapping.map("title", () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
-      //gosudoc.getConventionMapping().map("windowTitle", (Callable<Object>) () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
     });
   }
 
@@ -144,7 +118,6 @@ public abstract class GosuBasePlugin implements Plugin<Project> {
  private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, final Project target, TaskProvider<? extends AbstractCompile> compileTask) {
     final String sourceSetChildPath = "classes/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
     sourceDirectorySet.getDestinationDirectory().convention(target.getLayout().getBuildDirectory().dir(sourceSetChildPath));
-
     DefaultSourceSetOutput sourceSetOutput = Cast.cast(DefaultSourceSetOutput.class, sourceSet.getOutput());
     sourceSetOutput.getClassesDirs().from(sourceDirectorySet.getDestinationDirectory()).builtBy(compileTask);
     sourceDirectorySet.compiledBy(compileTask, AbstractCompile::getDestinationDirectory);

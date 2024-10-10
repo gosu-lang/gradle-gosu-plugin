@@ -2,10 +2,9 @@ package org.gosulang.gradle.tasks.compile;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
-import org.gradle.api.Project;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.model.ObjectFactory;
@@ -15,7 +14,6 @@ import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
-import org.gradle.api.JavaVersion;
 
 import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
@@ -38,11 +36,6 @@ public abstract class CommandLineGosuCompiler implements GosuCompiler<GosuCompil
 
   @Inject
   public abstract ExecOperations getExecOperations();
-
-//  @Inject
-//  public FileSystemOperations getFs() {
-//    throw new UnsupportedOperationException("method implementation injected by Gradle");
-//  }
 
   @Inject
   public CommandLineGosuCompiler(Directory projectDir, GosuCompileSpec spec, String projectName ) {

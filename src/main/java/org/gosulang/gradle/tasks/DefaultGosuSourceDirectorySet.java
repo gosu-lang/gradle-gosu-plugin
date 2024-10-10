@@ -8,8 +8,8 @@ import javax.inject.Inject;
 
 public abstract class DefaultGosuSourceDirectorySet extends DefaultSourceDirectorySet implements GosuSourceDirectorySet {
 
-    @Inject
-        public DefaultGosuSourceDirectorySet(SourceDirectorySet sourceDirectorySet, TaskDependencyFactory taskDependencyFactory) {
-        super(sourceDirectorySet, taskDependencyFactory);
-    }
+  @Inject
+  public DefaultGosuSourceDirectorySet(SourceDirectorySet sourceDirectorySet, TaskDependencyFactory taskDependencyFactory) {
+    super(sourceDirectorySet, taskDependencyFactory);
+  }
 }

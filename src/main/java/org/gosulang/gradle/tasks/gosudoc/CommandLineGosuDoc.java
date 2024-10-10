@@ -4,12 +4,9 @@ import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
-import org.gradle.api.Project;
 import org.gradle.api.file.Directory;
-import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemOperations;
-import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -144,9 +141,9 @@ public abstract class CommandLineGosuDoc {
     } else {
       tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar");
       tempFile.deleteOnExit();
-    }    
-    
-    LOGGER.info("Creating classpath JAR at " + tempFile.getAbsolutePath());
+    }
+
+    LOGGER.info("Creating classpath JAR at {}", tempFile.getAbsolutePath());
     
     Manifest man = new Manifest();
     man.getMainAttributes().putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0");

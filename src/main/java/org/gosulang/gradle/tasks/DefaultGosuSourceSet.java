@@ -6,7 +6,6 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reflect.HasPublicType;
 import org.gradle.api.reflect.TypeOf;
-import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 
@@ -27,7 +26,6 @@ public abstract class DefaultGosuSourceSet implements GosuSourceSet, HasPublicTy
   private static final List<String> _gosuExtensionsOnly = _gosuAndJavaExtensions.subList(1, _gosuAndJavaExtensions.size());
 
   private final String name;
-  private final String baseName;
   private final String displayName;
 
   @Inject
@@ -35,9 +33,7 @@ public abstract class DefaultGosuSourceSet implements GosuSourceSet, HasPublicTy
 
   @Inject
   public DefaultGosuSourceSet(String name) {
-
     this.name = name;
-    this.baseName = name.equals(SourceSet.MAIN_SOURCE_SET_NAME) ? "" : name.toUpperCase();
     displayName = GUtil.toWords(this.name);
     _gosu = getObjectFactory().newInstance(DefaultGosuSourceDirectorySet.class, getObjectFactory().sourceDirectorySet("gosu", displayName + " Gosu source"));
     _gosu.getFilter().include(_gosuAndJavaExtensions);
