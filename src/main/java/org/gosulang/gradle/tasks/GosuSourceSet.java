@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks;
 
-import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.file.SourceDirectorySet;
 
@@ -21,22 +20,12 @@ public interface GosuSourceSet {
   /**
    * Configures the Gosu source for this set.
    *
-   * <p>The given closure is used to configure the {@link SourceDirectorySet} which contains the Gosu source.
-   *
-   * @param configureClosure The closure to use to configure the Gosu source.
-   * @return this
-   */
-  GosuSourceSet gosu(Closure configureClosure);
-
-  /**
-   * Configures the Gosu source for this set.
-   *
    * <p>The given action is used to configure the {@link SourceDirectorySet} which contains the Gosu source.
    *
    * @param configureAction The action to use to configure the Gosu source.
    * @return this
    */
-  GosuSourceSet gosu( Action<? super SourceDirectorySet> configureAction);  
+  GosuSourceSet gosu(Action<? super SourceDirectorySet> configureAction);
   
   /**
    * All Gosu source for this source set.

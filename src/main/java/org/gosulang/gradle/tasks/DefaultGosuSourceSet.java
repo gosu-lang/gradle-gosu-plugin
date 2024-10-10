@@ -1,12 +1,10 @@
 package org.gosulang.gradle.tasks;
 
-import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reflect.HasPublicType;
 import org.gradle.api.reflect.TypeOf;
-import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 
 import javax.inject.Inject;
@@ -61,13 +59,7 @@ public abstract class DefaultGosuSourceSet implements GosuSourceSet, HasPublicTy
   }
 
   @Override
-  public GosuSourceSet gosu( Closure configureClosure ) {
-    ConfigureUtil.configure(configureClosure, getGosu());
-    return this;
-  }
-
-  @Override
-  public GosuSourceSet gosu( Action<? super SourceDirectorySet> configureAction) {
+  public GosuSourceSet gosu(Action<? super SourceDirectorySet> configureAction) {
     configureAction.execute(getGosu());
     return this;
   }
