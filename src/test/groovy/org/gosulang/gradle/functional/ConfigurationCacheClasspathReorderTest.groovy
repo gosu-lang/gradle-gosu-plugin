@@ -54,7 +54,7 @@ class ConfigurationCacheClasspathReorderTest extends AbstractGosuPluginSpecifica
                 .withPluginClasspath()
                 .withArguments('compileGosu', '--no-configuration-cache')
                 .withGradleVersion(gradleVersion)
-                .forwardOutput()
+//                .forwardOutput()
 
         BuildResult result = runner.build()
 
