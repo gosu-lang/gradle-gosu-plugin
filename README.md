@@ -2,9 +2,11 @@
 
 A Gradle plugin, similar to the groovy and scala plugins for Gradle.
 
-Specifically, this adds compileGosu and compileTestGosu tasks. These tasks are dependent on the compileJava and compileTestJava tasks, respectively.
+Specifically, this adds `compileGosu` and `compileTestGosu` tasks. These tasks are dependent on the `compileJava` and `compileTestJava` tasks, respectively.  A `gosudoc` task is also created.
 
 Java 8 is required, as is Gosu version 1.13.9+ or 1.14.2+. Gosu 1.14 and 1.14.1 are not supported.
+
+As of this release, the plugin supports Gradle's [Configuration Cache](https://docs.gradle.org/current/userguide/configuration_cache.html).  However, **the plugin now requires Gradle 8.8 or higher**.
 
 Build status: [![Circle CI](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/main.svg?style=svg)](https://circleci.com/gh/gosu-lang/gradle-gosu-plugin/tree/main)
 
@@ -35,6 +37,27 @@ compileGosu {
 The latest release version, and instructions to apply it, is available here: https://plugins.gradle.org/plugin/org.gosu-lang.gosu
 
 It is now necessary to create a single compile-time dependency on the gosu-core-api JAR. Runtime and other dependencies are automatically inferred and applied by the plugin.
+
+Example minimal project configuration (groovy build script):
+```groovy
+plugins {
+    id 'org.gosu-lang.gosu' version '8.1.3'
+}
+
+java {
+    toolchain {
+        it.languageVersion = JavaLanguageVersion.of 11
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.gosu-lang.gosu:gosu-core-api:1.17.8'
+}
+```
 
 Additionally, snapshots are available from https://oss.sonatype.org/content/repositories/snapshots/org/gosu-lang/gosu/gradle-gosu-plugin/
 
