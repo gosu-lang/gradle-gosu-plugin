@@ -37,6 +37,7 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
     def 'apply gosu plugin and compile [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
+        testProjectDir.newFile('settings.gradle') << 'enableFeaturePreview "STABLE_CONFIGURATION_CACHE"'
 
         simplePogo = new File(srcMainGosu, asPath('example', 'gradle', 'SimplePogo.gs'))
         simplePogo.getParentFile().mkdirs()
@@ -50,7 +51,9 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
                 .withProjectDir(testProjectDir.root)
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
-                .withArguments('gosudoc', '--build-cache')
+                .withArguments('gosudoc', '--build-cache', '--configuration-cache')
+//                .forwardOutput()
+//                .withDebug(true)
 
         BuildResult result = runner.build()
 
@@ -58,25 +61,28 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         result.task(":compileGosu").outcome == SUCCESS
         result.task(":gosudoc").outcome == SUCCESS
 
-        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
-            result.output.contains('2 actionable tasks: 2 executed')
-        } else {
-            result.output.contains("""
-5 tasks in build, out of which 3 (60%) were executed
-2  (40%) no-source
-2  (40%) cache miss
-1  (20%) not cacheable
-""")
-        }
+        result.output.contains('Calculating task graph as no cached configuration is available for tasks: gosudoc')
+        result.output.contains('2 actionable tasks: 2 executed')
+        result.output.contains('Configuration cache entry stored.')
 
         assertTaskOutputs()
-        
+
         when:
+        GradleRunner.create()
+            .withProjectDir(testProjectDir.root)
+            .withTestKitDir(testKitDir.root)
+            .withPluginClasspath()
+            .withArguments('clean')
+            .build()
+
+        and:
         runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
                 .withTestKitDir(testKitDir.root)
                 .withPluginClasspath()
-                .withArguments('clean', 'gosudoc', '--build-cache')
+                .withArguments('gosudoc', '--build-cache', '--configuration-cache')
+//                .forwardOutput()
+//                .withDebug(true)
 
         result = runner.build()
 
@@ -84,22 +90,14 @@ class LocalBuildCacheTest extends AbstractGosuPluginSpecification {
         result.task(":compileGosu").outcome == FROM_CACHE
         result.task(":gosudoc").outcome == FROM_CACHE
 
-        if(VersionNumber.parse(gradleVersion) >= VersionNumber.parse('4.0')) {
-            result.output.contains('2 actionable tasks: 0 executed')
-        } else {
-            result.output.contains("""
-6 tasks in build, out of which 1 (17%) were executed
-1  (17%) up-to-date
-2  (33%) no-source
-2  (33%) loaded from cache
-1  (17%) not cacheable
-""")
-        }
+        result.output.contains('Reusing configuration cache.')
+        result.output.contains('2 actionable tasks: 2 from cache')
+        result.output.contains('Configuration cache entry reused.')
 
         assertTaskOutputs()
         
         where:
-        gradleVersion << gradleVersionsToTest.findAll { VersionNumber.parse(it) >= VersionNumber.parse('3.5') } // build caching only available since Gradle 3.5
+        gradleVersion << gradleVersionsToTest
     }
 
     private boolean assertTaskOutputs() {

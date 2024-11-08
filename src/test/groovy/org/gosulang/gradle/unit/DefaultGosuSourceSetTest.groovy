@@ -33,7 +33,7 @@ class DefaultGosuSourceSetTest extends Specification {
     def setup() {
         _testProjectDir.create()
         Project project = createRootProject(_testProjectDir.root)
-        sourceSet = new DefaultGosuSourceSet("<set-display-name>", project.objects);
+        sourceSet = project.objects.newInstance(DefaultGosuSourceSet, "<set-display-name>")
     }
 
     def 'verify_the_default_values'() {

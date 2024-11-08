@@ -1,4 +1,6 @@
 import org.gosulang.gradle.build.VersionWriterTask
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 import java.nio.charset.StandardCharsets
 
 plugins {
@@ -92,7 +94,7 @@ dependencies {
 test {
   useJUnitPlatform()
   testLogging {
-      events 'passed', 'failed', 'skipped'
+      events TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED
   }
   environment('JAVA_TOOL_OPTIONS', '-Duser.language=en')
 }

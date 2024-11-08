@@ -1,14 +1,15 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
-import groovy.lang.Closure;
-import org.gosulang.gradle.tasks.InfersGosuRuntime;
-import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.LogLevel;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
@@ -17,20 +18,30 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
 
+import javax.inject.Inject;
 import java.io.File;
 
 @CacheableTask
-public class GosuDoc extends SourceTask implements InfersGosuRuntime {
+public abstract class GosuDoc extends SourceTask /*implements InfersGosuRuntime*/ {
 
-  private FileCollection _classpath;
-  private Closure<FileCollection> _gosuClasspath;
-  private File _destinationDir;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
-  private String _title;
 
+  @Inject
+  public abstract ObjectFactory getObjectFactory();
+
+  @Inject
   public GosuDoc() {
     getLogging().captureStandardOutput(LogLevel.INFO);
   }
+
+  @Internal
+  public abstract Property<String> getProjectName();
+
+  @Internal
+  public abstract DirectoryProperty getProjectDir();
+
+  @Internal
+  public abstract DirectoryProperty getBuildDir();
 
   /**
    * {@inheritDoc}
@@ -46,13 +57,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    * @return the target directory to generate the API documentation.
    */
   @OutputDirectory
-  public File getDestinationDir() {
-    return _destinationDir;
-  }
-
-  public void setDestinationDir( File destinationDir ) {
-    _destinationDir = destinationDir;
-  }
+  public abstract DirectoryProperty getDestinationDir();
 
   /**
    * <p>Returns the classpath to use to locate classes referenced by the documented source.</p>
@@ -60,30 +65,15 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    * @return The classpath.
    */
   @Classpath
-  @InputFiles
-  public FileCollection getClasspath() {
-    return _classpath;
-  }
-
-  public void setClasspath( FileCollection classpath ) {
-    _classpath = classpath;
-  }
+  public abstract ConfigurableFileCollection getClasspath();
 
   /**
    * Returns the classpath to use to load the gosudoc tool.
+   *
    * @return the classpath to use to load the gosudoc tool.
    */
-  @Override
   @Classpath
-  @InputFiles
-  public Closure<FileCollection> getGosuClasspath() {
-    return _gosuClasspath;
-  }
-
-  @Override
-  public void setGosuClasspath( Closure<FileCollection> gosuClasspathClosure ) {
-    _gosuClasspath = gosuClasspathClosure;
-  }
+  public abstract ConfigurableFileCollection getGosuClasspath();
 
   /**
    * Returns the gosudoc generation options.
@@ -104,20 +94,14 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
    */
   @Input
   @Optional
-  public String getTitle() {
-    return _title;
-  }
-
-  public void setTitle( String title ) {
-    this._title = title;
-  }
+  public abstract Property<String> getTitle();
 
   @TaskAction
   protected void generate() {
     GosuDocOptions options = getGosuDocOptions();
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
-      options.setTitle(getTitle());
+      options.setTitle(getTitle().get());
     }
-    new CommandLineGosuDoc(getSource(), getDestinationDir(), getGosuClasspath().call(), getClasspath(), options, getProject()).execute();
+    getObjectFactory().newInstance(CommandLineGosuDoc.class, getSource(), getDestinationDir().get(), getGosuClasspath(), getClasspath(), options, getProjectName().get(), getProjectDir().get(), getBuildDir().get()).execute();
   }
 }

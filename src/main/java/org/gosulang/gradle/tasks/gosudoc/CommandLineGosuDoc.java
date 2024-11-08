@@ -4,15 +4,20 @@ import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
 import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
-import org.gradle.api.Project;
+import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileSystemOperations;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.compile.BaseForkOptions;
+import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.tooling.BuildException;
 
+import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,30 +29,43 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
-public class CommandLineGosuDoc {
+public abstract class CommandLineGosuDoc {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuDoc.class);
   
   private final FileCollection _source;
-  private final File _targetDir;
+  private final Directory _targetDir;
   private final FileCollection _projectClasspath;
   private final FileCollection _gosuClasspath;
   private final GosuDocOptions _options;
-  private final Project _project;
+  private final String _projectName;
+  private final Directory _projectDir;
+  private final Directory _buildDir;
 
+  @Inject
+  public abstract ObjectFactory getObjectFactory();
 
-  public CommandLineGosuDoc(FileCollection source, File targetDir, FileCollection gosuClasspath, FileCollection projectClasspath, GosuDocOptions options, Project project) {
+  @Inject
+  public abstract ExecOperations getExecOperations();
+
+  @Inject
+  public abstract FileSystemOperations getFs();
+
+  @Inject
+  public CommandLineGosuDoc(FileCollection source, Directory targetDir, FileCollection gosuClasspath, FileCollection projectClasspath, GosuDocOptions options, String projectName, Directory projectDir, Directory buildDir) {
     _source = source;
     _targetDir = targetDir;
     _gosuClasspath = gosuClasspath;
     _projectClasspath = projectClasspath;
     _options = options;
-    _project = project;
+    _projectName = projectName;
+    _projectDir = projectDir;
+    _buildDir = buildDir;
   }
   
   public void execute() {
     String startupMsg = "Initializing gosudoc generator";
-    if(_project.getName().isEmpty()) {
-      startupMsg += " for " + _project.getName();
+    if(!_projectName.isEmpty()) {
+      startupMsg += " for " + _projectName;
     }
     LOGGER.info(startupMsg);
     
@@ -55,17 +73,17 @@ public class CommandLineGosuDoc {
     // We don't want that, so instead we create a temp directory with the contents of 'source'
     // Copying 'source' to the temp dir should honor its include/exclude patterns
     // Finally, the tmpdir will be the sole inputdir passed to the gosudoc task
-    final File tmpDir = new File(_project.getBuildDir(), "tmp/gosudoc");
-    _project.delete(tmpDir);
-    _project.copy(copySpec -> copySpec.from(_source).into(tmpDir));
+    final RegularFile tmpDir = _buildDir.file("tmp/gosudoc");
+    getFs().delete(files-> files.delete(tmpDir));
+    getFs().copy(copySpec -> copySpec.from(_source).into(tmpDir));
 
     List<String> gosudocArgs = new ArrayList<>();
 
     gosudocArgs.add("-inputDirs");
-    gosudocArgs.add(tmpDir.getAbsolutePath());
+    gosudocArgs.add(tmpDir.getAsFile().getAbsolutePath());
     
     gosudocArgs.add("-output");
-    gosudocArgs.add(_targetDir.getAbsolutePath());
+    gosudocArgs.add(_targetDir.getAsFile().getAbsolutePath());
     
     if(_options.isVerbose()) {
       gosudocArgs.add("-verbose");
@@ -74,9 +92,9 @@ public class CommandLineGosuDoc {
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
+    FileCollection jointClasspath = getObjectFactory().fileCollection().from(_gosuClasspath).plus(_projectClasspath);
     if (!JavaVersion.current().isJava11Compatible()) { //if it is not java 11
-      jointClasspath = jointClasspath.plus(_project.files(Util.findToolsJar()));
+      jointClasspath = jointClasspath.plus(getObjectFactory().fileCollection().from(Util.findToolsJar()));
     }
 
     //FileCollection jointClasspath = _project.files(_gosuClasspath).plus(_projectClasspath);
@@ -90,12 +108,12 @@ public class CommandLineGosuDoc {
     
     LOGGER.info("Created classpathJar at " + classpathJar.getAbsolutePath());
     
-    ExecResult result = _project.javaexec(javaExecSpec -> {
+    ExecResult result = getExecOperations().javaexec(javaExecSpec -> {
 
-      javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
+      javaExecSpec.setWorkingDir(_projectDir);
       setJvmArgs(javaExecSpec, _options.getForkOptions());
       javaExecSpec.getMainClass().set("gw.gosudoc.cli.Gosudoc");
-      javaExecSpec.setClasspath(_project.files(classpathJar))
+      javaExecSpec.setClasspath(getObjectFactory().fileCollection().from(classpathJar))
           .setArgs((Iterable<?>) gosudocArgs); // Gradle 4.0 overloads JavaExecSpec#setArgs; must upcast to Iterable<?> for backwards compatibility
       javaExecSpec.setStandardOutput(stdout);
       javaExecSpec.setErrorOutput(stderr);
@@ -119,13 +137,13 @@ public class CommandLineGosuDoc {
   private File createClasspathJarFromFileCollection(FileCollection classpath) throws IOException {
     File tempFile;
     if (LOGGER.isDebugEnabled()) {
-      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar", new File(_targetDir.getAbsolutePath()));
+      tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar", new File(_targetDir.getAsFile().getAbsolutePath()));
     } else {
       tempFile = File.createTempFile(CommandLineGosuDoc.class.getName(), "classpath.jar");
       tempFile.deleteOnExit();
-    }    
-    
-    LOGGER.info("Creating classpath JAR at " + tempFile.getAbsolutePath());
+    }
+
+    LOGGER.info("Creating classpath JAR at {}", tempFile.getAbsolutePath());
     
     Manifest man = new Manifest();
     man.getMainAttributes().putValue(Attributes.Name.MANIFEST_VERSION.toString(), "1.0");
