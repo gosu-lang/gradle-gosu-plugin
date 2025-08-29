@@ -36,7 +36,7 @@ The latest release version, and instructions to apply it, is available here: htt
 
 It is now necessary to create a single compile-time dependency on the gosu-core-api JAR. Runtime and other dependencies are automatically inferred and applied by the plugin.
 
-Additionally, snapshots are available from https://oss.sonatype.org/content/repositories/snapshots/org/gosu-lang/gosu/gradle-gosu-plugin/
+Additionally, snapshots are available from https://central.sonatype.com/repository/maven-snapshots/
 
 ## Configurable Options
 
