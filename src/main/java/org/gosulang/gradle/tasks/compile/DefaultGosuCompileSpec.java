@@ -8,6 +8,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 public class DefaultGosuCompileSpec implements GosuCompileSpec {
 
@@ -59,6 +61,10 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   private List<File> _classpath;
   private File _destinationDir;
   private FileCollection _source;
+  private boolean _incremental = false;
+  private boolean _fullRebuildRequired = false;
+  private Set<File> _changedFiles = new HashSet<>();
+  private Set<File> _removedFiles = new HashSet<>();
 
   @Override
   public File getDestinationDir() {
@@ -101,6 +107,38 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
     List<File> target = new ArrayList<>();
     classpath.forEach(target::add);
     _classpath = Collections.unmodifiableList(target);
+  }
+
+  public boolean isIncremental() {
+    return _incremental;
+  }
+
+  public void setIncremental(boolean incremental) {
+    _incremental = incremental;
+  }
+
+  public boolean isFullRebuildRequired() {
+    return _fullRebuildRequired;
+  }
+
+  public void setFullRebuildRequired(boolean fullRebuildRequired) {
+    _fullRebuildRequired = fullRebuildRequired;
+  }
+
+  public Set<File> getChangedFiles() {
+    return _changedFiles;
+  }
+
+  public void setChangedFiles(Set<File> changedFiles) {
+    _changedFiles = changedFiles;
+  }
+
+  public Set<File> getRemovedFiles() {
+    return _removedFiles;
+  }
+
+  public void setRemovedFiles(Set<File> removedFiles) {
+    _removedFiles = removedFiles;
   }
 
 }

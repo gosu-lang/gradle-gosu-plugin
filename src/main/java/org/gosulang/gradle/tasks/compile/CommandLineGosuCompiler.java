@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuCompiler.class);
@@ -153,8 +154,66 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       fileOutput.add(spec.getGosuCompileOptions().getMaxErrs().toString());
     }
     
-    for(File sourceFile : spec.getSource()) {
-      fileOutput.add(sourceFile.getPath());
+    // Handle incremental compilation with new gosuc CLI flags
+    if (spec.getGosuCompileOptions().isIncrementalCompilation()) {
+      if (spec instanceof DefaultGosuCompileSpec) {
+        DefaultGosuCompileSpec defaultSpec = (DefaultGosuCompileSpec) spec;
+        
+        // Add incremental flag
+        fileOutput.add("-incremental");
+        
+        // Add dependency file path
+        String dependencyFile = spec.getGosuCompileOptions().getDependencyFile();
+        if (dependencyFile == null || dependencyFile.isEmpty()) {
+          // Default to build/tmp/gosuc-deps.json
+          File defaultDepFile = new File(_project.getBuildDir(), "tmp/gosuc-deps.json");
+          dependencyFile = defaultDepFile.getAbsolutePath();
+        } else if (!new File(dependencyFile).isAbsolute()) {
+          // Make relative paths relative to project directory
+          dependencyFile = new File(_project.getProjectDir(), dependencyFile).getAbsolutePath();
+        }
+        fileOutput.add("-dependency-file");
+        fileOutput.add(dependencyFile);
+        
+        if (defaultSpec.isIncremental() && !defaultSpec.isFullRebuildRequired()) {
+          // Incremental build - pass changed and deleted files
+          Set<File> changedFiles = defaultSpec.getChangedFiles();
+          Set<File> removedFiles = defaultSpec.getRemovedFiles();
+          
+          // Add changed files
+          if (!changedFiles.isEmpty()) {
+            fileOutput.add("-changed-files");
+            for (File file : changedFiles) {
+              fileOutput.add(file.getAbsolutePath());
+            }
+          }
+          
+          // Add deleted files
+          if (!removedFiles.isEmpty()) {
+            fileOutput.add("-deleted-files");
+            for (File file : removedFiles) {
+              fileOutput.add(file.getAbsolutePath());
+            }
+          }
+        }
+        
+        // Always add all source files for incremental mode
+        // The gosuc compiler will determine what needs to be compiled
+        for (File sourceFile : spec.getSource()) {
+          fileOutput.add(sourceFile.getPath());
+        }
+      } else {
+        // This shouldn't happen, but handle gracefully
+        LOGGER.warn("Incremental compilation requested but spec is not DefaultGosuCompileSpec");
+        for (File sourceFile : spec.getSource()) {
+          fileOutput.add(sourceFile.getPath());
+        }
+      }
+    } else {
+      // Standard compilation - compile all source files
+      for (File sourceFile : spec.getSource()) {
+        fileOutput.add(sourceFile.getPath());
+      }
     }
 
     Files.write(tempFile.toPath(), fileOutput, StandardCharsets.UTF_8);
