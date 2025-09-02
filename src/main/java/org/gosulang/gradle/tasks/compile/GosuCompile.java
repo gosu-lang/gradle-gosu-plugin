@@ -2,7 +2,6 @@ package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
@@ -15,7 +14,10 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
-import org.gradle.util.VersionNumber;
+import org.gradle.work.Incremental;
+import org.gradle.work.InputChanges;
+import org.gradle.work.FileChange;
+import org.gradle.work.ChangeType;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -51,8 +53,34 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   @TaskAction
-  protected void compile() {
+  protected void compile(InputChanges inputChanges) {
     DefaultGosuCompileSpec spec = createSpec();
+    
+    if (!inputChanges.isIncremental()) {
+      getProject().getLogger().info("Full recompilation is required");
+      spec.setFullRebuildRequired(true);
+    } else {
+      Set<File> changedFiles = new HashSet<>();
+      Set<File> removedFiles = new HashSet<>();
+      
+      for (FileChange change : inputChanges.getFileChanges(getStableSources())) {
+        File changedFile = change.getFile();
+        if (change.getChangeType() == ChangeType.REMOVED) {
+          removedFiles.add(changedFile);
+          getProject().getLogger().info("File removed: {}", changedFile.getAbsolutePath());
+        } else {
+          changedFiles.add(changedFile);
+          getProject().getLogger().info("File changed: {}", changedFile.getAbsolutePath());
+        }
+      }
+      
+      spec.setChangedFiles(changedFiles);
+      spec.setRemovedFiles(removedFiles);
+      spec.setIncremental(true);
+    }
+    
+
+    
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
   }
@@ -66,9 +94,9 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     return super.getSource();
   }
 
-  @SkipWhenEmpty
   @PathSensitive(NAME_ONLY)
   @InputFiles
+  @Incremental
   public FileCollection getStableSources() {
     return stableSources;
   }

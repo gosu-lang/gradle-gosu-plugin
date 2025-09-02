@@ -5,6 +5,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
 import org.gradle.util.VersionNumber
+import spock.lang.Ignore
 import spock.lang.Unroll
 
 import java.util.regex.Pattern
@@ -13,7 +14,7 @@ import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 @Unroll
-class IncrementalCompilationTest extends AbstractGosuPluginSpecification {
+class CompileInputChangeDetectionTest extends AbstractGosuPluginSpecification {
 
     File srcMainGosu, A, B
 
