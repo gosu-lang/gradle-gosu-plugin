@@ -180,20 +180,24 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
           Set<File> changedFiles = defaultSpec.getChangedFiles();
           Set<File> removedFiles = defaultSpec.getRemovedFiles();
           
-          // Add changed files
+          // Add changed files as a single path-separator-delimited string
           if (!changedFiles.isEmpty()) {
-            fileOutput.add("-changed-files");
+            List<String> changedPaths = new ArrayList<>();
             for (File file : changedFiles) {
-              fileOutput.add(file.getAbsolutePath());
+              changedPaths.add(file.getAbsolutePath());
             }
+            fileOutput.add("-changed-files");
+            fileOutput.add(String.join(File.pathSeparator, changedPaths));
           }
           
-          // Add deleted files
+          // Add deleted files as a single path-separator-delimited string  
           if (!removedFiles.isEmpty()) {
-            fileOutput.add("-deleted-files");
+            List<String> removedPaths = new ArrayList<>();
             for (File file : removedFiles) {
-              fileOutput.add(file.getAbsolutePath());
+              removedPaths.add(file.getAbsolutePath());
             }
+            fileOutput.add("-deleted-files");
+            fileOutput.add(String.join(File.pathSeparator, removedPaths));
           }
         }
         
