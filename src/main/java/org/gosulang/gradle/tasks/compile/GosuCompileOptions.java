@@ -17,6 +17,8 @@ public class GosuCompileOptions extends AbstractOptions {
   private boolean verbose = false;
   private Integer maxwarns;
   private Integer maxerrs;
+  private boolean incrementalCompilation = false;
+  private String dependencyFile;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -123,6 +125,45 @@ public class GosuCompileOptions extends AbstractOptions {
   @Optional
   public Integer getMaxErrs() {
     return maxerrs;
+  }
+  
+  /**
+   * @return Whether incremental compilation is enabled. Defaults to {@code false}.
+   */
+  @Input
+  public boolean isIncrementalCompilation() {
+    return incrementalCompilation;
+  }
+  
+  /**
+   * Sets whether incremental compilation is enabled. Defaults to {@code false}.
+   * When enabled, the compiler will track dependencies and only recompile affected files.
+   * Requires Gosu 1.18.7 or later.
+   * @param incrementalCompilation Enable incremental compilation
+   */
+  public void setIncrementalCompilation(boolean incrementalCompilation) {
+    this.incrementalCompilation = incrementalCompilation;
+  }
+  
+  /**
+   * @return Path to the dependency tracking file for incremental compilation. May be null.
+   * If not specified, defaults to "build/tmp/gosuc-deps.json".
+   */
+  @Input
+  @Optional
+  public String getDependencyFile() {
+    return dependencyFile;
+  }
+  
+  /**
+   * Sets the path to the dependency tracking file for incremental compilation.
+   * The path can be absolute or relative to the project directory.
+   * If not specified, defaults to "build/tmp/gosuc-deps.json".
+   * Only used when incrementalCompilation is true.
+   * @param dependencyFile Path to the dependency tracking file
+   */
+  public void setDependencyFile(String dependencyFile) {
+    this.dependencyFile = dependencyFile;
   }
   
 }
