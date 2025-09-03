@@ -38,7 +38,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
   @Override
   public WorkResult execute( GosuCompileSpec spec ) {
     String startupMsg = "Initializing gosuc compiler";
-    if(_projectName.isEmpty()) {
+    if(!_projectName.isEmpty()) {
       startupMsg += " for " + _projectName;
     }
     LOGGER.info(startupMsg);
@@ -165,8 +165,12 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
         // Add dependency file path
         String dependencyFile = spec.getGosuCompileOptions().getDependencyFile();
         if (dependencyFile == null || dependencyFile.isEmpty()) {
-          // Default to build/tmp/gosuc-deps.json
-          File defaultDepFile = new File(_project.getBuildDir(), "tmp/gosuc-deps.json");
+          // Default to build/tmp/gosuc-deps-{taskName}.json
+          String taskName = _projectName.replaceAll(":", ""); // Remove colons for filename
+          if (taskName.isEmpty()) {
+            taskName = "default";
+          }
+          File defaultDepFile = new File(_project.getBuildDir(), "tmp/gosuc-deps-" + taskName + ".json");
           dependencyFile = defaultDepFile.getAbsolutePath();
         } else if (!new File(dependencyFile).isAbsolute()) {
           // Make relative paths relative to project directory
