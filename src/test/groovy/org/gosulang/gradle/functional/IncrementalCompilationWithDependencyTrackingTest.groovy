@@ -22,7 +22,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         baseClass = new File(srcMainGosu, 'BaseClass.gs')
         derivedClass = new File(srcMainGosu, 'DerivedClass.gs')
         independentClass = new File(srcMainGosu, 'IndependentClass.gs')
-        dependencyFile = new File(testProjectDir.root, 'build/tmp/gosuc-deps.json')
+        dependencyFile = new File(testProjectDir.root, 'build/tmp/gosuc-deps-compileGosu.json')
     }
     
     def 'Incremental compilation with dependency tracking [Gradle #gradleVersion]'() {
