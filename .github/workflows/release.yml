@@ -1,0 +1,91 @@
+name: Release to Maven Central & Gradle Plugin Portal
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for creating tags and pushing commits
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for release plugin
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure release branch
+        run: |
+          if [[ "${GITHUB_REF_NAME}" != rel/* ]]; then
+            echo "❌ Manual runs allowed only on rel/* branches"
+            echo "Current branch: ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+      - name: Set up Java (Amazon Corretto 11)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+
+      - name: Check repository permissions
+        id: check-perms
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.actor
+              });
+              console.log(`User ${context.actor} repository permission: ${permission.data.permission}`);
+              const allowedRoles = ['admin', 'maintain'];
+              const hasPermission = allowedRoles.includes(permission.data.permission);
+              console.log(`Permission check result: ${hasPermission}`);
+              core.setOutput('can-publish', hasPermission.toString());
+              return hasPermission;
+            } catch (error) {
+              console.log(`Permission check failed: ${error.message}`);
+              core.setOutput('can-publish', 'false');
+              return false;
+            }
+
+      - name: Configure Git
+        if: steps.check-perms.outputs.can-publish == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run release
+        if: steps.check-perms.outputs.can-publish == 'true'
+        run: ./gradlew release -Dorg.gradle.project.release.useAutomaticVersion=true
+        env:
+          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLEPUBLISHKEY }}
+          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLEPUBLISHSECRET }}
+
+      - name: Report released version
+        if: steps.check-perms.outputs.can-publish == 'true'
+        run: |
+          # Get the tag that was just created
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          echo "## 🚀 Release Published" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $LATEST_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "**Repositories:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Maven Central" >> $GITHUB_STEP_SUMMARY
+          echo "- Gradle Plugin Portal" >> $GITHUB_STEP_SUMMARY
+
+      - name: Permission denied
+        if: steps.check-perms.outputs.can-publish != 'true'
+        run: |
+          echo "## ⛔ Permission Denied" >> $GITHUB_STEP_SUMMARY
+          echo "User **${{ github.actor }}** does not have permission to publish releases." >> $GITHUB_STEP_SUMMARY
+          echo "Required permission: **admin** or **maintain**" >> $GITHUB_STEP_SUMMARY
+          exit 1
