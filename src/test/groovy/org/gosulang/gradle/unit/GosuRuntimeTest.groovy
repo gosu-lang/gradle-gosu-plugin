@@ -1,7 +1,6 @@
 package org.gosulang.gradle.unit
 
 import org.gosulang.gradle.GosuBasePlugin
-import org.gradle.api.GradleException
 import org.gradle.testfixtures.ProjectBuilder
 import org.gosulang.gradle.util.VersionNumber
 import spock.lang.Specification
@@ -12,17 +11,6 @@ class GosuRuntimeTest extends Specification {
 
     def setup() {
         project.pluginManager.apply(GosuBasePlugin)
-    }
-
-    def 'inference fails if no repository declared'() {
-        when:
-        def gosuClasspath = project.gosuRuntime.inferGosuClasspath(project.files([new File('other.jar'), new File('gosu-core-api-1.8.jar')]))
-        gosuClasspath.files
-
-        then:
-        GradleException e = thrown()
-        System.out.println(e.message)
-        e.message.equals('Cannot infer Gosu classpath because no repository is declared in ' + project)
     }
 
     def 'test to find Gosu Jars on class path'() {

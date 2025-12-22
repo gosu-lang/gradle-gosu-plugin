@@ -52,10 +52,6 @@ public class GosuRuntime {
   }
 
   private FileCollection doInfer(Iterable<File> classpath) {
-    if (_project.getRepositories().isEmpty()) {
-      throw new GradleException("Cannot infer Gosu classpath because no repository is declared in " + _project);
-    }
-
     File gosuCoreApiJar = findGosuJar(classpath, "core-api");
 
     if (gosuCoreApiJar == null) {
