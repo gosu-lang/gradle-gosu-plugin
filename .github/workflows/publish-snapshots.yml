@@ -1,0 +1,74 @@
+name: Publish Snapshots to Maven Central
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  publish-snapshot:
+    runs-on: ubuntu-latest
+    # Only run on pushes to master, not on PRs
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java (Amazon Corretto 11)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '11'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+
+      - name: Check repository permissions
+        id: check-perms
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.actor
+              });
+              console.log(`User ${context.actor} repository permission: ${permission.data.permission}`);
+              const allowedRoles = ['admin', 'maintain'];
+              const hasPermission = allowedRoles.includes(permission.data.permission);
+              console.log(`Permission check result: ${hasPermission}`);
+              core.setOutput('can-publish', hasPermission.toString());
+              return hasPermission;
+            } catch (error) {
+              console.log(`Permission check failed: ${error.message}`);
+              core.setOutput('can-publish', 'false');
+              return false;
+            }
+
+      - name: Publish snapshot to Maven Central
+        if: steps.check-perms.outputs.can-publish == 'true'
+        run: ./gradlew publish
+        env:
+          SNAPSHOT_USER_CENTRAL: ${{ secrets.SNAPSHOT_USER_CENTRAL }}
+          SNAPSHOT_PASS_CENTRAL: ${{ secrets.SNAPSHOT_PASS_CENTRAL }}
+
+      - name: Report published version
+        if: steps.check-perms.outputs.can-publish == 'true'
+        run: |
+          VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+          echo "## 📦 Snapshot Published" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** Maven Central Snapshots" >> $GITHUB_STEP_SUMMARY
+
+      - name: Permission denied
+        if: steps.check-perms.outputs.can-publish != 'true'
+        run: |
+          echo "## ⛔ Permission Denied" >> $GITHUB_STEP_SUMMARY
+          echo "User **${{ github.actor }}** does not have permission to publish snapshots." >> $GITHUB_STEP_SUMMARY
+          echo "Required permission: **admin** or **maintain**" >> $GITHUB_STEP_SUMMARY
+          exit 1
