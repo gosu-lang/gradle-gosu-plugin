@@ -19,8 +19,6 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
     @Rule
     TemporaryFolder testProjectDir = new TemporaryFolder()
 
-    protected  URL _gosuVersionResource = this.class.classLoader.getResource("gosuVersion.txt")
-
     File buildScript
     Closure<List<String>> expectedOutputDir = { String gradleVersion ->
         List<String> retval = ['build', 'classes']
@@ -61,14 +59,6 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
         buildScript = testProjectDir.newFile('build.gradle')
     }
 
-    protected String getGosuVersion() {
-        return getGosuVersion(_gosuVersionResource)
-    }
-
-    protected String getGosuVersion(URL url) {
-        return new BufferedReader(new FileReader(url.file)).lines().findFirst().get()
-    }
-    
     /**
      * @param An array of files and directories
      * @return Delimited String of the values, joined as suitable for use in a classpath statement

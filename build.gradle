@@ -1,4 +1,3 @@
-import org.gosulang.gradle.build.VersionWriterTask
 import java.nio.charset.StandardCharsets
 
 plugins {
@@ -69,27 +68,10 @@ gradlePlugin {
     }
 }
 
-//Test Helper Tasks
-tasks.register('gradleVersionHelper', VersionWriterTask) {
-    propertyToRead = 'gradleVersion'
-    fallbackValue = project.gradle.gradleVersion
-}
-
-tasks.register('gosuVersionHelper', VersionWriterTask) {
-    propertyToRead = 'gosuVersion'
-}
-
-tasks.register('testedVersionsHelper', VersionWriterTask) {
-    propertyToRead = 'testedVersions'
-}
-
-dependencies {
-    testImplementation files(gradleVersionHelper) // Persist a file containing the gradleVersion
-    testImplementation files(gosuVersionHelper) // Persist a file containing the gosuVersion
-    testImplementation files(testedVersionsHelper) // Persist a file containing the testedVersions
-}
-
 test {
+  systemProperty 'test.gradleVersion', providers.gradleProperty('gradleVersion').orElse(project.gradle.gradleVersion).get()
+  systemProperty 'test.gosuVersion', providers.gradleProperty('gosuVersion').get()
+  systemProperty 'test.testedVersions', providers.gradleProperty('testedVersions').get()
   useJUnitPlatform()
   testLogging {
       events 'passed', 'failed', 'skipped'
