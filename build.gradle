@@ -67,6 +67,8 @@ gradlePlugin {
             tags.set(['gosu'])
         }
     }
+    website = 'http://gosu-lang.github.io/'
+    vcsUrl = 'https://github.com/gosu-lang/gradle-gosu-plugin'
 }
 
 //Test Helper Tasks
