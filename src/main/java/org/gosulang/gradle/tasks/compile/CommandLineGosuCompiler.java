@@ -181,27 +181,19 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
         
         if (defaultSpec.isIncremental() && !defaultSpec.isFullRebuildRequired()) {
           // Incremental build - pass changed and deleted files
-          Set<File> changedFiles = defaultSpec.getChangedFiles();
-          Set<File> removedFiles = defaultSpec.getRemovedFiles();
-          
-          // Add changed files as a single path-separator-delimited string
-          if (!changedFiles.isEmpty()) {
-            List<String> changedPaths = new ArrayList<>();
-            for (File file : changedFiles) {
-              changedPaths.add(file.getAbsolutePath());
-            }
-            fileOutput.add("-changed-files");
-            fileOutput.add(String.join(File.pathSeparator, changedPaths));
+          Set<String> changedTypes = defaultSpec.getChangedTypes();
+          Set<String> removedTypes = defaultSpec.getRemovedTypes();
+
+          // Add changed type FQCNs as a single path-separator-delimited string
+          if (!changedTypes.isEmpty()) {
+            fileOutput.add("-changed-types");
+            fileOutput.add(String.join(File.pathSeparator, changedTypes));
           }
-          
-          // Add deleted files as a single path-separator-delimited string  
-          if (!removedFiles.isEmpty()) {
-            List<String> removedPaths = new ArrayList<>();
-            for (File file : removedFiles) {
-              removedPaths.add(file.getAbsolutePath());
-            }
-            fileOutput.add("-deleted-files");
-            fileOutput.add(String.join(File.pathSeparator, removedPaths));
+
+          // Add removed type FQCNs as a single path-separator-delimited string
+          if (!removedTypes.isEmpty()) {
+            fileOutput.add("-removed-types");
+            fileOutput.add(String.join(File.pathSeparator, removedTypes));
           }
         }
         

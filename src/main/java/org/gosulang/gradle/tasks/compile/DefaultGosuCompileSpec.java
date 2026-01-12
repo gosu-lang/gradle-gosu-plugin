@@ -63,8 +63,8 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   private FileCollection _source;
   private boolean _incremental = false;
   private boolean _fullRebuildRequired = false;
-  private Set<File> _changedFiles = new HashSet<>();
-  private Set<File> _removedFiles = new HashSet<>();
+  private Set<String> _changedTypes = new HashSet<>();  // Changed type FQCNs (Java + Gosu)
+  private Set<String> _removedTypes = new HashSet<>();  // Removed type FQCNs (Java + Gosu)
 
   @Override
   public File getDestinationDir() {
@@ -125,20 +125,20 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
     _fullRebuildRequired = fullRebuildRequired;
   }
 
-  public Set<File> getChangedFiles() {
-    return _changedFiles;
+  public Set<String> getChangedTypes() {
+    return _changedTypes;
   }
 
-  public void setChangedFiles(Set<File> changedFiles) {
-    _changedFiles = changedFiles;
+  public void setChangedTypes(Set<String> changedTypes) {
+    _changedTypes = changedTypes;
   }
 
-  public Set<File> getRemovedFiles() {
-    return _removedFiles;
+  public Set<String> getRemovedTypes() {
+    return _removedTypes;
   }
 
-  public void setRemovedFiles(Set<File> removedFiles) {
-    _removedFiles = removedFiles;
+  public void setRemovedTypes(Set<String> removedTypes) {
+    _removedTypes = removedTypes;
   }
 
 }

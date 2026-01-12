@@ -57,32 +57,131 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     DefaultGosuCompileSpec spec = createSpec();
     
     if (!inputChanges.isIncremental()) {
-      getProject().getLogger().info("Full recompilation is required");
+      getLogger().info("Full recompilation is required");
       spec.setFullRebuildRequired(true);
     } else {
-      Set<File> changedFiles = new HashSet<>();
-      Set<File> removedFiles = new HashSet<>();
-      
+      Set<String> changedTypes = new HashSet<>();
+      Set<String> removedTypes = new HashSet<>();
+
+      // Extract FQCNs from changed Gosu source files
       for (FileChange change : inputChanges.getFileChanges(getStableSources())) {
-        File changedFile = change.getFile();
-        if (change.getChangeType() == ChangeType.REMOVED) {
-          removedFiles.add(changedFile);
-          getProject().getLogger().info("File removed: {}", changedFile.getAbsolutePath());
-        } else {
-          changedFiles.add(changedFile);
-          getProject().getLogger().info("File changed: {}", changedFile.getAbsolutePath());
+        File file = change.getFile();
+        if (file.getName().endsWith(".gs") || file.getName().endsWith(".gsx")) {
+          String fqcn = extractFQCNFromSourceFile(file);
+          if (fqcn != null) {
+            if (change.getChangeType() == ChangeType.REMOVED) {
+              removedTypes.add(fqcn);
+              getLogger().info("Gosu type removed: {}", fqcn);
+            } else {
+              changedTypes.add(fqcn);
+              getLogger().info("Gosu type changed: {}", fqcn);
+            }
+          }
         }
       }
-      
-      spec.setChangedFiles(changedFiles);
-      spec.setRemovedFiles(removedFiles);
+
+      // Extract FQCNs from changed Java classes on classpath
+      for (FileChange change : inputChanges.getFileChanges(getClasspath())) {
+        File file = change.getFile();
+        if (file.getName().endsWith(".class")) {
+          String className = extractClassNameFromClassFile(file);
+          if (className != null) {
+            // Propagate inner class changes to outer class (Option B)
+            if (className.contains("$")) {
+              className = className.substring(0, className.indexOf("$"));
+            }
+            if (change.getChangeType() == ChangeType.REMOVED) {
+              removedTypes.add(className);
+              getLogger().info("Java type removed: {}", className);
+            } else {
+              changedTypes.add(className);
+              getLogger().info("Java type changed: {}", className);
+            }
+          }
+        }
+      }
+
+      spec.setChangedTypes(changedTypes);
+      spec.setRemovedTypes(removedTypes);
       spec.setIncremental(true);
     }
-    
 
-    
+
+
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
+  }
+
+  /**
+   * Extracts the fully-qualified class name from a Gosu source file by finding its source root.
+   *
+   * @param sourceFile the .gs or .gsx file
+   * @return the FQCN (e.g., "com.example.MyClass") or null if extraction fails
+   */
+  private String extractFQCNFromSourceFile(File sourceFile) {
+    FileCollection sourceRoots = getSourceRoots();
+
+    for (File sourceRoot : sourceRoots.getFiles()) {
+      if (sourceFile.getAbsolutePath().startsWith(sourceRoot.getAbsolutePath())) {
+        java.nio.file.Path rootPath = sourceRoot.toPath();
+        java.nio.file.Path filePath = sourceFile.toPath();
+
+        // Get relative path from root
+        java.nio.file.Path relativePath = rootPath.relativize(filePath);
+
+        // Convert: com/example/MyClass.gs -> com.example.MyClass
+        String fqcn = relativePath.toString()
+          .replace(File.separator, ".");
+
+        // Remove extension (.gs or .gsx)
+        if (fqcn.endsWith(".gs")) {
+          fqcn = fqcn.substring(0, fqcn.length() - 3);
+        } else if (fqcn.endsWith(".gsx")) {
+          fqcn = fqcn.substring(0, fqcn.length() - 4);
+        }
+
+        return fqcn;
+      }
+    }
+
+    // Could not find source root
+    getLogger().debug("Could not determine FQCN for source file: {}", sourceFile.getAbsolutePath());
+    return null;
+  }
+
+  /**
+   * Extracts the fully-qualified class name from a .class file by finding its classpath root.
+   *
+   * @param classFile the .class file
+   * @return the FQN (e.g., "com.example.Interface") or null if extraction fails
+   */
+  private String extractClassNameFromClassFile(File classFile) {
+    FileCollection classpath = getClasspath();
+
+    for (File classpathEntry : classpath.getFiles()) {
+      if (classpathEntry.isDirectory()) {
+        java.nio.file.Path rootPath = classpathEntry.toPath();
+        java.nio.file.Path filePath = classFile.toPath();
+
+        // Check if this file is under this classpath root
+        if (filePath.startsWith(rootPath)) {
+          // Get relative path from root
+          java.nio.file.Path relativePath = rootPath.relativize(filePath);
+
+          // Convert: com/example/Interface.class -> com.example.Interface
+          String className = relativePath.toString()
+            .replace(File.separator, ".")
+            .replace(".class", "");
+
+          return className;
+        }
+      }
+    }
+
+    // Not found in any directory root - might be in a JAR
+    // JAR-level changes are handled at the JAR file level, not individual classes
+    getLogger().debug("Could not determine class name for: {}", classFile.getAbsolutePath());
+    return null;
   }
 
   /**
@@ -116,8 +215,10 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   /**
    * We override in order to apply the {@link org.gradle.api.tasks.CompileClasspath}, in order to ignore changes in JAR'd resources.
+   * The {@link Incremental} annotation enables fine-grained change detection for individual .class files.
    */
   @CompileClasspath
+  @Incremental
   public FileCollection getClasspath() {
     return super.getClasspath();
   }
