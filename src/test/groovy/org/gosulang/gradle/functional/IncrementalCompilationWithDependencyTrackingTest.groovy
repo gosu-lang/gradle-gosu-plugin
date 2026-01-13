@@ -131,15 +131,17 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         
         when: 'Delete a file'
         derivedClass.delete()
-        
+
         runner.withArguments('compileGosu', '-i')
         result = runner.build()
-        
-        then: 'Deleted file\'s output is removed'
+
+        then: 'Build succeeds and stale class file is deleted'
         result.task(':compileGosu').outcome == SUCCESS
-        !new File(buildOutput, 'DerivedClass.class').exists()
         new File(buildOutput, 'BaseClass.class').exists()
         new File(buildOutput, 'IndependentClass.class').exists()
+
+        and: 'DerivedClass.class is deleted (no stale class files)'
+        !new File(buildOutput, 'DerivedClass.class').exists()
         
         where:
         gradleVersion << gradleVersionsToTest
@@ -176,6 +178,106 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         result.task(':compileGosu').outcome == SUCCESS
         !dependencyFile.exists()
         
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Dependency file format uses FQCNs not file paths [Gradle #gradleVersion]'() {
+        given: 'A build script with incremental compilation enabled'
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+            }
+            """
+
+        and: 'Create Gosu classes with a dependency relationship in a package'
+        File packageDir = new File(srcMainGosu, 'com/example')
+        packageDir.mkdirs()
+
+        File producer = new File(packageDir, 'Producer.gs')
+        File consumer1 = new File(packageDir, 'Consumer1.gs')
+        File consumer2 = new File(packageDir, 'Consumer2.gs')
+
+        producer << """
+            package com.example
+
+            class Producer {
+                static function getMessage() : String {
+                    return "hello"
+                }
+            }
+            """
+
+        consumer1 << """
+            package com.example
+
+            uses com.example.Producer
+
+            class Consumer1 {
+                static function use() : String {
+                    return Producer.getMessage()
+                }
+            }
+            """
+
+        consumer2 << """
+            package com.example
+
+            uses com.example.Producer
+
+            class Consumer2 {
+                static function use() : String {
+                    return Producer.getMessage()
+                }
+            }
+            """
+
+        when: 'Compile the project'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu')
+                .withGradleVersion(gradleVersion)
+
+        BuildResult result = runner.build()
+
+        then: 'Build succeeds and dependency file is created'
+        result.task(':compileGosu').outcome == SUCCESS
+        dependencyFile.exists()
+
+        and: 'Dependency file has correct JSON format with FQCNs'
+        String actualJson = dependencyFile.text
+
+        // The exact format we expect (only meaningful type dependencies, common types filtered out)
+        // Common types like java.lang.Object, java.lang.String, etc. are omitted as noise
+        String expectedJson = """{
+  "version": "2.0",
+  "types": {
+    "usedBy": {
+      "com.example.Producer": [
+        "com.example.Consumer1",
+        "com.example.Consumer2"
+      ]
+    }
+  }
+}"""
+
+        actualJson == expectedJson
+
         where:
         gradleVersion << gradleVersionsToTest
     }

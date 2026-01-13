@@ -47,6 +47,10 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     }
   });
 
+  // Track compileJava output directory for fine-grained Java class change detection
+  // This will be configured by GosuBasePlugin using the SourceSet's Java output directory
+  private FileCollection javaClassesDir;
+
   @Inject
   public GosuCompile() {
       _compileOptions = getServices().get(ObjectFactory.class).newInstance(CompileOptions.class);
@@ -72,6 +76,8 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
             if (change.getChangeType() == ChangeType.REMOVED) {
               removedTypes.add(fqcn);
               getLogger().info("Gosu type removed: {}", fqcn);
+              // Delete stale .class file(s) to prevent them from lingering in the output directory
+              deleteClassFiles(fqcn, getDestinationDirectory().get().getAsFile());
             } else {
               changedTypes.add(fqcn);
               getLogger().info("Gosu type changed: {}", fqcn);
@@ -80,22 +86,21 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
         }
       }
 
-      // Extract FQCNs from changed Java classes on classpath
-      for (FileChange change : inputChanges.getFileChanges(getClasspath())) {
-        File file = change.getFile();
-        if (file.getName().endsWith(".class")) {
-          String className = extractClassNameFromClassFile(file);
-          if (className != null) {
-            // Propagate inner class changes to outer class (Option B)
-            if (className.contains("$")) {
-              className = className.substring(0, className.indexOf("$"));
-            }
-            if (change.getChangeType() == ChangeType.REMOVED) {
-              removedTypes.add(className);
-              getLogger().info("Java type removed: {}", className);
-            } else {
-              changedTypes.add(className);
-              getLogger().info("Java type changed: {}", className);
+      // Extract FQCNs from changed Java class files (if configured)
+      // This provides fine-grained tracking for project Java sources (not JARs)
+      if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+        for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
+          File classFile = change.getFile();
+          if (classFile.getName().endsWith(".class")) {
+            String fqcn = extractFQCNFromClassFile(classFile, getJavaClassesDir().getSingleFile());
+            if (fqcn != null && !fqcn.contains("$")) { // Skip inner classes
+              if (change.getChangeType() == ChangeType.REMOVED) {
+                removedTypes.add(fqcn);
+                getLogger().info("Java type removed: {}", fqcn);
+              } else {
+                changedTypes.add(fqcn);
+                getLogger().info("Java type changed: {}", fqcn);
+              }
             }
           }
         }
@@ -150,39 +155,70 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   /**
-   * Extracts the fully-qualified class name from a .class file by finding its classpath root.
+   * Extracts the fully-qualified class name from a Java .class file by computing
+   * its path relative to the Java classes directory.
    *
    * @param classFile the .class file
-   * @return the FQN (e.g., "com.example.Interface") or null if extraction fails
+   * @param javaClassesRoot the root directory (e.g., build/classes/java/main)
+   * @return the FQCN (e.g., "com.example.MyClass") or null if extraction fails
    */
-  private String extractClassNameFromClassFile(File classFile) {
-    FileCollection classpath = getClasspath();
+  private String extractFQCNFromClassFile(File classFile, File javaClassesRoot) {
+    if (!classFile.getAbsolutePath().startsWith(javaClassesRoot.getAbsolutePath())) {
+      return null;
+    }
 
-    for (File classpathEntry : classpath.getFiles()) {
-      if (classpathEntry.isDirectory()) {
-        java.nio.file.Path rootPath = classpathEntry.toPath();
-        java.nio.file.Path filePath = classFile.toPath();
+    java.nio.file.Path rootPath = javaClassesRoot.toPath();
+    java.nio.file.Path filePath = classFile.toPath();
+    java.nio.file.Path relativePath = rootPath.relativize(filePath);
 
-        // Check if this file is under this classpath root
-        if (filePath.startsWith(rootPath)) {
-          // Get relative path from root
-          java.nio.file.Path relativePath = rootPath.relativize(filePath);
+    // Convert: com/example/MyClass.class -> com.example.MyClass
+    String fqcn = relativePath.toString()
+      .replace(File.separator, ".")
+      .replace(".class", "");
 
-          // Convert: com/example/Interface.class -> com.example.Interface
-          String className = relativePath.toString()
-            .replace(File.separator, ".")
-            .replace(".class", "");
+    return fqcn.isEmpty() ? null : fqcn;
+  }
 
-          return className;
-        }
+  /**
+   * Deletes the .class file(s) for a removed Gosu type, including any inner/anonymous classes.
+   * This ensures stale class files don't remain in the output directory when source files are deleted.
+   *
+   * @param fqcn the fully-qualified class name (e.g., "com.example.MyClass")
+   * @param outputDir the Gosu output directory (e.g., build/classes/gosu/main)
+   */
+  private void deleteClassFiles(String fqcn, File outputDir) {
+    // Convert FQCN to file path: com.example.Foo -> com/example/Foo.class
+    String relativePath = fqcn.replace('.', File.separatorChar);
+    File mainClassFile = new File(outputDir, relativePath + ".class");
+
+    // Delete main class file
+    if (mainClassFile.exists()) {
+      if (mainClassFile.delete()) {
+        getLogger().info("Deleted stale class file: {}", mainClassFile);
+      } else {
+        getLogger().warn("Failed to delete class file: {}", mainClassFile);
       }
     }
 
-    // Not found in any directory root - might be in a JAR
-    // JAR-level changes are handled at the JAR file level, not individual classes
-    getLogger().debug("Could not determine class name for: {}", classFile.getAbsolutePath());
-    return null;
+    // Delete inner/anonymous classes (Foo$*.class)
+    File parentDir = mainClassFile.getParentFile();
+    if (parentDir != null && parentDir.exists()) {
+      String className = mainClassFile.getName().replace(".class", "");
+      File[] innerClasses = parentDir.listFiles((dir, name) ->
+        name.startsWith(className + "$") && name.endsWith(".class")
+      );
+      if (innerClasses != null) {
+        for (File innerClass : innerClasses) {
+          if (innerClass.delete()) {
+            getLogger().info("Deleted stale inner class file: {}", innerClass);
+          } else {
+            getLogger().warn("Failed to delete inner class file: {}", innerClass);
+          }
+        }
+      }
+    }
   }
+
 
   /**
    * {@inheritDoc}
@@ -201,6 +237,31 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   /**
+   * Returns the Java classes output directory for fine-grained change tracking.
+   * This tracks the compileJava task's output directory to detect which specific
+   * Java class files have changed (ABI changes only, not implementation changes).
+   * Configured by GosuBasePlugin using the SourceSet's Java output directory.
+   *
+   * @return FileCollection pointing to the Java classes output directory
+   */
+  @CompileClasspath  // ABI-sensitivity: only API changes trigger re-execution; provides built-in normalization
+  @Incremental       // Enables querying which specific .class files changed
+  @Optional          // Optional because not all projects may have Java sources
+  public FileCollection getJavaClassesDir() {
+    return javaClassesDir;
+  }
+
+  /**
+   * Sets the Java classes output directory for fine-grained change tracking.
+   * This should be called by GosuBasePlugin during task configuration.
+   *
+   * @param javaClassesDir FileCollection pointing to the Java classes output directory
+   */
+  public void setJavaClassesDir(FileCollection javaClassesDir) {
+    this.javaClassesDir = javaClassesDir;
+  }
+
+  /**
    * @return Gosu-specific compilation options.
    */
   @Nested
@@ -215,10 +276,8 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   /**
    * We override in order to apply the {@link org.gradle.api.tasks.CompileClasspath}, in order to ignore changes in JAR'd resources.
-   * The {@link Incremental} annotation enables fine-grained change detection for individual .class files.
    */
   @CompileClasspath
-  @Incremental
   public FileCollection getClasspath() {
     return super.getClasspath();
   }
@@ -305,12 +364,23 @@ public FileCollection getSourceRoots() {
     spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
 
+    // Build the classpath for gosuc: combine regular classpath + Java classes directory
+    // Note: javaClassesDir is tracked separately as an @Incremental input to enable selective recompilation,
+    // but must be included in the actual classpath passed to the compiler
+    FileCollection effectiveClasspath;
     if (_orderClasspath == null) {
-      spec.setClasspath(asList(getClasspath()));
+      effectiveClasspath = getClasspath();
     } else {
-      spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME))));
-      //spec.setClasspath(asList(_orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME))));
+      effectiveClasspath = _orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
     }
+
+    // Add Java classes directory to the BEGINNING of the classpath for compiler execution
+    // Project Java classes should take precedence over classes from JARs
+    if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+      effectiveClasspath = getJavaClassesDir().plus(effectiveClasspath);
+    }
+
+    spec.setClasspath(asList(effectiveClasspath));
 
     Logger logger = project.getLogger();
 

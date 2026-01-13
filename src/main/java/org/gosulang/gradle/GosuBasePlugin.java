@@ -86,6 +86,16 @@ public class GosuBasePlugin implements Plugin<Project> {
     configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
     gosuCompile.configure(t -> t.dependsOn(sourceSet.getCompileJavaTaskName()));
     gosuCompile.configure(t -> t.setSource((Object) gosuSourceSet.getGosu())); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
+
+    // Configure Java classes directory tracking for fine-grained Java → Gosu dependency tracking
+    gosuCompile.configure(t -> {
+      if (t instanceof GosuCompile) {
+        GosuCompile gosuCompileTask = (GosuCompile) t;
+        // Use the SourceSet's Java output directory (Gradle-idiomatic, not task lookup)
+        gosuCompileTask.setJavaClassesDir(_project.files(sourceSet.getJava().getDestinationDirectory()));
+      }
+    });
+
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 
@@ -102,7 +112,10 @@ public class GosuBasePlugin implements Plugin<Project> {
     compile.configure(t -> {
       t.setDescription("Compiles the " + sourceDirectorySet.getDisplayName() + ".");
       t.setSource(sourceSet.getJava());
-      t.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath().plus(target.files(sourceSet.getJava().getDestinationDirectory())));
+      // Note: Java classes directory is NOT included in classpath here to avoid triggering full rebuilds
+      // It's tracked separately via javaClassesDir property (with @Incremental) for selective recompilation
+      // The combined classpath (including Java classes) is assembled in GosuCompile.createSpec()
+      t.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath());
     });
     configureOutputDirectoryForSourceSet(sourceSet, sourceDirectorySet, target, compile);
   }
