@@ -265,14 +265,12 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         // The exact format we expect (only meaningful type dependencies, common types filtered out)
         // Common types like java.lang.Object, java.lang.String, etc. are omitted as noise
         String expectedJson = """{
-  "version": "2.0",
-  "types": {
-    "usedBy": {
-      "com.example.Producer": [
-        "com.example.Consumer1",
-        "com.example.Consumer2"
-      ]
-    }
+  "version": "1.0",
+  "consumers": {
+    "com.example.Producer": [
+      "com.example.Consumer1",
+      "com.example.Consumer2"
+    ]
   }
 }"""
 

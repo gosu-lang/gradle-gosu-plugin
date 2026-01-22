@@ -65,6 +65,7 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   private boolean _fullRebuildRequired = false;
   private Set<String> _changedTypes = new HashSet<>();  // Changed type FQCNs (Java + Gosu)
   private Set<String> _removedTypes = new HashSet<>();  // Removed type FQCNs (Java + Gosu)
+  private Set<String> _localJavaTypes = new HashSet<>();  // Local Java type FQCNs for selective tracking
 
   @Override
   public File getDestinationDir() {
@@ -139,6 +140,14 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
 
   public void setRemovedTypes(Set<String> removedTypes) {
     _removedTypes = removedTypes;
+  }
+
+  public Set<String> getLocalJavaTypes() {
+    return _localJavaTypes;
+  }
+
+  public void setLocalJavaTypes(Set<String> localJavaTypes) {
+    _localJavaTypes = localJavaTypes != null ? localJavaTypes : new HashSet<>();
   }
 
 }

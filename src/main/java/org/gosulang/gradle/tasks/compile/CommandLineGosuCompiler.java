@@ -196,7 +196,15 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
             fileOutput.add(String.join(File.pathSeparator, removedTypes));
           }
         }
-        
+
+        // Pass local Java type FQCNs for selective dependency tracking
+        // This allows gosuc to distinguish same-module Java types from JRE/JAR types
+        Set<String> localJavaTypes = defaultSpec.getLocalJavaTypes();
+        if (!localJavaTypes.isEmpty()) {
+          fileOutput.add("-local-java-types");
+          fileOutput.add(String.join(File.pathSeparator, localJavaTypes));
+        }
+
         // Always add all source files for incremental mode
         // The gosuc compiler will determine what needs to be compiled
         for (File sourceFile : spec.getSource()) {

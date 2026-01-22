@@ -111,7 +111,10 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       spec.setIncremental(true);
     }
 
-
+    // Extract local Java type FQCNs for selective dependency tracking
+    // This allows gosuc to distinguish same-module Java types from JRE/JAR types
+    Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
+    spec.setLocalJavaTypes(localJavaTypes);
 
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
@@ -219,6 +222,53 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     }
   }
 
+
+  /**
+   * Extract all FQCNs from javaClassesDir for local Java type tracking.
+   * gosuc needs this to distinguish same-module Java types (track) from JRE/JAR types (skip).
+   *
+   * @return Set of FQCNs for all Java classes in the javaClassesDir
+   */
+  private Set<String> extractLocalJavaTypeFQCNs() {
+    Set<String> localTypes = new HashSet<>();
+
+    if (getJavaClassesDir() == null || getJavaClassesDir().isEmpty()) {
+      return localTypes;
+    }
+
+    File javaOutputDir = getJavaClassesDir().getSingleFile();
+    if (!javaOutputDir.exists() || !javaOutputDir.isDirectory()) {
+      return localTypes;
+    }
+
+    // Recursively scan for all .class files
+    scanForClassFiles(javaOutputDir, javaOutputDir, localTypes);
+
+    return localTypes;
+  }
+
+  /**
+   * Recursive helper to scan directory tree for .class files and extract their FQCNs.
+   *
+   * @param dir Current directory to scan
+   * @param rootDir Root directory for FQCN calculation
+   * @param fqcns Set to add discovered FQCNs to
+   */
+  private void scanForClassFiles(File dir, File rootDir, Set<String> fqcns) {
+    File[] files = dir.listFiles();
+    if (files == null) return;
+
+    for (File file : files) {
+      if (file.isDirectory()) {
+        scanForClassFiles(file, rootDir, fqcns);
+      } else if (file.getName().endsWith(".class")) {
+        String fqcn = extractFQCNFromClassFile(file, rootDir);
+        if (fqcn != null && !fqcn.contains("$")) {  // Skip inner classes
+          fqcns.add(fqcn);
+        }
+      }
+    }
+  }
 
   /**
    * {@inheritDoc}
