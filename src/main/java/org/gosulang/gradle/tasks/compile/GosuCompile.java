@@ -326,10 +326,40 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
   /**
    * We override in order to apply the {@link org.gradle.api.tasks.CompileClasspath}, in order to ignore changes in JAR'd resources.
+   * Also filters out javaClassesDir to prevent local .class file changes from triggering full rebuilds.
+   * <p>
+   * This filtering ONLY applies when incremental compilation is configured (i.e., when javaClassesDir is set).
+   * When javaClassesDir is not set, the classpath is returned unmodified for backwards compatibility.
    */
   @CompileClasspath
   public FileCollection getClasspath() {
-    return super.getClasspath();
+    FileCollection classpath = super.getClasspath();
+    // Defensively filter out javaClassesDir to ensure local .class files are only tracked
+    // via the @Incremental javaClassesDir input, not via this classpath input.
+    // This only happens when incremental compilation is configured (javaClassesDir != null).
+    if (classpath != null && getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+      classpath = classpath.minus(getJavaClassesDir());
+    }
+    return classpath;
+  }
+
+  /**
+   * Override setClasspath to defensively filter out javaClassesDir whenever the classpath is set.
+   * This ensures that even if gradle-plugins or other code explicitly sets a classpath that includes
+   * local .class files, they will be filtered out for Gradle's input tracking purposes.
+   * <p>
+   * This filtering ONLY applies when incremental compilation is configured (i.e., when javaClassesDir is set).
+   * When javaClassesDir is not set, the classpath is stored unmodified for backwards compatibility.
+   */
+  @Override
+  public void setClasspath(FileCollection configuration) {
+    // Filter out javaClassesDir before storing the classpath.
+    // This only happens when incremental compilation is configured (javaClassesDir != null).
+    FileCollection filteredClasspath = configuration;
+    if (configuration != null && getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+      filteredClasspath = configuration.minus(getJavaClassesDir());
+    }
+    super.setClasspath(filteredClasspath);
   }
 
   /**
@@ -422,6 +452,13 @@ public FileCollection getSourceRoots() {
       effectiveClasspath = getClasspath();
     } else {
       effectiveClasspath = _orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
+    }
+
+    // Defensively subtract javaClassesDir from the classpath before adding it back
+    // This ensures local .class files are only tracked via the @Incremental javaClassesDir input,
+    // not via the classpath input (which would trigger full rebuilds on any change)
+    if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+      effectiveClasspath = effectiveClasspath.minus(getJavaClassesDir());
     }
 
     // Add Java classes directory to the BEGINNING of the classpath for compiler execution

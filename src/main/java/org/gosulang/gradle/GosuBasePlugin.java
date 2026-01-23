@@ -9,6 +9,7 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 import org.gradle.api.model.ObjectFactory;
@@ -115,7 +116,21 @@ public class GosuBasePlugin implements Plugin<Project> {
       // Note: Java classes directory is NOT included in classpath here to avoid triggering full rebuilds
       // It's tracked separately via javaClassesDir property (with @Incremental) for selective recompilation
       // The combined classpath (including Java classes) is assembled in GosuCompile.createSpec()
-      t.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath());
+      t.getConventionMapping().map("classpath", () -> {
+        FileCollection compileClasspath = sourceSet.getCompileClasspath();
+        FileCollection javaClassesOutput = target.files(sourceSet.getJava().getDestinationDirectory());
+        // Defensively subtract Java classes directory from classpath to prevent full rebuilds
+        // when local .class files change. These are tracked separately via javaClassesDir
+        // input property (with @Incremental) for fine-grained dependency tracking.
+        // Only filter if the task is GosuCompile and has javaClassesDir configured.
+        if (t instanceof GosuCompile) {
+          GosuCompile gosuCompileTask = (GosuCompile) t;
+          if (gosuCompileTask.getJavaClassesDir() != null && !gosuCompileTask.getJavaClassesDir().isEmpty()) {
+            return compileClasspath.minus(javaClassesOutput);
+          }
+        }
+        return compileClasspath;
+      });
     });
     configureOutputDirectoryForSourceSet(sourceSet, sourceDirectorySet, target, compile);
   }
