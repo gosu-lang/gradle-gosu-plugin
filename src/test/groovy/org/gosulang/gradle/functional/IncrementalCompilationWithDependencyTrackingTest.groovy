@@ -262,11 +262,14 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         and: 'Dependency file has correct JSON format with FQCNs'
         String actualJson = dependencyFile.text
 
-        // The exact format we expect (only meaningful type dependencies, common types filtered out)
+        // The exact format we expect (all types are registered, even with empty arrays)
         // Common types like java.lang.Object, java.lang.String, etc. are omitted as noise
+        // Note: All compiled types are registered to ensure proper tracking
         String expectedJson = """{
   "version": "1.0",
   "consumers": {
+    "com.example.Consumer1": [],
+    "com.example.Consumer2": [],
     "com.example.Producer": [
       "com.example.Consumer1",
       "com.example.Consumer2"

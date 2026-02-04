@@ -97,9 +97,11 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
 
         // Expected: Consumer.gs depends on LibraryClass from the JAR
         // This dependency tracking enables selective recompilation when JARs change
+        // Note: All compiled types are registered (even with empty arrays)
         String expectedJson = """{
   "version": "1.0",
   "consumers": {
+    "com.example.Consumer": [],
     "com.example.LibraryClass": [
       "com.example.Consumer"
     ]
