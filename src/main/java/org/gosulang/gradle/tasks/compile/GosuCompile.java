@@ -1,6 +1,7 @@
 package org.gosulang.gradle.tasks.compile;
 
 import groovy.lang.Closure;
+import org.gosulang.gradle.tasks.GosuSourceExtensions;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
@@ -70,7 +71,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       // Extract FQCNs from changed Gosu source files
       for (FileChange change : inputChanges.getFileChanges(getStableSources())) {
         File file = change.getFile();
-        if (file.getName().endsWith(".gs") || file.getName().endsWith(".gsx")) {
+        if (GosuSourceExtensions.isGosuSourceFile(file.getName())) {
           String fqcn = extractFQCNFromSourceFile(file);
           if (fqcn != null) {
             if (change.getChangeType() == ChangeType.REMOVED) {
@@ -123,7 +124,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   /**
    * Extracts the fully-qualified class name from a Gosu source file by finding its source root.
    *
-   * @param sourceFile the .gs or .gsx file
+   * @param sourceFile a Gosu source file (any extension in {@link GosuSourceExtensions#ALL_EXTS})
    * @return the FQCN (e.g., "com.example.MyClass") or null if extraction fails
    */
   private String extractFQCNFromSourceFile(File sourceFile) {
@@ -134,21 +135,14 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
         java.nio.file.Path rootPath = sourceRoot.toPath();
         java.nio.file.Path filePath = sourceFile.toPath();
 
-        // Get relative path from root
-        java.nio.file.Path relativePath = rootPath.relativize(filePath);
-
-        // Convert: com/example/MyClass.gs -> com.example.MyClass
-        String fqcn = relativePath.toString()
+        // Get relative path from root and convert separators to dots
+        // e.g. com/example/MyClass.gs -> com.example.MyClass
+        // or rules/EventMessage/MyRule.gr -> rules.EventMessage.MyRule.gr
+        String fqcn = rootPath.relativize(filePath).toString()
           .replace(File.separator, ".");
 
-        // Remove extension (.gs or .gsx)
-        if (fqcn.endsWith(".gs")) {
-          fqcn = fqcn.substring(0, fqcn.length() - 3);
-        } else if (fqcn.endsWith(".gsx")) {
-          fqcn = fqcn.substring(0, fqcn.length() - 4);
-        }
-
-        return fqcn;
+        // Strip Gosu extension to get the bare FQCN
+        return GosuSourceExtensions.stripExtension(fqcn);
       }
     }
 
