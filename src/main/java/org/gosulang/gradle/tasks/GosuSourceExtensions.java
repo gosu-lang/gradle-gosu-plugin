@@ -1,5 +1,8 @@
 package org.gosulang.gradle.tasks;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 /**
  * Canonical list of Gosu source file extensions for use within the Gradle plugin.
  *
@@ -11,7 +14,7 @@ package org.gosulang.gradle.tasks;
 public final class GosuSourceExtensions {
 
   /** All Gosu source file extensions. Mirrors {@code GosuClassTypeLoader.ALL_EXTS}. */
-  public static final String[] ALL_EXTS = { ".gs", ".gsx", ".gst", ".gsp", ".gr", ".grs" };
+  private static final HashSet<String> ALL_EXTS = new HashSet<>(Arrays.asList(".gs", ".gsx", ".gst", ".gsp", ".gr", ".grs"));
 
   private GosuSourceExtensions() {}
 
@@ -21,12 +24,8 @@ public final class GosuSourceExtensions {
    * @return {@code true} if the given filename ends with any Gosu source extension.
    * */
   public static boolean isGosuSourceFile( String filename ) {
-    for( String ext : ALL_EXTS ) {
-      if( filename.endsWith( ext ) ) {
-        return true;
-      }
-    }
-    return false;
+    int dot = filename.lastIndexOf('.');
+    return dot != -1 && ALL_EXTS.contains(filename.substring(dot));
   }
 
   /**
@@ -36,10 +35,9 @@ public final class GosuSourceExtensions {
    * @return the input less its Gosu file extension; otherwise return input unchanged if it does not end with a known Gosu extension.
    */
   public static String stripExtension( String fqcnWithExtension ) {
-    for( String ext : ALL_EXTS ) {
-      if( fqcnWithExtension.endsWith( ext ) ) {
-        return fqcnWithExtension.substring( 0, fqcnWithExtension.length() - ext.length() );
-      }
+    int dot = fqcnWithExtension.lastIndexOf('.');
+    if (dot != -1 && ALL_EXTS.contains(fqcnWithExtension.substring(dot))) {
+      return fqcnWithExtension.substring(0, dot);
     }
     return fqcnWithExtension;
   }
