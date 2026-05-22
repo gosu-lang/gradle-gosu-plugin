@@ -77,8 +77,6 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
             if (change.getChangeType() == ChangeType.REMOVED) {
               removedTypes.add(fqcn);
               getLogger().info("Gosu type removed: {}", fqcn);
-              // Delete stale .class file(s) to prevent them from lingering in the output directory
-              deleteClassFiles(fqcn, getDestinationDirectory().get().getAsFile());
             } else {
               changedTypes.add(fqcn);
               getLogger().info("Gosu type changed: {}", fqcn);
@@ -94,7 +92,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
           File classFile = change.getFile();
           if (classFile.getName().endsWith(".class")) {
             String fqcn = extractFQCNFromClassFile(classFile, getJavaClassesDir().getSingleFile());
-            if (fqcn != null && !fqcn.contains("$")) { // Skip inner classes
+            if (fqcn != null) {
               if (change.getChangeType() == ChangeType.REMOVED) {
                 removedTypes.add(fqcn);
                 getLogger().info("Java type removed: {}", fqcn);
@@ -170,52 +168,13 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
 
     // Convert: com/example/MyClass.class -> com.example.MyClass
     String fqcn = relativePath.toString()
-      .replace(File.separator, ".")
-      .replace(".class", "");
-
+            .replace(File.separator, ".")
+            .replace('$', '.');
+    if (fqcn.endsWith(".class")) {
+      fqcn = fqcn.substring(0, fqcn.length() - ".class".length());
+    }
     return fqcn.isEmpty() ? null : fqcn;
   }
-
-  /**
-   * Deletes the .class file(s) for a removed Gosu type, including any inner/anonymous classes.
-   * This ensures stale class files don't remain in the output directory when source files are deleted.
-   *
-   * @param fqcn the fully-qualified class name (e.g., "com.example.MyClass")
-   * @param outputDir the Gosu output directory (e.g., build/classes/gosu/main)
-   */
-  private void deleteClassFiles(String fqcn, File outputDir) {
-    // Convert FQCN to file path: com.example.Foo -> com/example/Foo.class
-    String relativePath = fqcn.replace('.', File.separatorChar);
-    File mainClassFile = new File(outputDir, relativePath + ".class");
-
-    // Delete main class file
-    if (mainClassFile.exists()) {
-      if (mainClassFile.delete()) {
-        getLogger().info("Deleted stale class file: {}", mainClassFile);
-      } else {
-        getLogger().warn("Failed to delete class file: {}", mainClassFile);
-      }
-    }
-
-    // Delete inner/anonymous classes (Foo$*.class)
-    File parentDir = mainClassFile.getParentFile();
-    if (parentDir != null && parentDir.exists()) {
-      String className = mainClassFile.getName().replace(".class", "");
-      File[] innerClasses = parentDir.listFiles((dir, name) ->
-        name.startsWith(className + "$") && name.endsWith(".class")
-      );
-      if (innerClasses != null) {
-        for (File innerClass : innerClasses) {
-          if (innerClass.delete()) {
-            getLogger().info("Deleted stale inner class file: {}", innerClass);
-          } else {
-            getLogger().warn("Failed to delete inner class file: {}", innerClass);
-          }
-        }
-      }
-    }
-  }
-
 
   /**
    * Extract all FQCNs from javaClassesDir for local Java type tracking.
@@ -257,7 +216,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
         scanForClassFiles(file, rootDir, fqcns);
       } else if (file.getName().endsWith(".class")) {
         String fqcn = extractFQCNFromClassFile(file, rootDir);
-        if (fqcn != null && !fqcn.contains("$")) {  // Skip inner classes
+        if (fqcn != null) {
           fqcns.add(fqcn);
         }
       }

@@ -1,11 +1,11 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gradle.api.tasks.Console;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.compile.AbstractOptions;
 import org.gradle.api.tasks.compile.BaseForkOptions;
+
+import javax.annotation.Nullable;
 
 public class GosuCompileOptions extends AbstractOptions {
 
@@ -151,6 +151,8 @@ public class GosuCompileOptions extends AbstractOptions {
    */
   @Input
   @Optional
+  //  TODO: This should be only Optional, see all details and changes needed in docs/dependency-file-caching.md
+  // Consider removing this as we don't want to expose it as an option to the user to set.
   public String getDependencyFile() {
     return dependencyFile;
   }
@@ -165,5 +167,22 @@ public class GosuCompileOptions extends AbstractOptions {
   public void setDependencyFile(String dependencyFile) {
     this.dependencyFile = dependencyFile;
   }
-  
+
+  // Annotation processors are not run by gosuc; they execute during compileJava
+  // and their generated .class files reach this task via javaClassesDir.
+
+// TODO Should we return null here or just don't override?
+//    /**
+//     * Returns the classpath to use to load annotation processors. This path is also used for annotation processor discovery.
+//     *
+//     * @return The annotation processor path, or {@code null} if annotation processing is disabled.
+//     * @since 3.4
+//     */
+//  @Nullable
+//  @Optional
+//  @Classpath
+//  public FileCollection getAnnotationProcessorPath() {
+//    return annotationProcessorPath;
+//  }
+
 }

@@ -10,9 +10,28 @@ import java.util.jar.JarOutputStream
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 /**
- * Tests JAR dependency tracking with ABI-level change detection.
- * Gradle uses @CompileClasspath which detects ABI changes in JARs (not implementation changes).
- * The dependency graph tracks which Gosu types use which JAR classes for selective recompilation.
+ * Tests how the Gosu plugin reacts to ABI changes in an external JAR.
+ *
+ * Two-layer model used by this plugin for "did some dependency change?":
+ *
+ *   1. Within-project Java types (in this task's javaClassesDir output)
+ *      are tracked in the dep graph. A change there propagates to Gosu
+ *      consumers via the gosuc BFS, recompiling only the affected sources.
+ *
+ *   2. External JAR / cross-subproject classes are NOT tracked in the dep
+ *      graph. They live in compileClasspath, which the plugin annotates
+ *      @CompileClasspath (ABI-sensitive, not @Incremental). When the
+ *      classpath's ABI fingerprint changes, Gradle marks the whole
+ *      compileGosu task as non-incremental and the plugin sets
+ *      spec.setFullRebuildRequired(true). Every Gosu source is recompiled,
+ *      regardless of whether it actually used anything from the JAR.
+ *
+ * This split is intentional: tracking external-JAR types in the dep graph
+ * would be dead weight (the FQCNs from a JAR never appear in changedTypes
+ * because changedTypes is sourced from javaClassesDir only), so the BFS
+ * could never query those edges. The two-layer split also matches what
+ * Gradle's Java incremental compiler does -- per-class dep tracking
+ * within a subproject, ABI fingerprinting across subprojects.
  */
 @Unroll
 class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
@@ -33,7 +52,7 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         dependencyFile = new File(testProjectDir.root, 'build/tmp/gosuc-deps-compileGosu.json')
     }
 
-    def 'JAR ABI changes trigger selective recompilation based on dependency graph [Gradle #gradleVersion]'() {
+    def 'JAR ABI change triggers full compileGosu rebuild via @CompileClasspath, not dep-graph cascade [Gradle #gradleVersion]'() {
         given: 'A build script with a file dependency on a JAR'
         buildScript << """
             plugins {
@@ -66,7 +85,7 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
             }
         ''')
 
-        and: 'A Gosu class that uses the JAR class'
+        and: 'A Gosu class that uses the JAR class, plus a second unrelated Gosu class'
         gosuClass << '''
             package com.example
 
@@ -79,12 +98,30 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
             }
         '''
 
+        // Unrelated has no reference to LibraryClass or to the JAR at all.
+        // Under a hypothetical "selective recompile via dep graph" model it
+        // would NOT be touched by a JAR ABI change. Under the real model
+        // (full task rebuild driven by @CompileClasspath fingerprint change)
+        // it IS recompiled alongside Consumer -- this test pins that
+        // behavior so the two-layer model stays explicit.
+        File unrelatedClass = new File(srcMainGosu, 'com/example/Unrelated.gs')
+        unrelatedClass << '''
+            package com.example
+
+            class Unrelated {
+                static function id() : String {
+                    return "unrelated"
+                }
+            }
+        '''
+
         when: 'Initial build'
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath()
                 .withArguments('clean', 'compileGosu', '-i')
                 .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
 
@@ -92,29 +129,37 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         result.task(':compileGosu').outcome == SUCCESS
         dependencyFile.exists()
 
-        and: 'Dependency file tracks JAR class usage (enables selective recompilation)'
+        and: 'Dependency file omits external JAR types (the dep graph only tracks project-local Java types)'
         String actualJson = dependencyFile.text
 
-        // Expected: Consumer.gs depends on LibraryClass from the JAR
-        // This dependency tracking enables selective recompilation when JARs change
-        // Note: All compiled types are registered (even with empty arrays)
+        // The dep graph records edges only between Gosu types and Java types
+        // that live in this project's javaClassesDir. com.example.LibraryClass
+        // is from an external JAR (lib/my-library.jar), so it does NOT appear
+        // as a producer here. IncrementalCompilationManager.shouldTrackJavaType
+        // filters such types out -- recording them would be dead weight because
+        // their FQCNs never enter changedTypes (the plugin sources changedTypes
+        // from javaClassesDir only).
+        //
+        // Both Gosu types ARE present in the dep graph (registered via
+        // ensureTypeRegistered during their own compile), each with an empty
+        // consumer list because nothing local depends on them.
         String expectedJson = """{
   "version": "1.0",
   "consumers": {
     "com.example.Consumer": [],
-    "com.example.LibraryClass": [
-      "com.example.Consumer"
-    ]
+    "com.example.Unrelated": []
   }
 }"""
 
         actualJson == expectedJson
 
-        when: 'Capture timestamps'
+        when: 'Capture timestamps for both Gosu outputs'
         File consumerClassFile = new File(testProjectDir.root, 'build/classes/gosu/main/com/example/Consumer.class')
+        File unrelatedClassFile = new File(testProjectDir.root, 'build/classes/gosu/main/com/example/Unrelated.class')
         long consumerTimeBefore = consumerClassFile.lastModified()
+        long unrelatedTimeBefore = unrelatedClassFile.lastModified()
 
-        // Wait to ensure file timestamp will differ
+        // Wait to ensure file timestamps will differ
         Thread.sleep(1000)
 
         and: 'Replace the JAR with a modified version (ABI change: add new method)'
@@ -134,11 +179,22 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         runner.withArguments('compileGosu', '-i')
         result = runner.build()
 
-        then: 'compileGosu detects the JAR change and rebuilds'
+        then: 'compileGosu re-executes and succeeds'
         result.task(':compileGosu').outcome == SUCCESS
 
-        and: 'The Gosu class was recompiled'
+        and: 'Consumer was recompiled (it references the changed JAR class)'
         consumerClassFile.lastModified() > consumerTimeBefore
+
+        and: 'Unrelated was ALSO recompiled, even though it has no JAR reference -- the cross-classpath path is full task rebuild, not selective cascade'
+        // This is the deliberate consequence of the @CompileClasspath +
+        // not-@Incremental annotation on getClasspath(): when the JAR ABI
+        // fingerprint changes, Gradle marks the whole task non-incremental,
+        // the plugin calls setFullRebuildRequired(true), and every Gosu
+        // source is recompiled. If anyone in the future tries to make this
+        // selective via the dep graph for external JAR types, this
+        // assertion will fail and the failure should be a deliberate
+        // architectural decision, not an accidental one.
+        unrelatedClassFile.lastModified() > unrelatedTimeBefore
 
         where:
         gradleVersion << gradleVersionsToTest

@@ -182,6 +182,780 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
+    def 'Transitive dependency chain does not stop after one hop [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        // Chain: ClassA <- ClassB <- ClassC, every edge on the public API
+        File classA = new File(srcMainGosu, 'ClassA.gs')
+        File classB = new File(srcMainGosu, 'ClassB.gs')
+        File classC = new File(srcMainGosu, 'ClassC.gs')
+
+        classA << """
+            class ClassA {
+                static function value() : int {
+                    return 1
+                }
+            }
+            """
+
+        classB << """
+            class ClassB {
+                // ClassB re-exposes ClassA's value on its public API
+                static function transitive() : int {
+                    return ClassA.value() + 10
+                }
+            }
+            """
+
+        classC << """
+            class ClassC {
+                static function entry() : int {
+                    return ClassB.transitive() + 100
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'ClassA.class').exists()
+        new File(buildOutput, 'ClassB.class').exists()
+        new File(buildOutput, 'ClassC.class').exists()
+
+        when: 'Modify ClassA (head of the chain)'
+        long classATime = new File(buildOutput, 'ClassA.class').lastModified()
+        long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
+        long classCTime = new File(buildOutput, 'ClassC.class').lastModified()
+        Thread.sleep(1100)
+
+        classA.setText('') // truncate
+        classA << """
+            class ClassA {
+                static function value() : int {
+                    return 2  // changed
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'ClassA is recompiled'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'ClassA.class').lastModified() > classATime
+
+        and: 'ClassB is recompiled (direct consumer of ClassA)'
+        new File(buildOutput, 'ClassB.class').lastModified() > classBTime
+
+        and: 'ClassC is recompiled, as it transitively depends on ClassA'
+        new File(buildOutput, 'ClassC.class').lastModified() > classCTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Annotation reference on class header is tracked as a dependency [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        // Java annotation type co-located with the Gosu consumer
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File annoFile = new File(srcMainJavaPkg, 'MyAnno.java')
+        annoFile << """
+            package com.example;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            public @interface MyAnno {
+                String tag() default "v1";
+            }
+            """
+
+        // Gosu class annotated with @com.example.MyAnno - note: no `uses` import,
+        // so the annotation type appears ONLY inside an annotation expression.
+        File consumerFile = new File(srcMainGosu, 'Consumer.gs')
+        consumerFile << """
+            @com.example.MyAnno("v1")
+            class Consumer {
+                static function id() : String {
+                    return "consumer"
+                }
+            }
+            """
+
+        when: 'Initial compilation (compileJava + compileGosu)'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/MyAnno.class').exists()
+        new File(gosuOutput, 'Consumer.class').exists()
+
+        when: 'Modify the annotation type - add a new attribute (ABI change)'
+        long annoTime = new File(javaOutput, 'com/example/MyAnno.class').lastModified()
+        long consumerTime = new File(gosuOutput, 'Consumer.class').lastModified()
+        Thread.sleep(1100)
+
+        annoFile.setText('')
+        annoFile << """
+            package com.example;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            public @interface MyAnno {
+                String tag() default "v1";
+                String extra() default "added";   // new attribute - ABI change
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'MyAnno was recompiled by javac'
+        new File(javaOutput, 'com/example/MyAnno.class').lastModified() > annoTime
+
+        and: 'Consumer is recompiled as it carries @com.example.MyAnno'
+        new File(gosuOutput, 'Consumer.class').lastModified() > consumerTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Nested Java annotation type change is detected by javaClassesDir tracking [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        // Java file containing a top-level class AND a nested annotation
+        // type. Compilation produces TWO .class files:
+        //   build/classes/java/main/com/example/Outer.class
+        //   build/classes/java/main/com/example/Outer\$NestedAnno.class
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File outerFile = new File(srcMainJavaPkg, 'Outer.java')
+        outerFile << """
+            package com.example;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            public class Outer {
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target(ElementType.TYPE)
+                public @interface NestedAnno {
+                    String tag() default "v1";
+                }
+            }
+            """
+
+        File consumerFile = new File(srcMainGosu, 'Consumer.gs')
+        consumerFile << """
+            @com.example.Outer.NestedAnno("v1")
+            class Consumer {
+                static function id() : String {
+                    return "consumer"
+                }
+            }
+            """
+
+        when: 'Initial compilation (compileJava emits both Outer and Outer\$NestedAnno)'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then: 'Both class files exist after the first compile'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').exists()
+        new File(javaOutput, 'com/example/Outer$NestedAnno.class').exists()
+        new File(gosuOutput, 'Consumer.class').exists()
+
+        when: 'Modify the nested annotation - add a new attribute (ABI change)'
+        // Editing the nested annotation rewrites BOTH Outer.class and
+        // Outer$NestedAnno.class because javac recompiles the whole .java unit.
+        long outerTime = new File(javaOutput, 'com/example/Outer.class').lastModified()
+        long nestedAnnoTime = new File(javaOutput, 'com/example/Outer$NestedAnno.class').lastModified()
+        long consumerTime = new File(gosuOutput, 'Consumer.class').lastModified()
+        Thread.sleep(1100)
+
+        outerFile.setText('')
+        outerFile << """
+            package com.example;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            public class Outer {
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target(ElementType.TYPE)
+                public @interface NestedAnno {
+                    String tag() default "v1";
+                    String extra() default "added";   // new attribute - ABI change
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'javac re-emits BOTH Outer.class and Outer\$NestedAnno.class'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').lastModified() > outerTime
+        new File(javaOutput, 'com/example/Outer$NestedAnno.class').lastModified() > nestedAnnoTime
+
+        and: 'Consumer is recompiled as it carries @Outer.NestedAnno'
+        new File(gosuOutput, 'Consumer.class').lastModified() > consumerTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Nested Java class change is detected by javaClassesDir tracking [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File outerFile = new File(srcMainJavaPkg, 'Outer.java')
+        outerFile << """
+            package com.example;
+
+            public class Outer {
+                public static class Inner {
+                    public static String tag() {
+                        return "v1";
+                    }
+                }
+            }
+            """
+
+        File consumerFile = new File(srcMainGosu, 'Consumer.gs')
+        consumerFile << """
+            uses com.example.Outer.Inner
+
+            class Consumer {
+                static function id() : String {
+                    return Inner.tag()
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then: 'Both class files exist after the first compile'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').exists()
+        new File(javaOutput, 'com/example/Outer$Inner.class').exists()
+        new File(gosuOutput, 'Consumer.class').exists()
+
+        when: 'Modify the nested class - new public method (ABI change)'
+        long outerTime = new File(javaOutput, 'com/example/Outer.class').lastModified()
+        long innerTime = new File(javaOutput, 'com/example/Outer$Inner.class').lastModified()
+        long consumerTime = new File(gosuOutput, 'Consumer.class').lastModified()
+        Thread.sleep(1100)
+
+        outerFile.setText('')
+        outerFile << """
+            package com.example;
+
+            public class Outer {
+                public static class Inner {
+                    public static String tag() {
+                        return "v2";
+                    }
+                    public static int newApi() {     // new public method - ABI change
+                        return 42;
+                    }
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'javac re-emits BOTH Outer.class and Outer\$Inner.class'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').lastModified() > outerTime
+        new File(javaOutput, 'com/example/Outer$Inner.class').lastModified() > innerTime
+
+        and: 'Consumer is recompiled as it uses Outer.Inner.tag()'
+        new File(gosuOutput, 'Consumer.class').lastModified() > consumerTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Nested Java class change must not recompile unrelated Gosu sources [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File outerFile = new File(srcMainJavaPkg, 'Outer.java')
+        outerFile << """
+            package com.example;
+
+            public class Outer {
+                public static class Inner {
+                    public static String tag() {
+                        return "v1";
+                    }
+                }
+            }
+            """
+
+        File referringConsumer = new File(srcMainGosu, 'ReferringConsumer.gs')
+        referringConsumer << """
+            uses com.example.Outer.Inner
+
+            class ReferringConsumer {
+                static function id() : String {
+                    return Inner.tag()
+                }
+            }
+            """
+
+        // UnrelatedConsumer does NOT reference Outer or Outer.Inner.
+        // With a correct dep graph its .class file should remain untouched
+        // when Outer.Inner changes.
+        File unrelatedConsumer = new File(srcMainGosu, 'UnrelatedConsumer.gs')
+        unrelatedConsumer << """
+            class UnrelatedConsumer {
+                static function id() : String {
+                    return "unrelated"
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then: 'All class files exist after the first compile'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').exists()
+        new File(javaOutput, 'com/example/Outer$Inner.class').exists()
+        new File(gosuOutput, 'ReferringConsumer.class').exists()
+        new File(gosuOutput, 'UnrelatedConsumer.class').exists()
+
+        when: 'Modify the nested class - new public method (ABI change)'
+        long referringTime = new File(gosuOutput, 'ReferringConsumer.class').lastModified()
+        long unrelatedTime = new File(gosuOutput, 'UnrelatedConsumer.class').lastModified()
+        Thread.sleep(1100)
+
+        outerFile.setText('')
+        outerFile << """
+            package com.example;
+
+            public class Outer {
+                public static class Inner {
+                    public static String tag() {
+                        return "v2";
+                    }
+                    public static int newApi() {
+                        return 42;
+                    }
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'ReferringConsumer IS recompiled'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(gosuOutput, 'ReferringConsumer.class').lastModified() > referringTime
+
+        and: 'UnrelatedConsumer should not br recompiled, as it has no edge to Outer.Inner'
+        new File(gosuOutput, 'UnrelatedConsumer.class').lastModified() == unrelatedTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Nested Java annotation type change must not recompile unrelated Gosu sources [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File outerFile = new File(srcMainJavaPkg, 'Outer.java')
+        outerFile << """
+            package com.example;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            public class Outer {
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target(ElementType.TYPE)
+                public @interface NestedAnno {
+                    String tag() default "v1";
+                }
+            }
+            """
+
+        File annotatedConsumer = new File(srcMainGosu, 'AnnotatedConsumer.gs')
+        annotatedConsumer << """
+            @com.example.Outer.NestedAnno("v1")
+            class AnnotatedConsumer {
+                static function id() : String {
+                    return "annotated"
+                }
+            }
+            """
+
+        File unrelatedConsumer = new File(srcMainGosu, 'UnrelatedConsumer.gs')
+        unrelatedConsumer << """
+            class UnrelatedConsumer {
+                static function id() : String {
+                    return "unrelated"
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').exists()
+        new File(javaOutput, 'com/example/Outer$NestedAnno.class').exists()
+        new File(gosuOutput, 'AnnotatedConsumer.class').exists()
+        new File(gosuOutput, 'UnrelatedConsumer.class').exists()
+
+        when: 'Modify the nested annotation - add a new attribute (ABI change)'
+        long annotatedTime = new File(gosuOutput, 'AnnotatedConsumer.class').lastModified()
+        long unrelatedTime = new File(gosuOutput, 'UnrelatedConsumer.class').lastModified()
+        Thread.sleep(1100)
+
+        outerFile.setText('')
+        outerFile << """
+            package com.example;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            public class Outer {
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target(ElementType.TYPE)
+                public @interface NestedAnno {
+                    String tag() default "v1";
+                    String extra() default "added";
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'AnnotatedConsumer IS recompiled (correct outcome, exercised today via fallback)'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(gosuOutput, 'AnnotatedConsumer.class').lastModified() > annotatedTime
+
+        and: 'UnrelatedConsumer is not recompiled'
+        new File(gosuOutput, 'UnrelatedConsumer.class').lastModified() == unrelatedTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Top-level Java type change does not over-recompile unrelated Gosu sources [Gradle #gradleVersion]'() {
+        given:
+        buildScript << """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File targetFile = new File(srcMainJavaPkg, 'Target.java')
+        targetFile << """
+            package com.example;
+
+            public class Target {
+                public static String tag() {
+                    return "v1";
+                }
+            }
+            """
+
+        File referringConsumer = new File(srcMainGosu, 'ReferringConsumer.gs')
+        referringConsumer << """
+            uses com.example.Target
+
+            class ReferringConsumer {
+                static function id() : String {
+                    return Target.tag()
+                }
+            }
+            """
+
+        File unrelatedConsumer = new File(srcMainGosu, 'UnrelatedConsumer.gs')
+        unrelatedConsumer << """
+            class UnrelatedConsumer {
+                static function id() : String {
+                    return "unrelated"
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(gosuOutput, 'ReferringConsumer.class').exists()
+        new File(gosuOutput, 'UnrelatedConsumer.class').exists()
+
+        when: 'Modify the target Java type - new public method (ABI change)'
+        long referringTime = new File(gosuOutput, 'ReferringConsumer.class').lastModified()
+        long unrelatedTime = new File(gosuOutput, 'UnrelatedConsumer.class').lastModified()
+        Thread.sleep(1100)
+
+        targetFile.setText('')
+        targetFile << """
+            package com.example;
+
+            public class Target {
+                public static String tag() {
+                    return "v2";
+                }
+                public static int newApi() {
+                    return 42;
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'ReferringConsumer IS recompiled'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(gosuOutput, 'ReferringConsumer.class').lastModified() > referringTime
+
+        and: 'UnrelatedConsumer is NOT recompiled - dep graph correctly excludes it'
+        new File(gosuOutput, 'UnrelatedConsumer.class').lastModified() == unrelatedTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
     def 'Dependency file format uses FQCNs not file paths [Gradle #gradleVersion]'() {
         given: 'A build script with incremental compilation enabled'
         buildScript << """
