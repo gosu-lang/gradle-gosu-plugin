@@ -22,8 +22,7 @@ import org.gradle.work.ChangeType;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -85,13 +84,20 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
         }
       }
 
-      // Extract FQCNs from changed Java class files (if configured)
-      // This provides fine-grained tracking for project Java sources (not JARs)
+      // Extract FQCNs from changed Java class files (if configured).
+      // This provides fine-grained tracking for project Java sources (not JARs).
+      //
+      // Note: editing a single Java source can produce multiple FileChange
+      // events. Modifying a nested class inside Outer.java rewrites both
+      // Outer.class and Outer$Inner.class, each surfaced as its own change
+      // here. Each maps to a distinct FQCN ("com.example.Outer" and
+      // "com.example.Outer.Inner") and ends up in changedTypes.
       if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+        File javaClassesRoot = getJavaClassesDir().getSingleFile();
         for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
           File classFile = change.getFile();
           if (classFile.getName().endsWith(".class")) {
-            String fqcn = extractFQCNFromClassFile(classFile, getJavaClassesDir().getSingleFile());
+            String fqcn = extractFQCNFromClassFile(classFile, javaClassesRoot);
             if (fqcn != null) {
               if (change.getChangeType() == ChangeType.REMOVED) {
                 removedTypes.add(fqcn);
@@ -122,21 +128,24 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   /**
    * Extracts the fully-qualified class name from a Gosu source file by finding its source root.
    *
+   * <p>Uses {@link Path#startsWith(Path)} on normalised absolute paths so the under-root check
+   * is path-component-aware (not a brittle string-prefix match -- a sibling directory like
+   * {@code .../main2/} would not be misidentified as living under {@code .../main/}).
+   *
    * @param sourceFile a Gosu source file (any extension in {@link GosuSourceExtensions#ALL_EXTS})
    * @return the FQCN (e.g., "com.example.MyClass") or null if extraction fails
    */
   private String extractFQCNFromSourceFile(File sourceFile) {
+    Path sourcePath = sourceFile.toPath().toAbsolutePath().normalize();
     FileCollection sourceRoots = getSourceRoots();
 
     for (File sourceRoot : sourceRoots.getFiles()) {
-      if (sourceFile.getAbsolutePath().startsWith(sourceRoot.getAbsolutePath())) {
-        java.nio.file.Path rootPath = sourceRoot.toPath();
-        java.nio.file.Path filePath = sourceFile.toPath();
-
+      Path rootPath = sourceRoot.toPath().toAbsolutePath().normalize();
+      if (sourcePath.startsWith(rootPath)) {
         // Get relative path from root and convert separators to dots
         // e.g. com/example/MyClass.gs -> com.example.MyClass
         // or rules/EventMessage/MyRule.gr -> rules.EventMessage.MyRule.gr
-        String fqcn = rootPath.relativize(filePath).toString()
+        String fqcn = rootPath.relativize(sourcePath).toString()
           .replace(File.separator, ".");
 
         // Strip Gosu extension to get the bare FQCN
@@ -150,29 +159,39 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   /**
-   * Extracts the fully-qualified class name from a Java .class file by computing
+   * Extracts the fully-qualified class name from a Java {@code .class} file by computing
    * its path relative to the Java classes directory.
+   *
+   * <p>Uses {@link Path#startsWith(Path)} on normalised absolute paths (component-aware,
+   * not string-prefix), strips the {@code .class} suffix explicitly via {@code endsWith}
+   * + {@code substring} (safer than {@code String.replace(".class", "")} which is global
+   * and could mangle a path that contains {@code .class} as a substring elsewhere),
+   * and converts {@code '$'} -&gt; {@code '.'} so nested-class FQCNs match the dot form
+   * returned by {@code IJavaType.getName()}.
    *
    * @param classFile the .class file
    * @param javaClassesRoot the root directory (e.g., build/classes/java/main)
-   * @return the FQCN (e.g., "com.example.MyClass") or null if extraction fails
+   * @return the FQCN (e.g., "com.example.MyClass" or "com.example.Outer.Inner") or null
+   *         if extraction fails
    */
   private String extractFQCNFromClassFile(File classFile, File javaClassesRoot) {
-    if (!classFile.getAbsolutePath().startsWith(javaClassesRoot.getAbsolutePath())) {
+    Path rootPath = javaClassesRoot.toPath().toAbsolutePath().normalize();
+    Path classFilePath = classFile.toPath().toAbsolutePath().normalize();
+    if (!classFilePath.startsWith(rootPath)) {
       return null;
     }
 
-    java.nio.file.Path rootPath = javaClassesRoot.toPath();
-    java.nio.file.Path filePath = classFile.toPath();
-    java.nio.file.Path relativePath = rootPath.relativize(filePath);
-
-    // Convert: com/example/MyClass.class -> com.example.MyClass
-    String fqcn = relativePath.toString()
+    String relativePath = rootPath.relativize(classFilePath).toString();
+    if (!relativePath.endsWith(".class")) {
+      return null;
+    }
+    // Strip the .class suffix first (off the still-unmangled string), then
+    // replace separators and '$' so the suffix-strip can't be confused by a
+    // class name that happens to contain ".class" as a substring after
+    // $-replacement.
+    String fqcn = relativePath.substring(0, relativePath.length() - ".class".length())
             .replace(File.separator, ".")
             .replace('$', '.');
-    if (fqcn.endsWith(".class")) {
-      fqcn = fqcn.substring(0, fqcn.length() - ".class".length());
-    }
     return fqcn.isEmpty() ? null : fqcn;
   }
 
@@ -201,15 +220,21 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
   }
 
   /**
-   * Recursive helper to scan directory tree for .class files and extract their FQCNs.
+   * Recursive helper to scan a directory tree for {@code .class} files and add
+   * each one's FQCN (via {@link #extractFQCNFromClassFile}) to {@code fqcns}.
    *
-   * @param dir Current directory to scan
-   * @param rootDir Root directory for FQCN calculation
-   * @param fqcns Set to add discovered FQCNs to
+   * @param dir current directory to scan
+   * @param rootDir root directory for FQCN calculation
+   * @param fqcns set to add discovered FQCNs to
    */
   private void scanForClassFiles(File dir, File rootDir, Set<String> fqcns) {
     File[] files = dir.listFiles();
-    if (files == null) return;
+    if (files == null) {
+      getLogger().warn(
+        "Could not list contents of {} while extracting local Java types " +
+        "(not a directory, or I/O / permission error); skipping subtree.", dir);
+      return;
+    }
 
     for (File file : files) {
       if (file.isDirectory()) {

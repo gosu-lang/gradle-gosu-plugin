@@ -27,26 +27,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
     
     def 'Incremental compilation with dependency tracking [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/' //for Gosu snapshot builds
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-            
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
         
         baseClass << """
             class BaseClass {
@@ -184,26 +165,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Transitive dependency chain does not stop after one hop [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         // Chain: ClassA <- ClassB <- ClassC, every edge on the public API
         File classA = new File(srcMainGosu, 'ClassA.gs')
@@ -286,26 +248,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Annotation reference on class header is tracked as a dependency [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         // Java annotation type co-located with the Gosu consumer
         File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
@@ -393,26 +336,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Nested Java annotation type change is detected by javaClassesDir tracking [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         // Java file containing a top-level class AND a nested annotation
         // type. Compilation produces TWO .class files:
@@ -511,26 +435,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Nested Java class change is detected by javaClassesDir tracking [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
         srcMainJavaPkg.mkdirs()
@@ -616,26 +521,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Nested Java class change must not recompile unrelated Gosu sources [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
         srcMainJavaPkg.mkdirs()
@@ -732,26 +618,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Nested Java annotation type change must not recompile unrelated Gosu sources [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
         srcMainJavaPkg.mkdirs()
@@ -852,26 +719,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Top-level Java type change does not over-recompile unrelated Gosu sources [Gradle #gradleVersion]'() {
         given:
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-                gosuOptions.verbose = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
         srcMainJavaPkg.mkdirs()
@@ -958,25 +806,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
     def 'Dependency file format uses FQCNs not file paths [Gradle #gradleVersion]'() {
         given: 'A build script with incremental compilation enabled'
-        buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
-            dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
-            }
-            """
+        buildScript << getIncrementalBuildScriptForTesting()
 
         and: 'Create Gosu classes with a dependency relationship in a package'
         File packageDir = new File(srcMainGosu, 'com/example')

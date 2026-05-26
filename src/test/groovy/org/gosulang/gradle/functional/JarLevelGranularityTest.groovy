@@ -54,24 +54,12 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
 
     def 'JAR ABI change triggers full compileGosu rebuild via @CompileClasspath, not dep-graph cascade [Gradle #gradleVersion]'() {
         given: 'A build script with a file dependency on a JAR'
+        // Standard incremental setup, plus a file-system JAR dependency that
+        // this test will swap to simulate an ABI change.
+        buildScript << getIncrementalBuildScriptForTesting()
         buildScript << """
-            plugins {
-                id 'org.gosu-lang.gosu'
-            }
-            repositories {
-                mavenLocal()
-                mavenCentral()
-                maven {
-                    url 'https://central.sonatype.com/repository/maven-snapshots/'
-                }
-            }
             dependencies {
-                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
                 implementation files('lib/my-library.jar')
-            }
-
-            compileGosu {
-                gosuOptions.incrementalCompilation = true
             }
         """
 
@@ -154,8 +142,12 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         actualJson == expectedJson
 
         when: 'Capture timestamps for both Gosu outputs'
-        File consumerClassFile = new File(testProjectDir.root, 'build/classes/gosu/main/com/example/Consumer.class')
-        File unrelatedClassFile = new File(testProjectDir.root, 'build/classes/gosu/main/com/example/Unrelated.class')
+        // Use expectedOutputDir() helper rather than hardcoding 'build/classes/gosu/main',
+        // so the path stays correct across Gradle versions (older versions used a
+        // different output-directory layout).
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        File consumerClassFile = new File(gosuOutput, 'com/example/Consumer.class')
+        File unrelatedClassFile = new File(gosuOutput, 'com/example/Unrelated.class')
         long consumerTimeBefore = consumerClassFile.lastModified()
         long unrelatedTimeBefore = unrelatedClassFile.lastModified()
 
