@@ -2,8 +2,11 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Unroll
 
+import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
@@ -14,10 +17,19 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
     File dependencyFile
 
     /**
+     * Isolated Gradle user-home for tests that exercise the build cache, so
+     * cache entries created here don't leak into other tests or other runs.
+     * Mirrors the pattern in LocalBuildCacheTest.
+     */
+    @Rule
+    TemporaryFolder testKitDir = new TemporaryFolder()
+
+    /**
      * super#setup is invoked automatically
      * @return
      */
     def setup() {
+        testKitDir.create()
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
         baseClass = new File(srcMainGosu, 'BaseClass.gs')
         derivedClass = new File(srcMainGosu, 'DerivedClass.gs')
@@ -241,6 +253,119 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
         and: 'ClassC is recompiled, as it transitively depends on ClassA'
         new File(buildOutput, 'ClassC.class').lastModified() > classCTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Dependency file is restored from the Gradle build cache for incremental compilation [Gradle #gradleVersion]'() {
+        given:
+        buildScript << getIncrementalBuildScriptForTesting()
+
+        // Layout: ClassA <- ClassB (B consumes A), plus an UnrelatedC that
+        // has no edge to either. The test exercises a clean+cache-restore
+        // round trip and then changes ClassA's ABI. If the dep file rode
+        // through the cache, the post-restore compileGosu uses the restored
+        // graph and recompiles only ClassA and ClassB - UnrelatedC's
+        // .class file stays untouched. If the dep file is NOT restored, the
+        // compiler has no baseline graph and falls back to a full rebuild,
+        // which would also recompile UnrelatedC and fail the negative
+        // assertion below. UnrelatedC is the load-bearing signal.
+        File classA = new File(srcMainGosu, 'ClassA.gs')
+        File classB = new File(srcMainGosu, 'ClassB.gs')
+        File unrelatedC = new File(srcMainGosu, 'UnrelatedC.gs')
+
+        classA << """
+            class ClassA {
+                static function value() : int {
+                    return 1
+                }
+            }
+            """
+
+        classB << """
+            class ClassB {
+                static function transitive() : int {
+                    return ClassA.value() + 10
+                }
+            }
+            """
+
+        unrelatedC << """
+            class UnrelatedC {
+                static function standalone() : int {
+                    return 42
+                }
+            }
+            """
+
+        when: 'Initial compilation populates the local build cache'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withTestKitDir(testKitDir.root)
+                .withPluginClasspath()
+                .withArguments('compileGosu', '--build-cache', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then: 'All classes compile and the dep file is written'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'ClassA.class').exists()
+        new File(buildOutput, 'ClassB.class').exists()
+        new File(buildOutput, 'UnrelatedC.class').exists()
+        dependencyFile.exists()
+        String depFileContentBeforeWipe = dependencyFile.text
+
+        when: 'Wipe the build directory to simulate a fresh checkout, then restore via the build cache'
+        runner.withArguments('clean', '--build-cache', '-i')
+        runner.build()
+
+        runner.withArguments('compileGosu', '--build-cache', '-i')
+        result = runner.build()
+
+        then: 'compileGosu is restored from the cache, including the dep file'
+        result.task(':compileGosu').outcome == FROM_CACHE
+        new File(buildOutput, 'ClassA.class').exists()
+        new File(buildOutput, 'ClassB.class').exists()
+        new File(buildOutput, 'UnrelatedC.class').exists()
+
+        and: 'The dep file is restored with the same content it had before the wipe'
+        dependencyFile.exists()
+        dependencyFile.text == depFileContentBeforeWipe
+
+        when: 'Change ClassA ABI so the next compileGosu drives an incremental recompile off the restored dep file'
+        long classATime = new File(buildOutput, 'ClassA.class').lastModified()
+        long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
+        long unrelatedCTime = new File(buildOutput, 'UnrelatedC.class').lastModified()
+        Thread.sleep(1100)
+
+        classA.setText('') // truncate
+        classA << """
+            class ClassA {
+                static function value() : int {
+                    return 1
+                }
+                static function value2() : int { // new method - ABI change
+                    return 2
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '--build-cache', '-i')
+        result = runner.build()
+
+        then: 'ClassA is recompiled'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'ClassA.class').lastModified() > classATime
+
+        and: 'ClassB is recompiled (direct consumer, edge survived the cache round trip)'
+        new File(buildOutput, 'ClassB.class').lastModified() > classBTime
+
+        and: 'UnrelatedC is NOT recompiled - the cache-restored dep file correctly excludes it from the cascade'
+        new File(buildOutput, 'UnrelatedC.class').lastModified() == unrelatedCTime
 
         where:
         gradleVersion << gradleVersionsToTest

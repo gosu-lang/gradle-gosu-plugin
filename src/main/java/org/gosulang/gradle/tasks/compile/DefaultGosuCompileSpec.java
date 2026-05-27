@@ -66,6 +66,7 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   private Set<String> _changedTypes = new HashSet<>();  // Changed type FQCNs (Java + Gosu)
   private Set<String> _removedTypes = new HashSet<>();  // Removed type FQCNs (Java + Gosu)
   private Set<String> _localJavaTypes = new HashSet<>();  // Local Java type FQCNs for selective tracking
+  private File _dependencyFile;  // Resolved path to gosuc dep-tracking file (set by GosuCompile)
 
   @Override
   public File getDestinationDir() {
@@ -148,6 +149,14 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
 
   public void setLocalJavaTypes(Set<String> localJavaTypes) {
     _localJavaTypes = localJavaTypes != null ? localJavaTypes : new HashSet<>();
+  }
+
+  public File getDependencyFile() {
+    return _dependencyFile;
+  }
+
+  public void setDependencyFile(File dependencyFile) {
+    _dependencyFile = dependencyFile;
   }
 
 }

@@ -384,6 +384,18 @@ public FileCollection getSourceRoots() {
   return getProject().getLayout().files(sourceRoots);
 }
 
+  /**
+   * The gosuc dependency-tracking file. Declared @OutputFile so Gradle caches
+   * it alongside the .class files - on a FROM_CACHE restore the dep file
+   * returns to disk and the next incremental compileGosu can use it as a
+   * baseline graph instead of falling back to a full rebuild.
+   *
+   * Path is derived from the task name; not user-configurable.
+   */
+  @OutputFile
+  public File getDependencyFile() {
+    return new File(getProject().getBuildDir(), "tmp/gosuc-deps-" + getName() + ".json");
+  }
 
   private DefaultGosuCompileSpec createSpec() {
     DefaultGosuCompileSpec spec = new DefaultGosuCompileSpec();
@@ -395,6 +407,7 @@ public FileCollection getSourceRoots() {
     spec.setGosuClasspath(getGosuClasspath());
     spec.setCompileOptions(_compileOptions);
     spec.setGosuCompileOptions(_gosuCompileOptions);
+    spec.setDependencyFile(getDependencyFile());
 
     // Build the classpath for gosuc: combine regular classpath + Java classes directory
     // Note: javaClassesDir is tracked separately as an @Incremental input to enable selective recompilation,

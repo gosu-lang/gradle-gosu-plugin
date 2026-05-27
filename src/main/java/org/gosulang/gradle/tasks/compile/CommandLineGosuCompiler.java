@@ -162,22 +162,12 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
         // Add incremental flag
         fileOutput.add("-incremental");
         
-        // Add dependency file path
-        String dependencyFile = spec.getGosuCompileOptions().getDependencyFile();
-        if (dependencyFile == null || dependencyFile.isEmpty()) {
-          // Default to build/tmp/gosuc-deps-{taskName}.json
-          String taskName = _projectName.replaceAll(":", ""); // Remove colons for filename
-          if (taskName.isEmpty()) {
-            taskName = "default";
-          }
-          File defaultDepFile = new File(_project.getBuildDir(), "tmp/gosuc-deps-" + taskName + ".json");
-          dependencyFile = defaultDepFile.getAbsolutePath();
-        } else if (!new File(dependencyFile).isAbsolute()) {
-          // Make relative paths relative to project directory
-          dependencyFile = new File(_project.getProjectDir(), dependencyFile).getAbsolutePath();
-        }
+        // Dependency file path - resolved on the GosuCompile task itself and
+        // carried through on the spec, so Gradle's snapshotter sees it as an
+        // @OutputFile and caches it alongside the .class files.
+        File depFile = defaultSpec.getDependencyFile();
         fileOutput.add("-dependency-file");
-        fileOutput.add(dependencyFile);
+        fileOutput.add(depFile.getAbsolutePath());
         
         if (defaultSpec.isIncremental() && !defaultSpec.isFullRebuildRequired()) {
           // Incremental build - pass changed and deleted files

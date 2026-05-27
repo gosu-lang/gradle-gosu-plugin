@@ -18,7 +18,6 @@ public class GosuCompileOptions extends AbstractOptions {
   private Integer maxwarns;
   private Integer maxerrs;
   private boolean incrementalCompilation = false;
-  private String dependencyFile;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -143,29 +142,6 @@ public class GosuCompileOptions extends AbstractOptions {
    */
   public void setIncrementalCompilation(boolean incrementalCompilation) {
     this.incrementalCompilation = incrementalCompilation;
-  }
-  
-  /**
-   * @return Path to the dependency tracking file for incremental compilation. May be null.
-   * If not specified, defaults to "build/tmp/gosuc-deps.json".
-   */
-  @Input
-  @Optional
-  //  TODO: This should be only Optional, see all details and changes needed in docs/dependency-file-caching.md
-  // Consider removing this as we don't want to expose it as an option to the user to set.
-  public String getDependencyFile() {
-    return dependencyFile;
-  }
-  
-  /**
-   * Sets the path to the dependency tracking file for incremental compilation.
-   * The path can be absolute or relative to the project directory.
-   * If not specified, defaults to "build/tmp/gosuc-deps.json".
-   * Only used when incrementalCompilation is true.
-   * @param dependencyFile Path to the dependency tracking file
-   */
-  public void setDependencyFile(String dependencyFile) {
-    this.dependencyFile = dependencyFile;
   }
 
   // Annotation processors are not run by gosuc; they execute during compileJava
