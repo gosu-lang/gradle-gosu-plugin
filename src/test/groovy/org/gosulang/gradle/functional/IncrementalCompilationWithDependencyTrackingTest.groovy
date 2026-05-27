@@ -372,6 +372,81 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
+    def 'Deleting the dep file forces gosuc to re-run and regenerate it [Gradle #gradleVersion]'() {
+        given:
+        buildScript << getIncrementalBuildScriptForTesting()
+
+        // Two classes with a real dep edge so the regenerated dep file has
+        // something non-trivial to record (not just an empty consumers map).
+        File classA = new File(srcMainGosu, 'ClassA.gs')
+        File classB = new File(srcMainGosu, 'ClassB.gs')
+
+        classA << """
+            class ClassA {
+                static function value() : int {
+                    return 1
+                }
+            }
+            """
+
+        classB << """
+            class ClassB {
+                static function consume() : int {
+                    return ClassA.value() + 10
+                }
+            }
+            """
+
+        when: 'Initial compilation writes the dep file'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        dependencyFile.exists()
+        new File(buildOutput, 'ClassA.class').exists()
+        new File(buildOutput, 'ClassB.class').exists()
+
+        when: 'Re-running with nothing changed is UP-TO-DATE (sanity check)'
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then:
+        result.task(':compileGosu').outcome == UP_TO_DATE
+
+        when: 'Manually delete the dep file, simulating a stray rm or IDE clean'
+        long classATime = new File(buildOutput, 'ClassA.class').lastModified()
+        long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
+        Thread.sleep(1100) // ensure observable mtime difference on coarse filesystems
+
+        assert dependencyFile.delete()
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'Gradle detects the missing @OutputFile and re-runs the task (not UP_TO_DATE)'
+        result.task(':compileGosu').outcome == SUCCESS
+
+        and: 'The dep file is regenerated'
+        dependencyFile.exists()
+
+        and: 'ClassA.class was rewritten - full rebuild path'
+        new File(buildOutput, 'ClassA.class').lastModified() > classATime
+
+        and: 'ClassB.class was also rewritten - confirms every source went through gosuc, not just the ones with a known dep edge'
+        new File(buildOutput, 'ClassB.class').lastModified() > classBTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
     def 'Annotation reference on class header is tracked as a dependency [Gradle #gradleVersion]'() {
         given:
         buildScript << getIncrementalBuildScriptForTesting()
