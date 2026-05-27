@@ -111,50 +111,62 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
     _classpath = Collections.unmodifiableList(target);
   }
 
+  @Override
   public boolean isIncremental() {
     return _incremental;
   }
 
+  @Override
   public void setIncremental(boolean incremental) {
     _incremental = incremental;
   }
 
+  @Override
   public boolean isFullRebuildRequired() {
     return _fullRebuildRequired;
   }
 
+  @Override
   public void setFullRebuildRequired(boolean fullRebuildRequired) {
     _fullRebuildRequired = fullRebuildRequired;
   }
 
+  @Override
   public Set<String> getChangedTypes() {
     return _changedTypes;
   }
 
+  @Override
   public void setChangedTypes(Set<String> changedTypes) {
     _changedTypes = changedTypes;
   }
 
+  @Override
   public Set<String> getRemovedTypes() {
     return _removedTypes;
   }
 
+  @Override
   public void setRemovedTypes(Set<String> removedTypes) {
     _removedTypes = removedTypes;
   }
 
+  @Override
   public Set<String> getLocalJavaTypes() {
     return _localJavaTypes;
   }
 
+  @Override
   public void setLocalJavaTypes(Set<String> localJavaTypes) {
-    _localJavaTypes = localJavaTypes != null ? localJavaTypes : new HashSet<>();
+    _localJavaTypes = localJavaTypes;
   }
 
+  @Override
   public File getDependencyFile() {
     return _dependencyFile;
   }
 
+  @Override
   public void setDependencyFile(File dependencyFile) {
     _dependencyFile = dependencyFile;
   }

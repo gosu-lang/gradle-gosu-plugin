@@ -162,8 +162,9 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(testProjectDir.root)
                 .withPluginClasspath()
-                .withArguments('clean', 'compileGosu')
+                .withArguments('clean', 'compileGosu', '-i')
                 .withGradleVersion(gradleVersion)
+                .forwardOutput()
 
         BuildResult result = runner.build()
         

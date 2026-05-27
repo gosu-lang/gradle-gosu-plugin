@@ -156,56 +156,45 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     
     // Handle incremental compilation with new gosuc CLI flags
     if (spec.getGosuCompileOptions().isIncrementalCompilation()) {
-      if (spec instanceof DefaultGosuCompileSpec) {
-        DefaultGosuCompileSpec defaultSpec = (DefaultGosuCompileSpec) spec;
-        
-        // Add incremental flag
-        fileOutput.add("-incremental");
-        
-        // Dependency file path - resolved on the GosuCompile task itself and
-        // carried through on the spec, so Gradle's snapshotter sees it as an
-        // @OutputFile and caches it alongside the .class files.
-        File depFile = defaultSpec.getDependencyFile();
-        fileOutput.add("-dependency-file");
-        fileOutput.add(depFile.getAbsolutePath());
-        
-        if (defaultSpec.isIncremental() && !defaultSpec.isFullRebuildRequired()) {
-          // Incremental build - pass changed and deleted files
-          Set<String> changedTypes = defaultSpec.getChangedTypes();
-          Set<String> removedTypes = defaultSpec.getRemovedTypes();
+      // Add incremental flag
+      fileOutput.add("-incremental");
 
-          // Add changed type FQCNs as a single path-separator-delimited string
-          if (!changedTypes.isEmpty()) {
-            fileOutput.add("-changed-types");
-            fileOutput.add(String.join(File.pathSeparator, changedTypes));
-          }
+      // Dependency file path - resolved on the GosuCompile task itself and
+      // carried through on the spec, so Gradle's snapshotter sees it as an
+      // @OutputFile and caches it alongside the .class files.
+      fileOutput.add("-dependency-file");
+      fileOutput.add(spec.getDependencyFile().getAbsolutePath());
 
-          // Add removed type FQCNs as a single path-separator-delimited string
-          if (!removedTypes.isEmpty()) {
-            fileOutput.add("-removed-types");
-            fileOutput.add(String.join(File.pathSeparator, removedTypes));
-          }
+      if (spec.isIncremental() && !spec.isFullRebuildRequired()) {
+        // Incremental build - pass changed and deleted files
+        Set<String> changedTypes = spec.getChangedTypes();
+        Set<String> removedTypes = spec.getRemovedTypes();
+
+        // Add changed type FQCNs as a single path-separator-delimited string
+        if (!changedTypes.isEmpty()) {
+          fileOutput.add("-changed-types");
+          fileOutput.add(String.join(File.pathSeparator, changedTypes));
         }
 
-        // Pass local Java type FQCNs for selective dependency tracking
-        // This allows gosuc to distinguish same-module Java types from JRE/JAR types
-        Set<String> localJavaTypes = defaultSpec.getLocalJavaTypes();
-        if (!localJavaTypes.isEmpty()) {
-          fileOutput.add("-local-java-types");
-          fileOutput.add(String.join(File.pathSeparator, localJavaTypes));
+        // Add removed type FQCNs as a single path-separator-delimited string
+        if (!removedTypes.isEmpty()) {
+          fileOutput.add("-removed-types");
+          fileOutput.add(String.join(File.pathSeparator, removedTypes));
         }
+      }
 
-        // Always add all source files for incremental mode
-        // The gosuc compiler will determine what needs to be compiled
-        for (File sourceFile : spec.getSource()) {
-          fileOutput.add(sourceFile.getPath());
-        }
-      } else {
-        // This shouldn't happen, but handle gracefully
-        LOGGER.warn("Incremental compilation requested but spec is not DefaultGosuCompileSpec");
-        for (File sourceFile : spec.getSource()) {
-          fileOutput.add(sourceFile.getPath());
-        }
+      // Pass local Java type FQCNs for selective dependency tracking
+      // This allows gosuc to distinguish same-module Java types from JRE/JAR types
+      Set<String> localJavaTypes = spec.getLocalJavaTypes();
+      if (!localJavaTypes.isEmpty()) {
+        fileOutput.add("-local-java-types");
+        fileOutput.add(String.join(File.pathSeparator, localJavaTypes));
+      }
+
+      // Always add all source files for incremental mode
+      // The gosuc compiler will determine what needs to be compiled
+      for (File sourceFile : spec.getSource()) {
+        fileOutput.add(sourceFile.getPath());
       }
     } else {
       // Standard compilation - compile all source files

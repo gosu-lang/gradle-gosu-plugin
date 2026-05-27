@@ -394,7 +394,9 @@ public FileCollection getSourceRoots() {
    */
   @OutputFile
   public File getDependencyFile() {
-    return new File(getProject().getBuildDir(), "tmp/gosuc-deps-" + getName() + ".json");
+    return getProject().getLayout().getBuildDirectory()
+        .file("tmp/gosuc-deps-" + getName() + ".json")
+        .get().getAsFile();
   }
 
   private DefaultGosuCompileSpec createSpec() {

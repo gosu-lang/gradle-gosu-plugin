@@ -55,7 +55,7 @@ public class CommandLineGosuDoc {
     // We don't want that, so instead we create a temp directory with the contents of 'source'
     // Copying 'source' to the temp dir should honor its include/exclude patterns
     // Finally, the tmpdir will be the sole inputdir passed to the gosudoc task
-    final File tmpDir = new File(_project.getBuildDir(), "tmp/gosudoc");
+    final File tmpDir = _project.getLayout().getBuildDirectory().dir("tmp/gosudoc").get().getAsFile();
     _project.delete(tmpDir);
     _project.copy(copySpec -> copySpec.from(_source).into(tmpDir));
 

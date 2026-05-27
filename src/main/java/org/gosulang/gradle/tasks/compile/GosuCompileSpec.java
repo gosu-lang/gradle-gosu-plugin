@@ -4,6 +4,7 @@ import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 
 import java.io.File;
+import java.util.Set;
 
 interface GosuCompileSpec extends InfersGosuRuntime {
 
@@ -33,5 +34,30 @@ interface GosuCompileSpec extends InfersGosuRuntime {
 
   @Deprecated
   void setClasspath(Iterable<File> classpath);
+
+  //--- incremental compilation state
+  File getDependencyFile();
+
+  void setDependencyFile(File dependencyFile);
+
+  boolean isIncremental();
+
+  void setIncremental(boolean incremental);
+
+  boolean isFullRebuildRequired();
+
+  void setFullRebuildRequired(boolean fullRebuildRequired);
+
+  Set<String> getChangedTypes();
+
+  void setChangedTypes(Set<String> changedTypes);
+
+  Set<String> getRemovedTypes();
+
+  void setRemovedTypes(Set<String> removedTypes);
+
+  Set<String> getLocalJavaTypes();
+
+  void setLocalJavaTypes(Set<String> localJavaTypes);
 
 }
