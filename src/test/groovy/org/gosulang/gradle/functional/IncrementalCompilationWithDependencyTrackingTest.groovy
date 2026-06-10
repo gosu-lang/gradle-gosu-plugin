@@ -1005,6 +1005,111 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
+    def 'Nested Java class producer is recorded in dep file using $ separator [Gradle #gradleVersion]'() {
+        given:
+        buildScript << getIncrementalBuildScriptForTesting()
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File outerFile = new File(srcMainJavaPkg, 'Outer.java')
+        outerFile << """
+            package com.example;
+
+            public class Outer {
+                public static class Inner {
+                    public String tag() {
+                        return "v1";
+                    }
+                }
+            }
+            """
+
+        File consumerPkgDir = new File(srcMainGosu, 'com/example')
+        consumerPkgDir.mkdirs()
+        File consumerFile = new File(consumerPkgDir, 'Consumer.gs')
+        consumerFile << """
+            package com.example
+
+            class Consumer {
+                static function id() : String {
+                    return new Outer.Inner().tag()
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then: 'Both Java class files and the Gosu consumer compile, and the dep file exists'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').exists()
+        new File(javaOutput, 'com/example/Outer$Inner.class').exists()
+        new File(gosuOutput, 'com/example/Consumer.class').exists()
+        dependencyFile.exists()
+
+        and: 'Dep file matches the golden form - inner-class producer uses $, not .'
+        String actualJson = dependencyFile.text
+
+        String expectedJson = """{
+  "version": "1.0",
+  "consumers": {
+    "com.example.Consumer": [],
+    "com.example.Outer": [
+      "com.example.Consumer"
+    ],
+    "com.example.Outer\$Inner": [
+      "com.example.Consumer"
+    ]
+  }
+}"""
+
+        actualJson == expectedJson
+
+        when: 'Modify the nested class - new public method (ABI change)'
+        long outerTime = new File(javaOutput, 'com/example/Outer.class').lastModified()
+        long innerTime = new File(javaOutput, 'com/example/Outer$Inner.class').lastModified()
+        long consumerTime = new File(gosuOutput, 'com/example/Consumer.class').lastModified()
+        Thread.sleep(1100)
+
+        outerFile.setText('')
+        outerFile << """
+            package com.example;
+
+            public class Outer {
+                public static class Inner {
+                    public String tag() {
+                        return "v2";
+                    }
+                    public int newApi() {
+                        return 42;
+                    }
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'Consumer is recompiled because the Outer$Inner edge survived in the dep graph'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Outer.class').lastModified() > outerTime
+        new File(javaOutput, 'com/example/Outer$Inner.class').lastModified() > innerTime
+        new File(gosuOutput, 'com/example/Consumer.class').lastModified() > consumerTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
     def 'Dependency file format uses FQCNs not file paths [Gradle #gradleVersion]'() {
         given: 'A build script with incremental compilation enabled'
         buildScript << getIncrementalBuildScriptForTesting()

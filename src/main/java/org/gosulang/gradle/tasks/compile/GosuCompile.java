@@ -91,7 +91,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
       // events. Modifying a nested class inside Outer.java rewrites both
       // Outer.class and Outer$Inner.class, each surfaced as its own change
       // here. Each maps to a distinct FQCN ("com.example.Outer" and
-      // "com.example.Outer.Inner") and ends up in changedTypes.
+      // "com.example.Outer$Inner") and ends up in changedTypes.
       if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
         File javaClassesRoot = getJavaClassesDir().getSingleFile();
         for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
@@ -162,16 +162,9 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
    * Extracts the fully-qualified class name from a Java {@code .class} file by computing
    * its path relative to the Java classes directory.
    *
-   * <p>Uses {@link Path#startsWith(Path)} on normalised absolute paths (component-aware,
-   * not string-prefix), strips the {@code .class} suffix explicitly via {@code endsWith}
-   * + {@code substring} (safer than {@code String.replace(".class", "")} which is global
-   * and could mangle a path that contains {@code .class} as a substring elsewhere),
-   * and converts {@code '$'} -&gt; {@code '.'} so nested-class FQCNs match the dot form
-   * returned by {@code IJavaType.getName()}.
-   *
    * @param classFile the .class file
    * @param javaClassesRoot the root directory (e.g., build/classes/java/main)
-   * @return the FQCN (e.g., "com.example.MyClass" or "com.example.Outer.Inner") or null
+   * @return the FQCN (e.g., "com.example.MyClass" or "com.example.Outer$Inner") or null
    *         if extraction fails
    */
   private String extractFQCNFromClassFile(File classFile, File javaClassesRoot) {
@@ -185,13 +178,11 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     if (!relativePath.endsWith(".class")) {
       return null;
     }
-    // Strip the .class suffix first (off the still-unmangled string), then
-    // replace separators and '$' so the suffix-strip can't be confused by a
-    // class name that happens to contain ".class" as a substring after
-    // $-replacement.
+    // Strip the .class suffix before replacing separators so a path
+    // component like "foo.class" (unusual but legal) can't be mistaken
+    // for the file suffix.
     String fqcn = relativePath.substring(0, relativePath.length() - ".class".length())
-            .replace(File.separator, ".")
-            .replace('$', '.');
+            .replace(File.separator, ".");
     return fqcn.isEmpty() ? null : fqcn;
   }
 
