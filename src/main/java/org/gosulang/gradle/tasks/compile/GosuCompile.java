@@ -61,7 +61,7 @@ public class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
     DefaultGosuCompileSpec spec = createSpec();
     
     if (!inputChanges.isIncremental()) {
-      getLogger().info("Full recompilation is required");
+      getLogger().info("Gosu full recompilation is required");
       spec.setFullRebuildRequired(true);
     } else {
       getLogger().info("Gosu incremental compilation started");
