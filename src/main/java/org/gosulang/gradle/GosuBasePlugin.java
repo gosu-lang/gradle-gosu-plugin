@@ -9,12 +9,15 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.reporting.ReportingExtension;
+import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.AbstractCompile;
@@ -22,6 +25,7 @@ import org.gradle.internal.Cast;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.Serializable;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
 
@@ -69,7 +73,17 @@ public class GosuBasePlugin implements Plugin<Project> {
       sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
   //    sourceSet.getExtensions().add(SourceDirectorySet.class, "gosu", gosuSourceSet.getGosu()); //alternative but it's not working
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
-      sourceSet.getResources().getFilter().exclude(element -> gosuSourceSet.getGosu().contains(element.getFile()));
+      // Exclude gosu sources from this source set's resources with a *serializable* Spec, so the filter — and
+      // therefore every consumer's ProcessResources task — is configuration-cache compatible. The
+      // (Spec & Serializable) intersection cast produces a serializable lambda using only public Java/Gradle
+      // API; it is exactly what Gradle's own GroovyBasePlugin/ScalaBasePlugin do via the internal
+      // SerializableLambdas.spec (which a community plugin must not depend on). Capture a FileCollection view of
+      // the gosu sources (serialized via the configuration cache's file-collection codec), NOT the
+      // DefaultGosuSourceSet graph — capturing the latter was the dominant CC hazard this plugin imposed on
+      // consumers. See #68.
+      final FileCollection gosuSourceFiles = gosuSourceSet.getGosu();
+      sourceSet.getResources().getFilter().exclude(
+          (Spec<FileTreeElement> & Serializable) element -> gosuSourceFiles.contains(element.getFile()));
       sourceSet.getAllSource().source(gosuSourceSet.getGosu());
       configureGosuCompile(sourceSet, gosuSourceSet);
     });
