@@ -2,12 +2,13 @@ package org.gosulang.gradle.tasks.compile;
 
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.gosulang.gradle.tasks.Util;
-import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.api.tasks.compile.BaseForkOptions;
+import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GUtil;
@@ -23,17 +24,21 @@ import java.util.List;
 
 public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
   private static final Logger LOGGER = Logging.getLogger(CommandLineGosuCompiler.class);
-  
-  private final Project _project;
+
+  private final ExecOperations _execOperations;
+  private final ObjectFactory _objectFactory;
   private final GosuCompileSpec _spec;
   private final String _projectName;
-  
-  public CommandLineGosuCompiler(Project project, GosuCompileSpec spec, String projectName ) {
-    _project = project;
+  private final File _projectDir;
+
+  public CommandLineGosuCompiler(ExecOperations execOperations, ObjectFactory objectFactory, GosuCompileSpec spec, String projectName, File projectDir) {
+    _execOperations = execOperations;
+    _objectFactory = objectFactory;
     _spec = spec;
     _projectName = projectName;
+    _projectDir = projectDir;
   }
-  
+
   @Override
   public WorkResult execute( GosuCompileSpec spec ) {
     String startupMsg = "Initializing gosuc compiler";
@@ -52,17 +57,17 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       LOGGER.error("Error creating argfile with gosuc arguments");
       throw new GosuCompilationFailedException(e);
     }
-    
+
     ByteArrayOutputStream stdout = new ByteArrayOutputStream();
     ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
-    ExecResult result = _project.javaexec(javaExecSpec -> {
-      FileCollection gosuClasspathJars =  spec.getGosuClasspath().call();
+    ExecResult result = _execOperations.javaexec(javaExecSpec -> {
+      FileCollection gosuClasspathJars = spec.getGosuClasspath();
       if (!JavaVersion.current().isJava11Compatible()) { //if it is not java 11
-        gosuClasspathJars = gosuClasspathJars.plus(_project.files(Util.findToolsJar()));
+        gosuClasspathJars = gosuClasspathJars.plus(_objectFactory.fileCollection().from(Util.findToolsJar()));
       }
 
-      javaExecSpec.setWorkingDir((Object) _project.getProjectDir()); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
+      javaExecSpec.setWorkingDir((Object) _projectDir); // Gradle 4.0 overloads ProcessForkOptions#setWorkingDir; must upcast to Object for backwards compatibility
       setJvmArgs(javaExecSpec, _spec.getGosuCompileOptions().getForkOptions());
       javaExecSpec.getMainClass().set("gw.lang.gosuc.cli.CommandLineCompiler");
       javaExecSpec.setClasspath(gosuClasspathJars)
@@ -115,7 +120,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
 
     spec.setJvmArgs((Iterable<?>) args); // Gradle 4.0 overloads JavaForkOptions#setJvmArgs; must upcast to Iterable<?> for backwards compatibility
   }
-  
+
   private File createArgFile(GosuCompileSpec spec) throws IOException {
     File tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments", spec.getTempDir());
 
@@ -124,7 +129,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     if(spec.getGosuCompileOptions().isCheckedArithmetic()) {
       fileOutput.add("-checkedArithmetic");
     }
-    
+
     // The classpath used to initialize Gosu; CommandLineCompiler will supplement this with the JRE jars
     fileOutput.add("-classpath");
     fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getClasspath())));
@@ -152,7 +157,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       fileOutput.add("-maxerrs");
       fileOutput.add(spec.getGosuCompileOptions().getMaxErrs().toString());
     }
-    
+
     for(File sourceFile : spec.getSource()) {
       fileOutput.add(sourceFile.getPath());
     }

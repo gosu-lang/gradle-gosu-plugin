@@ -1,10 +1,13 @@
 package org.gosulang.gradle.tasks.gosudoc;
 
-import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.file.FileTree;
-import org.gradle.api.logging.LogLevel;
+import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
@@ -16,21 +19,31 @@ import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.process.ExecOperations;
 
+import javax.inject.Inject;
 import java.io.File;
 
 @CacheableTask
-public class GosuDoc extends SourceTask implements InfersGosuRuntime {
+public abstract class GosuDoc extends SourceTask implements InfersGosuRuntime {
 
   private FileCollection _classpath;
-  private Closure<FileCollection> _gosuClasspath;
-  private File _destinationDir;
+  private ConfigurableFileCollection gosuClasspath;
+  private DirectoryProperty _destinationDir;
   private GosuDocOptions _gosuDocOptions = new GosuDocOptions();
   private String _title;
 
-  public GosuDoc() {
-    getLogging().captureStandardOutput(LogLevel.INFO);
-  }
+  @Inject
+  protected abstract ExecOperations getExecOperations();
+
+  @Inject
+  protected abstract FileSystemOperations getFileSystemOperations();
+
+  @Inject
+  protected abstract ObjectFactory getObjectFactory();
+
+  @Inject
+  protected abstract ProjectLayout getLayout();
 
   /**
    * {@inheritDoc}
@@ -40,18 +53,26 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   public FileTree getSource() {
     return super.getSource();
   }
-  
+
   /**
-   * Returns the target directory to generate the API documentation.
    * @return the target directory to generate the API documentation.
    */
   @OutputDirectory
-  public File getDestinationDir() {
+  public DirectoryProperty getDestinationDir() {
+    if (_destinationDir == null) {
+      _destinationDir = getObjectFactory().directoryProperty();
+    }
     return _destinationDir;
   }
 
-  public void setDestinationDir( File destinationDir ) {
-    _destinationDir = destinationDir;
+  /**
+   *
+   * @deprecated Use {@link #getDestinationDir()} methods
+   * @see DirectoryProperty
+   */
+  @Deprecated
+  public void setDestinationDir(File destinationDir) {
+    getDestinationDir().set(destinationDir);
   }
 
   /**
@@ -76,13 +97,17 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
   @Override
   @Classpath
   @InputFiles
-  public Closure<FileCollection> getGosuClasspath() {
-    return _gosuClasspath;
+  public ConfigurableFileCollection getGosuClasspath() {
+    // Field named 'gosuClasspath' (not '_gosuClasspath') — see GosuCompile for the CC rationale.
+    if (gosuClasspath == null) {
+      gosuClasspath = getObjectFactory().fileCollection();
+    }
+    return gosuClasspath;
   }
 
   @Override
-  public void setGosuClasspath( Closure<FileCollection> gosuClasspathClosure ) {
-    _gosuClasspath = gosuClasspathClosure;
+  public void setGosuClasspath(FileCollection gosuClasspath) {
+    getGosuClasspath().setFrom(gosuClasspath);
   }
 
   /**
@@ -118,6 +143,7 @@ public class GosuDoc extends SourceTask implements InfersGosuRuntime {
     if (options.getTitle() != null && !options.getTitle().isEmpty()) {
       options.setTitle(getTitle());
     }
-    new CommandLineGosuDoc(getSource(), getDestinationDir(), getGosuClasspath().call(), getClasspath(), options, getProject()).execute();
+    new CommandLineGosuDoc(getSource(), getDestinationDir().get().getAsFile(), getGosuClasspath(), getClasspath(), options,
+        getExecOperations(), getFileSystemOperations(), getObjectFactory(), getLayout(), getPath()).execute();
   }
 }
