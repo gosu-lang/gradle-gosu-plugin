@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks;
 
-import groovy.lang.Closure;
 import org.gradle.api.Buildable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -37,23 +36,19 @@ public class GosuRuntime {
    * @param classpath a classpath containing a 'gosu-core-api' Jar
    * @return a classpath containing a corresponding 'gosu-doc' Jar and its dependencies
    */
-  public Closure<FileCollection> inferGosuClasspath(final Iterable<File> classpath) {
-    return new Closure<FileCollection>(this, this) {
-      private FileCollection resolved;
-
-      public FileCollection doCall(Object ignore) {
-        ConfigurableFileCollection fileCollection = _project.files((Callable<FileCollection>) () -> {
-          if (resolved == null) {
-            resolved = doInfer(classpath);
-          }
-          return resolved;
-        });
-        if (classpath instanceof Buildable) {
-          fileCollection.builtBy(((Buildable) classpath).getBuildDependencies());
-        }
-        return fileCollection;
+  public FileCollection inferGosuClasspath(final FileCollection classpath) {
+    ConfigurableFileCollection result = _project.getObjects().fileCollection();
+    final FileCollection[] resolved = {null};
+    result.from((Callable<FileCollection>) () -> {
+      if (resolved[0] == null) {
+        resolved[0] = doInfer(classpath);
       }
-    };
+      return resolved[0];
+    });
+    if (classpath instanceof Buildable) {
+      result.builtBy(((Buildable) classpath).getBuildDependencies());
+    }
+    return result;
   }
 
   private FileCollection doInfer(Iterable<File> classpath) {

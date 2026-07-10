@@ -9,10 +9,11 @@ import org.gosulang.gradle.tasks.compile.GosuCompile;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -21,10 +22,8 @@ import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.AbstractCompile;
-import org.gradle.internal.Cast;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.Serializable;
 
 import static org.gosulang.gradle.tasks.Util.javaPluginExtension;
@@ -61,6 +60,26 @@ public class GosuBasePlugin implements Plugin<Project> {
    * Sets the gosuClasspath property for all GosuCompile tasks: compileGosu and compileTestGosu
    */
   private void configureCompileDefaults() {
+    // Convention mapping defers evaluation of inferGosuClasspath() to first access (task execution on
+    // non-CC builds; CC-store time on CC builds, when BeanPropertyWriter serialises the task graph).
+    // This matches the pattern used by GroovyBasePlugin and ScalaBasePlugin.
+    //
+    // IMPORTANT – the backing field in GosuCompile/GosuDoc MUST be named 'gosuClasspath' (no
+    // underscore prefix). Gradle's CC BeanPropertyWriter looks up convention mappings by the
+    // backing-field name; an underscore-prefixed name produces a key mismatch so the convention
+    // is never found, CC stores null for the field, and gosuClasspath is empty on CC reuse.
+    // Fixed upstream in Gradle 8.8 via gradle/gradle#28248 (ConfigurableFileCollection now
+    // wires its convention directly, bypassing the field-name lookup); required for Gradle ≤ 8.7.
+    //
+    // Using CFC#from(Callable) here instead (PR #93) causes CC to attempt to serialise the
+    // lambda at store time; when that fails the property is left unconfigured, producing a
+    // WorkValidationException before the task action runs.
+    //
+    // TODO: once minimum Gradle is 8.8, drop convention mapping here and in configureGosuDoc()
+    // and replace with: gosuCompile.getGosuClasspath().convention(_project.getObjects()
+    //   .fileCollection().from((Callable) () -> _gosuRuntime.inferGosuClasspath(...))).
+    // CFC#convention(Callable) was introduced in Gradle 8.8 (gradle/gradle#28248); it wires
+    // the convention directly on the CFC and is fully CC-safe without the field-name constraint.
     _project.getTasks().withType(GosuCompile.class, gosuCompile ->
         gosuCompile.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosuCompile.getClasspath())));
   }
@@ -96,17 +115,22 @@ public class GosuBasePlugin implements Plugin<Project> {
    */
   private void configureGosuCompile(SourceSet sourceSet, GosuSourceSet gosuSourceSet) {
     String compileTaskName = sourceSet.getCompileTaskName("gosu");
-    TaskProvider<? extends AbstractCompile> gosuCompile = _project.getTasks().register(compileTaskName, GosuCompile.class);
+    TaskProvider<GosuCompile> gosuCompile = _project.getTasks().register(compileTaskName, GosuCompile.class);
     configureForSourceSet(sourceSet, gosuSourceSet.getGosu(), gosuCompile, _project);
-    gosuCompile.configure(t -> t.dependsOn(sourceSet.getCompileJavaTaskName()));
-    gosuCompile.configure(t -> t.setSource((Object) gosuSourceSet.getGosu())); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
+    gosuCompile.configure(t -> {
+      t.dependsOn(sourceSet.getCompileJavaTaskName());
+      t.getSourceRoots().from(gosuSourceSet.getGosu().getSourceDirectories());
+      t.setSource((Object) gosuSourceSet.getGosu()); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
+    });
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 
   private void configureGosuDoc() {
+    // Same convention-mapping pattern as configureCompileDefaults(); see that comment for rationale.
     _project.getTasks().withType(GosuDoc.class, gosudoc -> {
+      gosudoc.getLogging().captureStandardOutput(LogLevel.INFO);
       gosudoc.getConventionMapping().map("gosuClasspath", () -> _gosuRuntime.inferGosuClasspath(gosudoc.getClasspath()));
-      gosudoc.getConventionMapping().map("destinationDir", () -> new File(javaPluginExtension(_project).getDocsDir().get().getAsFile(), "gosudoc"));
+      gosudoc.getDestinationDir().convention(javaPluginExtension(_project).getDocsDir().map(d -> d.dir("gosudoc")));
       gosudoc.getConventionMapping().map("title", () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
       //gosudoc.getConventionMapping().map("windowTitle", (Callable<Object>) () -> _project.getExtensions().getByType(ReportingExtension.class).getApiDocTitle());
     });
@@ -124,8 +148,7 @@ public class GosuBasePlugin implements Plugin<Project> {
  private static void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final SourceDirectorySet sourceDirectorySet, final Project target, TaskProvider<? extends AbstractCompile> compileTask) {
     final String sourceSetChildPath = "classes/" + sourceDirectorySet.getName() + "/" + sourceSet.getName();
     sourceDirectorySet.getDestinationDirectory().convention(target.getLayout().getBuildDirectory().dir(sourceSetChildPath));
-    DefaultSourceSetOutput sourceSetOutput = Cast.cast(DefaultSourceSetOutput.class, sourceSet.getOutput());
-    sourceSetOutput.getClassesDirs().from(sourceDirectorySet.getDestinationDirectory()).builtBy(compileTask);
+    ((ConfigurableFileCollection) sourceSet.getOutput().getClassesDirs()).from(sourceDirectorySet.getDestinationDirectory()).builtBy(compileTask);
     sourceDirectorySet.compiledBy(compileTask, AbstractCompile::getDestinationDirectory);
   }
 
