@@ -1,11 +1,14 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gosulang.gradle.tasks.InfersGosuRuntime;
 import org.gradle.api.file.FileCollection;
 
 import java.io.File;
 
-interface GosuCompileSpec extends InfersGosuRuntime {
+interface GosuCompileSpec {
+
+  FileCollection getGosuClasspath();
+
+  void setGosuClasspath(FileCollection gosuClasspath);
 
   MinimalGosuCompileOptions getCompileOptions();
 
