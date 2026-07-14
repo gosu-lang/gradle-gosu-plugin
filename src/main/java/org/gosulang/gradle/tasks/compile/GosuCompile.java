@@ -7,6 +7,7 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
@@ -55,6 +56,25 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   @PathSensitive(NAME_ONLY)
   public FileTree getSource() {
     return super.getSource();
+  }
+
+  /**
+   * Overrides {@link SourceTask#source} to also register non-{@link SourceDirectorySet},
+   * non-{@link FileTree} arguments in {@link #getSourceRoots()} so that directories added by
+   * external plugins (e.g. via a {@code Provider<Directory>} or {@code Provider<File>}) are
+   * treated as Gosu type-system source roots.  {@code SourceDirectorySet} is excluded because
+   * {@code GosuBasePlugin} already wires its {@code getSourceDirectories()} into
+   * {@code sourceRoots}.  {@code FileTree} is excluded because resolving one yields individual
+   * files rather than root directories.
+   */
+  @Override
+  public SourceTask source(Object... sources) {
+    for (Object s : sources) {
+      if (!(s instanceof SourceDirectorySet) && !(s instanceof FileTree)) {
+        getSourceRoots().from(s);
+      }
+    }
+    return super.source(sources);
   }
 
   @SkipWhenEmpty
