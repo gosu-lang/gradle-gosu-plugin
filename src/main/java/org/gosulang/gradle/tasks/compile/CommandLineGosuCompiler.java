@@ -11,7 +11,6 @@ import org.gradle.api.tasks.compile.BaseForkOptions;
 import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
-import org.gradle.util.GUtil;
 import org.gradle.api.JavaVersion;
 
 import java.io.ByteArrayOutputStream;
@@ -121,6 +120,20 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     spec.setJvmArgs((Iterable<?>) args); // Gradle 4.0 overloads JavaForkOptions#setJvmArgs; must upcast to Iterable<?> for backwards compatibility
   }
 
+  // Ported from Gradle's org.gradle.util.internal.GUtil#asPath (Apache License 2.0:
+  // https://github.com/gradle/gradle/blob/master/platforms/core-runtime/base-services/src/main/java/org/gradle/util/internal/GUtil.java),
+  // since org.gradle.util.GUtil is removed in Gradle 9.0.
+  private static String asPath(Iterable<File> files) {
+    StringBuilder path = new StringBuilder();
+    for (File file : files) {
+      if (path.length() > 0) {
+        path.append(File.pathSeparator);
+      }
+      path.append(file);
+    }
+    return path.toString();
+  }
+
   private File createArgFile(GosuCompileSpec spec) throws IOException {
     File tempFile = File.createTempFile(CommandLineGosuCompiler.class.getName(), "arguments", spec.getTempDir());
 
@@ -132,13 +145,13 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
 
     // The classpath used to initialize Gosu; CommandLineCompiler will supplement this with the JRE jars
     fileOutput.add("-classpath");
-    fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getClasspath())));
+    fileOutput.add(asPath(spec.getClasspath()));
 
     fileOutput.add("-d");
     fileOutput.add(spec.getDestinationDir().getAbsolutePath());
 
     fileOutput.add("-sourcepath");
-    fileOutput.add(String.join(File.pathSeparator, GUtil.asPath(spec.getSourceRoots())));
+    fileOutput.add(asPath(spec.getSourceRoots()));
 
     if(!spec.getCompileOptions().isWarnings()) {
       fileOutput.add("-nowarn");
