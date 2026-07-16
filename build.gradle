@@ -64,6 +64,7 @@ tasks.withType(JavaCompile).configureEach {
     // actual Java 8 API surface, rejecting JDK 9+-only APIs (e.g. List.of()) whose return
     // types are internal JDK immutable-collection implementations that have a history of
     // breaking Gradle's Configuration Cache serialization.
+    // See https://github.com/gradle/gradle/issues/26942
     options.release = 8
 }
 
