@@ -54,7 +54,7 @@ class GosuPluginVariantTest extends AbstractGosuPluginSpecification {
     Attributes
         - org.gradle.category            = library
         - org.gradle.dependency.bundling = external
-        - org.gradle.jvm.version         = 11
+        - org.gradle.jvm.version         = 21
         - org.gradle.libraryelements     = classes
         - org.gradle.usage               = java-runtime
     Artifacts
@@ -87,7 +87,7 @@ class GosuPluginVariantTest extends AbstractGosuPluginSpecification {
     Attributes
         - org.gradle.category            = library
         - org.gradle.dependency.bundling = external
-        - org.gradle.jvm.version         = 11
+        - org.gradle.jvm.version         = 21
         - org.gradle.libraryelements     = classes
         - org.gradle.usage               = java-api
     Artifacts
