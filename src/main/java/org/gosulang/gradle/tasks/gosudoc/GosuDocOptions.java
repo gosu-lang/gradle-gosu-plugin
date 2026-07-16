@@ -4,10 +4,9 @@ import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.compile.AbstractOptions;
 import org.gradle.api.tasks.compile.BaseForkOptions;
 
-public class GosuDocOptions extends AbstractOptions {
+public class GosuDocOptions {
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
   private String title;
