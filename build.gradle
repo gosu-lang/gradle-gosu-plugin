@@ -53,8 +53,18 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of javaVersion
     }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
     withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // --release (not just source/targetCompatibility) so the compiler validates against the
+    // actual Java 8 API surface, rejecting JDK 9+-only APIs (e.g. List.of()) whose return
+    // types are internal JDK immutable-collection implementations that have a history of
+    // breaking Gradle's Configuration Cache serialization.
+    options.release = 8
 }
 
 gradlePlugin {
