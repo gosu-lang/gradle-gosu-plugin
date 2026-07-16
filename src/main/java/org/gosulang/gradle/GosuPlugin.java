@@ -1,12 +1,10 @@
 package org.gosulang.gradle;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.GosuRuntime;
-import org.gosulang.gradle.tasks.GosuSourceSet;
 import org.gosulang.gradle.tasks.gosudoc.GosuDoc;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.Convention;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.SourceSet;
@@ -46,8 +44,11 @@ public class GosuPlugin implements Plugin<Project> {
 
  private void configureGosuDoc( final Project project ) {
      SourceSet mainSourceSet = javaPluginExtension(project).getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
-     Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(mainSourceSet, "convention");
-     GosuSourceSet gosuSourceSet = sourceSetConvention.getPlugin(GosuSourceSet.class);
+     // Look up by name, not getByType(SourceDirectorySet.class): the "gosu" extension is registered
+     // as a plain SourceDirectorySet (see GosuBasePlugin), and getByType would throw on ambiguity if
+     // another language plugin (e.g. groovy, scala) registered its own SourceDirectorySet-typed
+     // extension on the same source set.
+     SourceDirectorySet gosuSource = (SourceDirectorySet) mainSourceSet.getExtensions().getByName("gosu");
 
      TaskProvider<GosuDoc> gosuDoc = project.getTasks().register(GOSUDOC_TASK_NAME, GosuDoc.class, t -> {
         t.setDescription("Generates Gosudoc API documentation for the main source code.");
@@ -55,7 +56,7 @@ public class GosuPlugin implements Plugin<Project> {
         // JvmFeatureInternal mainFeature = JavaPluginHelper.getJavaComponent(project).getMainFeature();//alternative approach but needs to be tested
         // gosuDoc.setClasspath(mainFeature.getSourceSet().getOutput().plus(mainFeature.getSourceSet().getCompileClasspath()));
         t.setClasspath(mainSourceSet.getOutput().plus(mainSourceSet.getCompileClasspath()));
-        t.setSource(gosuSourceSet.getGosu());
+        t.setSource(gosuSource);
     });
   }
 
