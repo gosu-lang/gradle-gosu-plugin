@@ -6,7 +6,10 @@ import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.compile.BaseForkOptions;
 
-public class GosuCompileOptions {
+import java.io.Serializable;
+
+public class GosuCompileOptions implements Serializable {
+  private static final long serialVersionUID = 0;
 
   //for some reason related to Java reflection, we need to name these private fields exactly like their getters/setters (no leading '_')
   private boolean checkedArithmetic = false;
