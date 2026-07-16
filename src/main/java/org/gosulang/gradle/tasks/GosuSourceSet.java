@@ -16,12 +16,14 @@ public interface GosuSourceSet {
   /**
    * Configures the Gosu source for this set.
    *
-   * <p>The given closure is used to configure the {@link SourceDirectorySet} which contains the Gosu source.
+   * <p>The given closure is used to configure the {@link SourceDirectorySet} which contains the Gosu source,
+   * with the {@link SourceDirectorySet} set as the closure's delegate (resolved before the closure's
+   * owner), matching Gradle's usual Closure-configuration DSL convention.
    *
    * @param configureClosure The closure to use to configure the Gosu source.
    * @return this
    */
-  GosuSourceSet gosu(Closure configureClosure);
+  GosuSourceSet gosu(Closure<?> configureClosure);
 
   /**
    * Configures the Gosu source for this set.
@@ -31,7 +33,7 @@ public interface GosuSourceSet {
    * @param configureAction The action to use to configure the Gosu source.
    * @return this
    */
-  GosuSourceSet gosu( Action<? super SourceDirectorySet> configureAction);  
+  GosuSourceSet gosu( Action<? super SourceDirectorySet> configureAction);
   
   /**
    * All Gosu source for this source set.
