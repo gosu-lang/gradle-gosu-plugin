@@ -6,7 +6,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
-import org.gradle.util.VersionNumber;
+import org.gosulang.gradle.util.VersionNumber;
 
 import javax.annotation.Nullable;
 import java.io.File;

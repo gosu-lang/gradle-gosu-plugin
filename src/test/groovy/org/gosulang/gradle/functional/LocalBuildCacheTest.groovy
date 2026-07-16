@@ -2,7 +2,7 @@ package org.gosulang.gradle.functional
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
-import org.gradle.util.VersionNumber
+import org.gosulang.gradle.util.VersionNumber
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
