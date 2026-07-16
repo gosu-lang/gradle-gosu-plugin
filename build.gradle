@@ -65,6 +65,11 @@ gradlePlugin {
             displayName = 'Gosu Gradle Plugin'
             description = project.description
             tags.set(['gosu'])
+            compatibility(it) {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
     website = 'http://gosu-lang.github.io/'
