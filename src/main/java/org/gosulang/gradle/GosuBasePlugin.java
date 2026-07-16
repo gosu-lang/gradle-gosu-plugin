@@ -1,7 +1,6 @@
 package org.gosulang.gradle;
 
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.gosulang.gradle.tasks.DefaultGosuSourceSet;
 import org.gosulang.gradle.tasks.GosuRuntime;
 import org.gosulang.gradle.tasks.GosuSourceSet;
@@ -15,7 +14,6 @@ import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.plugins.Convention;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.specs.Spec;
@@ -87,10 +85,17 @@ public class GosuBasePlugin implements Plugin<Project> {
  private void configureSourceSetDefaults() {
      javaPluginExtension(_project).getSourceSets().all(sourceSet -> {
       DefaultGosuSourceSet gosuSourceSet = new DefaultGosuSourceSet(sourceSet.getName(), _objectFactory);
-     //have to be revisit to avoid using the covention here
-      Convention sourceSetConvention = (Convention) InvokerHelper.getProperty(sourceSet, "convention");
-      sourceSetConvention.getPlugins().put("gosu", gosuSourceSet);
-  //    sourceSet.getExtensions().add(SourceDirectorySet.class, "gosu", gosuSourceSet.getGosu()); //alternative but it's not working
+      // org.gradle.api.plugins.Convention is removed in Gradle 9.0. Register the *SourceDirectorySet*
+      // itself as the "gosu" extension, matching exactly how Gradle's own current GroovyBasePlugin/
+      // ScalaBasePlugin attach their language sources (e.g. sourceSet.getExtensions().add(
+      // GroovySourceDirectorySet.class, "groovy", groovySource)). This matters because Gradle's
+      // extension-shorthand DSL (`gosu { ... }` inside a sourceSet block, or a bare `sourceSet.gosu`
+      // property read) delegates directly to the registered extension OBJECT, not through any
+      // custom method our own GosuSourceSet interface might define under the same name. Registering
+      // the wrapper GosuSourceSet instance (first attempt) broke `gosu { srcDir(...) }` /
+      // `gosu.srcDirs` DSL usage because those calls resolved against the wrapper object, which has
+      // no such methods/properties (only its nested getGosu() SourceDirectorySet does).
+      sourceSet.getExtensions().add(SourceDirectorySet.class, "gosu", gosuSourceSet.getGosu());
       gosuSourceSet.getGosu().srcDir("src/" + sourceSet.getName() + "/gosu");
       // Exclude gosu sources from this source set's resources with a *serializable* Spec, so the filter — and
       // therefore every consumer's ProcessResources task — is configuration-cache compatible. The
