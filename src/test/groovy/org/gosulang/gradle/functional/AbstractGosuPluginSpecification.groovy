@@ -1,6 +1,6 @@
 package org.gosulang.gradle.functional
 
-import org.gradle.util.VersionNumber
+import org.gosulang.gradle.util.VersionNumber
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Shared

@@ -3,7 +3,7 @@ package org.gosulang.gradle.unit
 import org.gosulang.gradle.GosuBasePlugin
 import org.gradle.api.GradleException
 import org.gradle.testfixtures.ProjectBuilder
-import org.gradle.util.VersionNumber
+import org.gosulang.gradle.util.VersionNumber
 import spock.lang.Specification
 
 class GosuRuntimeTest extends Specification {
