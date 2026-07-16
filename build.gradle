@@ -124,8 +124,12 @@ if(System.getenv('CI') != null) {
         options.fork = false
     }
     test {
-        maxHeapSize = '1g'
-        systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit from spawning daemons and running out of memory
+        maxHeapSize = '2g'
+        // `org.gradle.testkit.debug=true` forces all testkit tests to share the same in-process daemon
+        // Previously this was nice and kept memory usage low, but with JDK 16+ causes issues with --add-opens and the daemon and configuration cache tests
+        // See GradleRunner withDebug(true) with Config cache fails with Unable to make field SerializedLambda.capturedArgs accessible · Issue #22765 · gradle/gradle (https://github.com/gradle/gradle/issues/22765)
+        // and Config Cache support for serializing java.lang.invoke.SerializedLambda · Issue #24981 · gradle/gradle (https://github.com/gradle/gradle/issues/24981)
+        //systemProperty 'org.gradle.testkit.debug', 'true' // prevents the testkit from spawning daemons and running out of memory
     }
 }
 
