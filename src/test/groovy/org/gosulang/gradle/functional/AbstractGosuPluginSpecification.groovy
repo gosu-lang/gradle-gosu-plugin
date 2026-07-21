@@ -41,7 +41,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
                 mavenLocal()
                 mavenCentral()
                 maven {
-                    url 'https://oss.sonatype.org/content/repositories/snapshots' //for Gosu snapshot builds
+                    url 'https://central.sonatype.com/repository/maven-snapshots/' //for Gosu snapshot builds
                 }
             }
             dependencies {
@@ -54,6 +54,36 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
             }
             """
         return buildFileContent
+    }
+
+    /**
+     * Build script for incremental-compilation tests: same plugin/repositories/
+     * dependencies setup as the basic script, plus compileGosu configuration
+     * with incrementalCompilation enabled and verbose logging on. Used by tests
+     * that exercise the dep-graph / change-detection paths.
+     */
+    protected String getIncrementalBuildScriptForTesting() {
+        String gosuVersion = this.gosuVersion
+        return """
+            plugins {
+                id 'org.gosu-lang.gosu'
+            }
+            repositories {
+                mavenLocal()
+                mavenCentral()
+                maven {
+                    url 'https://central.sonatype.com/repository/maven-snapshots/'
+                }
+            }
+            dependencies {
+                implementation group: 'org.gosu-lang.gosu', name: 'gosu-core-api', version: '$gosuVersion'
+            }
+
+            compileGosu {
+                gosuOptions.incrementalCompilation = true
+                gosuOptions.verbose = true
+            }
+            """
     }
 
     def setup() {

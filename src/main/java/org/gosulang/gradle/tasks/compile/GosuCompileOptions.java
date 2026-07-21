@@ -1,5 +1,6 @@
 package org.gosulang.gradle.tasks.compile;
 
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
@@ -19,6 +20,7 @@ public class GosuCompileOptions implements Serializable {
   private boolean verbose = false;
   private Integer maxwarns;
   private Integer maxerrs;
+  private boolean incrementalCompilation = false;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -127,4 +129,39 @@ public class GosuCompileOptions implements Serializable {
     return maxerrs;
   }
   
+  /**
+   * @return Whether incremental compilation is enabled. Defaults to {@code false}.
+   */
+  @Input
+  public boolean isIncrementalCompilation() {
+    return incrementalCompilation;
+  }
+
+  /**
+   * Sets whether incremental compilation is enabled. Defaults to {@code false}.
+   * When enabled, the compiler will track dependencies and only recompile affected files.
+   * Requires Gosu 1.18.7 or later.
+   * @param incrementalCompilation Enable incremental compilation
+   */
+  public void setIncrementalCompilation(boolean incrementalCompilation) {
+    this.incrementalCompilation = incrementalCompilation;
+  }
+
+  // Annotation processors are not run by gosuc; they execute during compileJava
+  // and their generated .class files reach this task via javaClassesDir.
+
+// TODO Should we return null here or just don't override?
+//    /**
+//     * Returns the classpath to use to load annotation processors. This path is also used for annotation processor discovery.
+//     *
+//     * @return The annotation processor path, or {@code null} if annotation processing is disabled.
+//     * @since 3.4
+//     */
+//  @Nullable
+//  @Optional
+//  @Classpath
+//  public FileCollection getAnnotationProcessorPath() {
+//    return annotationProcessorPath;
+//  }
+
 }

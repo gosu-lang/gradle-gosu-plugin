@@ -77,7 +77,7 @@ class MultiModuleGraphTraversalTest extends AbstractGosuPluginSpecification {
                     mavenLocal()
                     mavenCentral()
                     maven {
-                        url 'https://oss.sonatype.org/content/repositories/snapshots' //for Gosu snapshot builds
+                        url 'https://central.sonatype.com/repository/maven-snapshots/' //for Gosu snapshot builds
                     }
                 }
                 dependencies {
