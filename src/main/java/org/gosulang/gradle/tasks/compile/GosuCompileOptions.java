@@ -147,21 +147,4 @@ public class GosuCompileOptions implements Serializable {
     this.incrementalCompilation = incrementalCompilation;
   }
 
-  // Annotation processors are not run by gosuc; they execute during compileJava
-  // and their generated .class files reach this task via javaClassesDir.
-
-// TODO Should we return null here or just don't override?
-//    /**
-//     * Returns the classpath to use to load annotation processors. This path is also used for annotation processor discovery.
-//     *
-//     * @return The annotation processor path, or {@code null} if annotation processing is disabled.
-//     * @since 3.4
-//     */
-//  @Nullable
-//  @Optional
-//  @Classpath
-//  public FileCollection getAnnotationProcessorPath() {
-//    return annotationProcessorPath;
-//  }
-
 }

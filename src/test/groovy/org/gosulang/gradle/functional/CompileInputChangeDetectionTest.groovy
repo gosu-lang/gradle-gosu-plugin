@@ -5,7 +5,6 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.gradle.testkit.runner.UnexpectedBuildSuccess
 import org.gosulang.gradle.util.VersionNumber
-import spock.lang.Ignore
 import spock.lang.Unroll
 
 import java.util.regex.Pattern
