@@ -12,6 +12,7 @@ import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
 @Unroll
 class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPluginSpecification {
+    private static final long SLEEP_MS = 200;
 
     File srcMainGosu, baseClass, derivedClass, independentClass
     File dependencyFile
@@ -90,7 +91,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         long derivedClassTime = new File(buildOutput, 'DerivedClass.class').lastModified()
         long independentClassTime = new File(buildOutput, 'IndependentClass.class').lastModified()
         
-        Thread.sleep(1100) // Ensure timestamp difference
+        Thread.sleep(SLEEP_MS) // Ensure timestamp difference
         
         baseClass.setText('') // truncate
         baseClass << """
@@ -231,7 +232,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         long classATime = new File(buildOutput, 'ClassA.class').lastModified()
         long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
         long classCTime = new File(buildOutput, 'ClassC.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         classA.setText('') // truncate
         classA << """
@@ -341,7 +342,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         long classATime = new File(buildOutput, 'ClassA.class').lastModified()
         long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
         long unrelatedCTime = new File(buildOutput, 'UnrelatedC.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         classA.setText('') // truncate
         classA << """
@@ -424,7 +425,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         when: 'Manually delete the dep file, simulating a stray rm or IDE clean'
         long classATime = new File(buildOutput, 'ClassA.class').lastModified()
         long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
-        Thread.sleep(1100) // ensure observable mtime difference on coarse filesystems
+        Thread.sleep(SLEEP_MS) // ensure observable mtime difference on coarse filesystems
 
         assert dependencyFile.delete()
 
@@ -503,7 +504,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         when: 'Modify the annotation type - add a new attribute (ABI change)'
         long annoTime = new File(javaOutput, 'com/example/MyAnno.class').lastModified()
         long consumerTime = new File(gosuOutput, 'Consumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         annoFile.setText('')
         annoFile << """
@@ -598,7 +599,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         long outerTime = new File(javaOutput, 'com/example/Outer.class').lastModified()
         long nestedAnnoTime = new File(javaOutput, 'com/example/Outer$NestedAnno.class').lastModified()
         long consumerTime = new File(gosuOutput, 'Consumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         outerFile.setText('')
         outerFile << """
@@ -687,7 +688,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         long outerTime = new File(javaOutput, 'com/example/Outer.class').lastModified()
         long innerTime = new File(javaOutput, 'com/example/Outer$Inner.class').lastModified()
         long consumerTime = new File(gosuOutput, 'Consumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         outerFile.setText('')
         outerFile << """
@@ -785,7 +786,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         when: 'Modify the nested class - new public method (ABI change)'
         long referringTime = new File(gosuOutput, 'ReferringConsumer.class').lastModified()
         long unrelatedTime = new File(gosuOutput, 'UnrelatedConsumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         outerFile.setText('')
         outerFile << """
@@ -883,7 +884,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         when: 'Modify the nested annotation - add a new attribute (ABI change)'
         long annotatedTime = new File(gosuOutput, 'AnnotatedConsumer.class').lastModified()
         long unrelatedTime = new File(gosuOutput, 'UnrelatedConsumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         outerFile.setText('')
         outerFile << """
@@ -975,7 +976,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         when: 'Modify the target Java type - new public method (ABI change)'
         long referringTime = new File(gosuOutput, 'ReferringConsumer.class').lastModified()
         long unrelatedTime = new File(gosuOutput, 'UnrelatedConsumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         targetFile.setText('')
         targetFile << """
@@ -1078,7 +1079,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         long outerTime = new File(javaOutput, 'com/example/Outer.class').lastModified()
         long innerTime = new File(javaOutput, 'com/example/Outer$Inner.class').lastModified()
         long consumerTime = new File(gosuOutput, 'com/example/Consumer.class').lastModified()
-        Thread.sleep(1100)
+        Thread.sleep(SLEEP_MS)
 
         outerFile.setText('')
         outerFile << """

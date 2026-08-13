@@ -35,7 +35,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
  */
 @Unroll
 class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
-
+    private static final long SLEEP_MS = 200;
     File srcMainGosu, libDir, myJar
     File gosuClass
     File dependencyFile
@@ -151,7 +151,7 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         long unrelatedTimeBefore = unrelatedClassFile.lastModified()
 
         // Wait to ensure file timestamps will differ
-        Thread.sleep(1000)
+        Thread.sleep(SLEEP_MS)
 
         and: 'Replace the JAR with a modified version (ABI change: add new method)'
         createJarWithClass(myJar, 'com/example/LibraryClass', '''

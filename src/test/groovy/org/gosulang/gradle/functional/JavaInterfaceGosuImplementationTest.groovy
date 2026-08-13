@@ -10,7 +10,7 @@ import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
 @Unroll
 class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecification {
-
+    private static final long SLEEP_MS = 200;
     File srcMainJava, srcMainGosu, javaInterface, gosuImplementation, unrelatedClass
     File dependencyFile
 
@@ -108,7 +108,7 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
         long implTimeBefore = implClassFile.lastModified()
         long unrelatedTimeBefore = unrelatedClassFile.lastModified()
 
-        Thread.sleep(1100) // Ensure timestamp difference
+        Thread.sleep(SLEEP_MS) // Ensure timestamp difference
 
         // Add a new method to the interface
         javaInterface.text = """
@@ -214,7 +214,7 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
         when: 'Change Java method IMPLEMENTATION only (not signature)'
         long subClassTimeBefore = subClassFile.lastModified()
 
-        Thread.sleep(1100) // Ensure timestamp difference
+        Thread.sleep(SLEEP_MS) // Ensure timestamp difference
 
         // Change implementation but not API
         javaBaseClass.text = """
