@@ -1069,6 +1069,120 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
+    /**
+     * Pins today's behaviour, which is correct but wasteful, so that improving it has to be a
+     * deliberate act rather than an accident.
+     *
+     * <p>The plugin does its job precisely here -- it takes the incremental path and names the
+     * changed Java type in {@code -changed-types}, both asserted below.  The waste is one layer
+     * down.  gosuc seeds its BFS with that FQCN, skips it (a {@code -local-java-types} entry is
+     * walked through but never compiled, since {@code compileJava} already built it), finds no
+     * consumers, and ends with an empty recompile set.  It cannot tell that apart from "no
+     * baseline dependency graph", so it applies its empty-set-means-initial-build rule and
+     * compiles every Gosu source in the module.
+     *
+     * <p>Contrast with 'Top-level Java type change does not over-recompile unrelated Gosu
+     * sources': the same kind of edit to a Java type that a Gosu class <em>does</em> consume
+     * produces a precise cascade.  It is the Java type nothing uses that costs a full rebuild,
+     * which is backwards, and in a mixed module most Java types have no Gosu consumers.
+     *
+     * <p>Fixing it needs a gosuc change -- distinguishing "-changed-types was supplied and the
+     * cascade came out empty" (nothing to do) from "-changed-types was absent" (initial build).
+     * When that lands this test will start failing, and the two negated assertions at the bottom
+     * are the ones to invert.
+     */
+    def 'Java type with no Gosu consumers recompiles every Gosu source [Gradle #gradleVersion]'() {
+        given:
+        buildScript << getIncrementalBuildScriptForTesting()
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File orphan = new File(srcMainJavaPkg, 'Orphan.java')
+        orphan << """
+            package com.example;
+
+            public class Orphan {
+                public static String tag() {
+                    return "v1";
+                }
+            }
+            """
+
+        // Neither Gosu class references Orphan, or each other.
+        File alphaClass = new File(srcMainGosu, 'AlphaClass.gs')
+        alphaClass << """
+            class AlphaClass {
+                static function id() : String {
+                    return "alpha"
+                }
+            }
+            """
+
+        File betaClass = new File(srcMainGosu, 'BetaClass.gs')
+        betaClass << """
+            class BetaClass {
+                static function id() : String {
+                    return "beta"
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(gosuOutput, 'AlphaClass.class').exists()
+        new File(gosuOutput, 'BetaClass.class').exists()
+
+        when: 'The orphan Java type gets an ABI change'
+        long alphaTime = new File(gosuOutput, 'AlphaClass.class').lastModified()
+        long betaTime = new File(gosuOutput, 'BetaClass.class').lastModified()
+        Thread.sleep(SLEEP_MS)
+
+        orphan.setText('')
+        orphan << """
+            package com.example;
+
+            public class Orphan {
+                public static String tag() {
+                    return "v2";
+                }
+                public static int newApi() {
+                    return 42;
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'The plugin drove a selective build and named the changed Java type'
+        result.task(':compileGosu').outcome == SUCCESS
+        result.output.contains('Gosu incremental compilation started')
+        result.output.contains('Java type changed: com.example.Orphan')
+
+        and: 'No full rebuild was requested by the plugin -- the change set was complete and non-empty'
+        !result.output.contains('Gosu full recompilation is required')
+
+        and: 'Yet every Gosu source was recompiled, none of which consumes the Java type'
+        // Invert these two when gosuc stops treating an empty recompile set as an initial build.
+        new File(gosuOutput, 'AlphaClass.class').lastModified() > alphaTime
+        new File(gosuOutput, 'BetaClass.class').lastModified() > betaTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
     def 'Nested Java class producer is recorded in dep file using $ separator [Gradle #gradleVersion]'() {
         given:
         buildScript << getIncrementalBuildScriptForTesting()

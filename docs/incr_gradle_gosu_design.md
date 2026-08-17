@@ -439,7 +439,7 @@ All three rows are pinned by tests, including the negative one:
 | Who computes the recompile set | In-process (`SelectiveCompiler` + `ClassSetAnalysis`) | The forked `gosuc` process |
 | Who narrows the compiler's file list | The plugin | `gosuc` — the plugin always passes all sources |
 | Cross-boundary ABI avoidance | `@CompileClasspath` fingerprinting | Same, and additionally applied to the same-module Java output |
-| Failure safety | `CompileTransaction` stash/restore | None on either side (§12) |
+| Failure safety | `CompileTransaction` stash/restore | None on either side (§11) |
 | Persisted state | `previous-compilation-data.bin`, `@OutputFile`, cacheable | `gosuc-deps-{task}.json`, `@OutputFile @Optional`, cacheable |
 
 ---
@@ -473,17 +473,32 @@ hit would poison the following incremental build.
 
 ---
 
-## 12. Known limitations and open items
+## 11. Known limitations and open items
 
 1. **No transactional safety.** gosuc deletes stale outputs *before* compiling with no
    stash/restore, so a failed compile leaves the output directory missing the deleted
    classes. The plugin does nothing to compensate — there is no equivalent of Gradle's
    `CompileTransaction` on either side of the contract. Recovery is `clean`.
-2. **Empty change sets mean compile-all.** If Gradle re-runs the task incrementally but
-   no change maps into `changedTypes`/`removedTypes` (e.g. only a non-Gosu, non-`.class`
-   file under a tracked input changed), neither flag is emitted, gosuc's recompile set
-   comes out empty, and it treats that as an initial build and compiles everything.
-   This is correct but not minimal.
+2. **A Java type with no Gosu consumers costs a full recompile.** Correct but badly
+   non-minimal, and the cause is not on this side of the contract. The plugin does the
+   right thing: an ABI change to a same-module Java type drives the incremental path and
+   emits a complete, non-empty `-changed-types`. gosuc seeds its BFS with that FQCN,
+   skips it (a `-local-java-types` entry is walked through but never compiled, since
+   `compileJava` already built it), finds no consumers, and ends with an **empty
+   recompile set** — which it cannot tell apart from "no baseline dependency graph", so
+   its empty-set-means-initial-build rule compiles every Gosu source in the module.
+
+   The incentives are backwards: change a Java type that Gosu code uses and the cascade
+   is precise (§9); change one nothing uses — the common case in a mixed module — and
+   the whole module rebuilds. Pinned by *Java type with no Gosu consumers recompiles
+   every Gosu source*, which also asserts that the plugin neither requested a full
+   rebuild nor produced an empty change set, so the failure stays attributed to gosuc.
+
+   Fixing it needs a gosuc change: discriminate on whether `-changed-types` was supplied
+   at all — present with an empty cascade means *nothing to do*, absent means *initial
+   build* — rather than on whether the recompile set came out empty. The plugin's half
+   would be to always emit `-changed-types`/`-removed-types` in incremental mode, even
+   when a set is empty, instead of suppressing them, so the signal is unambiguous.
 3. **`getJavaClassesDir().getSingleFile()`** assumes the collection holds exactly one
    directory. That holds for the `SourceSet`-derived value wired by `GosuBasePlugin`,
    but the setter is public and a caller passing a multi-directory collection would get
