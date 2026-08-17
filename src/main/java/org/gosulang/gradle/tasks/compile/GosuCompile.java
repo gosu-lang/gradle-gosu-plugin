@@ -470,9 +470,12 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
    * returns to disk and the next incremental compileGosu can use it as a
    * baseline graph instead of falling back to a full rebuild.
    *
+   * Also @Optional, because the file is only conditionally produced: gosuc is passed
+   * -dependency-file solely when gosuOptions.incrementalCompilation is on.
    * Path is derived from the task name; not user-configurable.
    */
   @OutputFile
+  @Optional
   public File getDependencyFile() {
     return getLayout().getBuildDirectory()
             .file("tmp/gosuc-deps-" + getName() + ".json")

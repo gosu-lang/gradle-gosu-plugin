@@ -172,7 +172,70 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         then: 'Compilation succeeds but no dependency file is created'
         result.task(':compileGosu').outcome == SUCCESS
         !dependencyFile.exists()
-        
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Build cache round trip is unaffected by the absent dep file when incremental is off [Gradle #gradleVersion]'() {
+        given: 'a non-incremental build - gosuc is never passed -dependency-file, so getDependencyFile(), an @Optional @OutputFile, is never produced'
+
+        buildScript << getBasicBuildScriptForTesting()
+
+        baseClass << """
+            class BaseClass {
+                protected static var value : int = 42
+            }
+            """
+
+        derivedClass << """
+            class DerivedClass extends BaseClass {
+                static function getDoubleValue() : int {
+                    return BaseClass.value * 2
+                }
+            }
+            """
+
+        when: 'the first build compiles and populates the local build cache'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withTestKitDir(testKitDir.root)
+                .withPluginClasspath()
+                .withArguments('compileGosu', '--build-cache', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then: 'the classes are produced and the dep file is not'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'BaseClass.class').exists()
+        new File(buildOutput, 'DerivedClass.class').exists()
+        !dependencyFile.exists()
+
+        when: 'the build runs again with no changes'
+        result = runner.build()
+
+        then: 'the permanently absent declared output does not force re-execution'
+        result.task(':compileGosu').outcome == UP_TO_DATE
+        !dependencyFile.exists()
+
+        when: 'the build directory is wiped, so the next build must come from the cache'
+        runner.withArguments('clean', '-i')
+        runner.build()
+
+        runner.withArguments('compileGosu', '--build-cache', '-i')
+        result = runner.build()
+
+        then: 'compileGosu is served from the cache and the classes are restored'
+        result.task(':compileGosu').outcome == FROM_CACHE
+        new File(buildOutput, 'BaseClass.class').exists()
+        new File(buildOutput, 'DerivedClass.class').exists()
+
+        and: 'the restore does not resurrect a dep file that was never stored'
+        !dependencyFile.exists()
+
         where:
         gradleVersion << gradleVersionsToTest
     }
@@ -322,7 +385,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         String depFileContentBeforeWipe = dependencyFile.text
 
         when: 'Wipe the build directory to simulate a fresh checkout, then restore via the build cache'
-        runner.withArguments('clean', '--build-cache', '-i')
+        runner.withArguments('clean', '-i')
         runner.build()
 
         runner.withArguments('compileGosu', '--build-cache', '-i')
