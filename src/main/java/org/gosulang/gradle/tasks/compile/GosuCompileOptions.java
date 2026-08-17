@@ -140,7 +140,7 @@ public class GosuCompileOptions implements Serializable {
   /**
    * Sets whether incremental compilation is enabled. Defaults to {@code false}.
    * When enabled, the compiler will track dependencies and only recompile affected files.
-   * Requires Gosu 1.18.7 or later.
+   * Requires Gosu 1.18.8 or later.
    * @param incrementalCompilation Enable incremental compilation
    */
   public void setIncrementalCompilation(boolean incrementalCompilation) {
