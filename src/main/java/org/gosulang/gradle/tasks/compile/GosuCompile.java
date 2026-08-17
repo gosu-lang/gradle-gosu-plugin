@@ -59,31 +59,36 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
 
   @TaskAction
   protected void compile(InputChanges inputChanges) {
-    if (getGosuOptions().isIncrementalCompilation() && !getGosuOptions().isFork()) {
-      throw new GradleException("gosuOptions.incrementalCompilation requires gosuOptions.fork = true,"
-        + " but fork is false for " + getPath() + ". The in-process Gosu compiler has no incremental"
-        + " support");
-    }
-
     DefaultGosuCompileSpec spec = createSpec();
 
-    if (!inputChanges.isIncremental()) {
-      getLogger().info("Gosu full recompilation is required");
-      spec.setFullRebuildRequired(true);
-    } else {
-      getLogger().info("Gosu incremental compilation started");
-      spec.setIncremental(true);
-      Set<String> changedTypes = new HashSet<>();
-      Set<String> removedTypes = new HashSet<>();
+    // Everything below only feeds gosuc's -changed-types/-removed-types/-local-java-types,
+    // which CommandLineGosuCompiler emits solely when incrementalCompilation is on.
+    if (getGosuOptions().isIncrementalCompilation()) {
+      if (!getGosuOptions().isFork()) {
+        throw new GradleException("gosuOptions.incrementalCompilation requires gosuOptions.fork = true,"
+                                  + " but fork is false for " + getPath() + ". The in-process Gosu compiler has no incremental"
+                                  + " support");
+      }
 
-      collectFQCNs( inputChanges, changedTypes, removedTypes);
-      spec.setChangedTypes(changedTypes);
-      spec.setRemovedTypes(removedTypes);
+      if (!inputChanges.isIncremental()) {
+        getLogger().info("Gosu full recompilation is required");
+        spec.setFullRebuildRequired(true);
+      } else {
+        getLogger().info("Gosu incremental compilation started");
+        spec.setIncremental(true);
+        Set<String> changedTypes = new HashSet<>();
+        Set<String> removedTypes = new HashSet<>();
+
+        collectFQCNs( inputChanges, changedTypes, removedTypes);
+        spec.setChangedTypes(changedTypes);
+        spec.setRemovedTypes(removedTypes);
+      }
+      // Extract local Java type FQCNs for selective dependency tracking
+      // This allows gosuc to distinguish same-module Java types from JRE/JAR types
+      Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
+      spec.setLocalJavaTypes(localJavaTypes);
     }
-    // Extract local Java type FQCNs for selective dependency tracking
-    // This allows gosuc to distinguish same-module Java types from JRE/JAR types
-    Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
-    spec.setLocalJavaTypes(localJavaTypes);
+
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
   }
