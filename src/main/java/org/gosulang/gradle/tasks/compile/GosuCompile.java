@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import groovy.lang.Closure;
 import org.gosulang.gradle.tasks.GosuSourceExtensions;
 import org.gosulang.gradle.tasks.InfersGosuRuntime;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -58,6 +59,12 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
 
   @TaskAction
   protected void compile(InputChanges inputChanges) {
+    if (getGosuOptions().isIncrementalCompilation() && !getGosuOptions().isFork()) {
+      throw new GradleException("gosuOptions.incrementalCompilation requires gosuOptions.fork = true,"
+        + " but fork is false for " + getPath() + ". The in-process Gosu compiler has no incremental"
+        + " support");
+    }
+
     DefaultGosuCompileSpec spec = createSpec();
 
     if (!inputChanges.isIncremental()) {
@@ -65,65 +72,86 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
       spec.setFullRebuildRequired(true);
     } else {
       getLogger().info("Gosu incremental compilation started");
+      spec.setIncremental(true);
       Set<String> changedTypes = new HashSet<>();
       Set<String> removedTypes = new HashSet<>();
 
-      // Extract FQCNs from changed Gosu source files
-      for (FileChange change : inputChanges.getFileChanges(getStableSources())) {
-        File file = change.getFile();
-        if (GosuSourceExtensions.isGosuSourceFile(file.getName())) {
-          String fqcn = extractFQCNFromSourceFile(file);
-          if (fqcn != null) {
-            if (change.getChangeType() == ChangeType.REMOVED) {
-              removedTypes.add(fqcn);
-              getLogger().info("Gosu type removed: {}", fqcn);
-            } else {
-              changedTypes.add(fqcn);
-              getLogger().info("Gosu type changed: {}", fqcn);
-            }
-          }
-        }
-      }
-
-      // Extract FQCNs from changed Java class files (if configured).
-      // This provides fine-grained tracking for project Java sources (not JARs).
-      //
-      // Note: editing a single Java source can produce multiple FileChange
-      // events. Modifying a nested class inside Outer.java rewrites both
-      // Outer.class and Outer$Inner.class, each surfaced as its own change
-      // here. Each maps to a distinct FQCN ("com.example.Outer" and
-      // "com.example.Outer$Inner") and ends up in changedTypes.
-      if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
-        File javaClassesRoot = getJavaClassesDir().getSingleFile();
-        for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
-          File classFile = change.getFile();
-          if (classFile.getName().endsWith(".class")) {
-            String fqcn = extractFQCNFromClassFile(classFile, javaClassesRoot);
-            if (fqcn != null) {
-              if (change.getChangeType() == ChangeType.REMOVED) {
-                removedTypes.add(fqcn);
-                getLogger().info("Java type removed: {}", fqcn);
-              } else {
-                changedTypes.add(fqcn);
-                getLogger().info("Java type changed: {}", fqcn);
-              }
-            }
-          }
-        }
-      }
-
+      collectFQCNs( inputChanges, changedTypes, removedTypes);
       spec.setChangedTypes(changedTypes);
       spec.setRemovedTypes(removedTypes);
-      spec.setIncremental(true);
     }
-
     // Extract local Java type FQCNs for selective dependency tracking
     // This allows gosuc to distinguish same-module Java types from JRE/JAR types
     Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
     spec.setLocalJavaTypes(localJavaTypes);
-
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
+  }
+
+  /**
+   * Collects the FQCNs of modified types into {@code changedTypes} and
+   * {@code removedTypes}, covering both Gosu sources and the
+   * {@code compileJava} output directory.
+   *
+   * <p>Fails the build as soon as a change cannot be mapped to an FQCN. Dropping it is unsafe:
+   * any other change would still drive a narrow incremental compile, and the unnamed type's
+   * stale output would survive.
+   *
+   * @param inputChanges the task's change set
+   * @param changedTypes out-param collecting FQCNs of added/modified types
+   * @param removedTypes out-param collecting FQCNs of removed types
+   * @throws GradleException if any change cannot be mapped to an FQCN
+   */
+  private void collectFQCNs( InputChanges inputChanges, Set<String> changedTypes, Set<String> removedTypes) {
+    // Extract FQCNs from changed Gosu source files
+    for (FileChange change : inputChanges.getFileChanges(getStableSources())) {
+      File file = change.getFile();
+      if (GosuSourceExtensions.isGosuSourceFile(file.getName())) {
+        String fqcn = extractFQCNFromSourceFile(file);
+        if (fqcn == null) {
+          throw new GradleException("Cannot determine the FQCN of changed Gosu source "
+            + file.getAbsolutePath() + ": it lives under none of the task's source roots "
+            + getSourceRoots().getFiles() + ", so it cannot be named in -changed-types/-removed-types.");
+        }
+        if (change.getChangeType() == ChangeType.REMOVED) {
+          removedTypes.add(fqcn);
+          getLogger().info("Gosu type removed: {}", fqcn);
+        } else {
+          changedTypes.add(fqcn);
+          getLogger().info("Gosu type changed: {}", fqcn);
+        }
+      }
+    }
+
+    // Extract FQCNs from changed Java class files (if configured).
+    // This provides fine-grained tracking for project Java sources (not JARs).
+    //
+    // Note: editing a single Java source can produce multiple FileChange
+    // events. Modifying a nested class inside Outer.java rewrites both
+    // Outer.class and Outer$Inner.class, each surfaced as its own change
+    // here. Each maps to a distinct FQCN ("com.example.Outer" and
+    // "com.example.Outer$Inner") and ends up in changedTypes.
+    if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+      File javaClassesRoot = getJavaClassesDir().getSingleFile();
+      for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
+        File classFile = change.getFile();
+        if (classFile.getName().endsWith(".class")) {
+          String fqcn = extractFQCNFromClassFile(classFile, javaClassesRoot);
+          if (fqcn == null) {
+            throw new GradleException("Cannot determine the FQCN of changed Java class "
+              + classFile.getAbsolutePath() + ": it does not live under "
+              + javaClassesRoot.getAbsolutePath() + ".");
+          }
+          if (change.getChangeType() == ChangeType.REMOVED) {
+            removedTypes.add(fqcn);
+            getLogger().info("Java type removed: {}", fqcn);
+          } else {
+            changedTypes.add(fqcn);
+            getLogger().info("Java type changed: {}", fqcn);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -155,7 +183,6 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     }
 
     // Could not find source root
-    getLogger().debug("Could not determine FQCN for source file: {}", sourceFile.getAbsolutePath());
     return null;
   }
 
@@ -191,7 +218,11 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
    * Extract all FQCNs from javaClassesDir for local Java type tracking.
    * gosuc needs this to distinguish same-module Java types (track) from JRE/JAR types (skip).
    *
+   * <p>An empty set is returned only when the source set genuinely has no Java output. An
+   * output directory that exists but cannot be read is an error, not an empty set.
+   *
    * @return Set of FQCNs for all Java classes in the javaClassesDir
+   * @throws GradleException if javaClassesDir exists but is not a readable directory tree
    */
   private Set<String> extractLocalJavaTypeFQCNs() {
     Set<String> localTypes = new HashSet<>();
@@ -201,8 +232,13 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     }
 
     File javaOutputDir = getJavaClassesDir().getSingleFile();
-    if (!javaOutputDir.exists() || !javaOutputDir.isDirectory()) {
+    if (!javaOutputDir.exists()) {
+      // compileJava produced no output, Gosu-only source set.
       return localTypes;
+    }
+    if (!javaOutputDir.isDirectory()) {
+      throw new GradleException("The Java classes directory " + javaOutputDir.getAbsolutePath()
+        + " is not a directory; cannot determine the same-module Java types.");
     }
 
     // Recursively scan for all .class files
@@ -218,14 +254,14 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
    * @param dir current directory to scan
    * @param rootDir root directory for FQCN calculation
    * @param fqcns set to add discovered FQCNs to
+   * @throws GradleException if a directory cannot be listed, or a {@code .class} file's FQCN
+   *         cannot be determined -- an incomplete set is silently wrong, see the body
    */
   private void scanForClassFiles(File dir, File rootDir, Set<String> fqcns) {
     File[] files = dir.listFiles();
     if (files == null) {
-      getLogger().warn(
-        "Could not list contents of {} while extracting local Java types " +
-        "(not a directory, or I/O / permission error); skipping subtree.", dir);
-      return;
+      throw new GradleException("Could not list contents of " + dir.getAbsolutePath()
+        + " while extracting local Java types (not a directory, or an I/O / permission error).");
     }
 
     for (File file : files) {
@@ -233,9 +269,12 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
         scanForClassFiles(file, rootDir, fqcns);
       } else if (file.getName().endsWith(".class")) {
         String fqcn = extractFQCNFromClassFile(file, rootDir);
-        if (fqcn != null) {
-          fqcns.add(fqcn);
+        if (fqcn == null) {
+          throw new GradleException("Cannot determine the FQCN of " + file.getAbsolutePath()
+            + " while extracting local Java types: it does not live under "
+            + rootDir.getAbsolutePath() + ".");
         }
+        fqcns.add(fqcn);
       }
     }
   }
