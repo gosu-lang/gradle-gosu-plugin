@@ -155,24 +155,10 @@ public class GosuBasePlugin implements Plugin<Project> {
     compile.configure(t -> {
       t.setDescription("Compiles the " + sourceDirectorySet.getDisplayName() + ".");
       t.setSource(sourceSet.getJava());
-      // Note: Java classes directory is NOT included in classpath here to avoid triggering full rebuilds
-      // It's tracked separately via javaClassesDir property (with @Incremental) for selective recompilation
-      // The combined classpath (including Java classes) is assembled in GosuCompile.createSpec()
-      t.getConventionMapping().map("classpath", () -> {
-        FileCollection compileClasspath = sourceSet.getCompileClasspath();
-        FileCollection javaClassesOutput = target.files(sourceSet.getJava().getDestinationDirectory());
-        // Defensively subtract Java classes directory from classpath to prevent full rebuilds
-        // when local .class files change. These are tracked separately via javaClassesDir
-        // input property (with @Incremental) for fine-grained dependency tracking.
-        // Only filter if the task is GosuCompile and has javaClassesDir configured.
-        if (t instanceof GosuCompile) {
-          GosuCompile gosuCompileTask = (GosuCompile) t;
-          if (gosuCompileTask.getJavaClassesDir() != null && !gosuCompileTask.getJavaClassesDir().isEmpty()) {
-            return compileClasspath.minus(javaClassesOutput);
-          }
-        }
-        return compileClasspath;
-      });
+      // No javaClassesDir filtering here: GosuCompile.getClasspath() subtracts it on read, so
+      // the @CompileClasspath input never contains the Java output regardless of how the value
+      // was supplied. GosuCompile.createSpec() re-adds it to the classpath handed to gosuc.
+      t.getConventionMapping().map("classpath", () -> sourceSet.getCompileClasspath());
     });
     configureOutputDirectoryForSourceSet(sourceSet, sourceDirectorySet, target, compile);
   }
