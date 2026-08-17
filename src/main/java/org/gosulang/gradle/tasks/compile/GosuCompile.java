@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import static org.gradle.api.tasks.PathSensitivity.NAME_ONLY;
+import static org.gradle.api.tasks.PathSensitivity.RELATIVE;
 
 @CacheableTask
 public abstract class GosuCompile extends AbstractCompile implements InfersGosuRuntime {
@@ -286,9 +286,22 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
 
   /**
    * {@inheritDoc}
+   *
+   * <p>Not tracked as an input in its own right -- {@link #getStableSources()} covers the same
+   * files and is the property the task action queries for changes.  Tracking both would
+   * fingerprint the source set twice and, because Gradle keys its incremental-input registry by
+   * the value object a getter returns, would reintroduce the aliasing hazard described on
+   * {@link #getStableSources()}.  This mirrors {@code JavaCompile}, which annotates its
+   * {@code getSource()} override the same way.
+   *
+   * <p>{@code @PathSensitive} is deliberately absent: Gradle reports a validation error when a
+   * property carries {@code @Internal} alongside a declared input modifier.  Declaring
+   * {@code @Internal} also discards every annotation category inherited from
+   * {@link SourceTask#getSource()} -- including {@code @SkipWhenEmpty} and
+   * {@code @IgnoreEmptyDirectories} -- which is why both now sit on {@code getStableSources()}.
    */
   @Override
-  @PathSensitive(NAME_ONLY)
+  @Internal("tracked via stableSources")
   public FileTree getSource() {
     return super.getSource();
   }
@@ -312,16 +325,42 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     return super.source(sources);
   }
 
-  @PathSensitive(NAME_ONLY)
+  /**
+   * The Gosu sources, and the sole tracked view of them: {@link #getSource()} is {@code @Internal}
+   * so the set is fingerprinted once, here.
+   *
+   * <p>{@code @SkipWhenEmpty} rather than {@code @Incremental} -- the two are interchangeable for
+   * this task's purpose but cannot be combined, because Gradle files them under one annotation
+   * category and rejects a property carrying both.  {@code @SkipWhenEmpty} is the stronger of the
+   * pair: it yields {@code InputBehavior.PRIMARY}, which tracks per-file changes for
+   * {@link InputChanges} exactly as {@code @Incremental} does <em>and</em> skips the task with its
+   * previous outputs removed when no Gosu source remains.  {@code @IgnoreEmptyDirectories} keeps a
+   * tree of empty package directories counting as "no source" for that check.  Both annotations
+   * used to reach the task by inheritance from {@link SourceTask#getSource()}; declaring
+   * {@code @Internal} there discards inherited categories, so they are restated here.  This is the
+   * same arrangement {@code JavaCompile} uses.
+   *
+   * <p>{@code @PathSensitive(RELATIVE)}, not {@code NAME_ONLY}: a Gosu type's FQCN <em>is</em> its
+   * path relative to the source root -- {@link #extractFQCNFromSourceFile} derives it that way, and
+   * gosuc keys its dependency graph on the same mapping.  Normalising to the bare filename would
+   * discard exactly that information, so moving {@code com/example/Foo.gs} to
+   * {@code com/other/Foo.gs} would leave the fingerprint unchanged and the task wrongly
+   * {@code UP-TO-DATE}.  {@code RELATIVE} is still relocatable, so {@code @CacheableTask} and
+   * build-cache portability are unaffected.  Matches {@code GosuDoc.getSource()} and
+   * {@code JavaCompile.getStableSources()}.
+   */
+  @SkipWhenEmpty
+  @IgnoreEmptyDirectories
+  @PathSensitive(RELATIVE)
   @InputFiles
-  @Incremental
   public FileCollection getStableSources() {
     // Must be a dedicated, stable FileCollection instance -- distinct from getSource().
     // Gradle keys its incremental-input BiMap by the value object returned here, and
-    // InputChanges.getFileChanges(getStableSources()) looks the property up by that value.
-    // Returning getSource() directly aliases the tracked "source" input, which corrupts the
-    // BiMap and makes getFileChanges() fail to resolve sibling properties (e.g. javaClassesDir).
-    // Built via the injected ObjectFactory (not getProject()) to stay configuration-cache safe.
+    // InputChanges.getFileChanges(getStableSources()) looks the property up by that value, so an
+    // instance shared with another tracked property would corrupt the BiMap and make
+    // getFileChanges() fail to resolve siblings (e.g. javaClassesDir). Built via the injected
+    // ObjectFactory (not getProject()) to stay configuration-cache safe. Same construction as
+    // JavaCompile's stableSources.
     if (_stableSources == null) {
       _stableSources = getObjectFactory().fileCollection().from((Callable<FileTree>) this::getSource);
     }

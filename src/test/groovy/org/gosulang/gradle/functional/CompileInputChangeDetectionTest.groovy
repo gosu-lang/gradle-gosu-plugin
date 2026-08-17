@@ -11,6 +11,7 @@ import java.util.regex.Pattern
 
 import static org.gradle.testkit.runner.TaskOutcome.FAILED
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
 @Unroll
 class CompileInputChangeDetectionTest extends AbstractGosuPluginSpecification {
@@ -89,6 +90,79 @@ class CompileInputChangeDetectionTest extends AbstractGosuPluginSpecification {
         result.output.contains('/src/main/gosu/B.gs has changed.')
         result.output.contains('[3,46] error: No static property descriptor found for property, abc, on class, Type<B>')
         
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    /**
+     * Pins {@code @PathSensitive(RELATIVE)} on {@code GosuCompile.getStableSources()}.
+     *
+     * <p>A Gosu type's FQCN is its path relative to the source root, so a file's directory is
+     * semantically significant input.  Under {@code NAME_ONLY} every source normalises to its bare
+     * filename, and a move that leaves the bytes untouched produces an identical fingerprint --
+     * the task stays UP-TO-DATE and the type is never compiled under its new name.
+     *
+     * <p>A {@code .gst} template is the vehicle because it carries no in-file {@code package}
+     * declaration: unlike a {@code .gs}/{@code .gr} class, whose declaration must agree with its
+     * directory and therefore changes content whenever the file moves, a template can be relocated
+     * byte-for-byte.  That isolates path sensitivity from content hashing, which is the whole point
+     * -- with {@code NAME_ONLY} this test fails at the "is not UP-TO-DATE" assertion.
+     */
+    def 'moving a template between packages is not UP-TO-DATE [Gradle #gradleVersion]'() {
+        given: 'a template whose type name derives solely from its directory'
+        buildScript << getBasicBuildScriptForTesting()
+
+        // A .gs class is needed alongside it only so the source set is never empty mid-move.
+        A << """
+             class A {
+               static function id() : String {
+                 return "a"
+               }
+             }
+             """
+
+        File oldPackage = new File(srcMainGosu, 'com/example')
+        oldPackage.mkdirs()
+        File template = new File(oldPackage, 'Greeting.gst')
+        String templateContent = 'Hello, world\n'
+        template.text = templateContent
+
+        when: 'initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then: 'the template compiles under com.example'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'com/example/Greeting.class').exists()
+
+        when: 'nothing changes'
+        result = runner.build()
+
+        then: 'sanity check -- the task really is up to date, so the next assertion means something'
+        result.task(':compileGosu').outcome == UP_TO_DATE
+
+        when: 'the template moves to another package, byte-for-byte identical'
+        assert template.delete()
+        File newPackage = new File(srcMainGosu, 'com/other')
+        newPackage.mkdirs()
+        File movedTemplate = new File(newPackage, 'Greeting.gst')
+        movedTemplate.text = templateContent
+
+        result = runner.build()
+
+        then: 'the move is visible to Gradle -- under @PathSensitive(NAME_ONLY) this is UP-TO-DATE'
+        result.task(':compileGosu').outcome == SUCCESS
+
+        and: 'the template is compiled under its new package'
+        new File(buildOutput, 'com/other/Greeting.class').exists()
+
         where:
         gradleVersion << gradleVersionsToTest
     }
