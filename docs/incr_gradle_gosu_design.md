@@ -44,7 +44,7 @@ CLI flags. That "off by default, zero-cost" property is pinned by
 | Requirement | Enforcement |
 |---|---|
 | `gosuOptions.fork = true` | Hard check at task-action time; a `GradleException` names the task and explains that the in-process compiler has no incremental support. `fork` already defaults to `true`, so the guard only fires for builds that explicitly opted out. |
-| gosu-lang ≥ 1.18.7 | Not enforced in code — an older `gosuc` would reject the new flags. `gradle.properties` moves the version used by functional tests to `1.18.8`. |
+| gosu-lang ≥ 1.18.9 | Not enforced in code — an older `gosuc` would reject the new flags. |
 
 Only `CommandLineGosuCompiler` (the forked path, selected by
 `GosuCompilerFactory` when `fork` is true) emits the incremental flags;
@@ -67,7 +67,7 @@ input, and modify the character of two existing properties.
 | `getSource()` | **`@Internal("tracked via stableSources")`** | No longer an input in its own right (§3.1). |
 | `getJavaClassesDir()` | **`@CompileClasspath` `@Incremental` `@Optional`** | *(new)* This source set's `compileJava` output directory, tracked ABI-sensitively and per-file. |
 | `getClasspath()` | `@CompileClasspath` | Unchanged annotation; the **value** now excludes `javaClassesDir` (§6). |
-| `getDependencyFile()` | **`@OutputFile` `@Optional`** | *(new)* `build/tmp/gosuc-deps-{taskName}.json`. |
+| `getDependencyFile()` | **`@OutputFile` `@Optional`**, typed `Provider<RegularFile>` | *(new)* `build/tmp/gosuc-deps-{taskName}.json`, absent unless incremental is on (§3.3). |
 
 ### 3.1 `getStableSources()` — a dedicated `FileCollection` instance
 
@@ -171,26 +171,42 @@ directory is populated before this task reads it.
 ```java
 @OutputFile
 @Optional
-public File getDependencyFile() {
-  return getLayout().getBuildDirectory()
-          .file("tmp/gosuc-deps-" + getName() + ".json")
-          .get().getAsFile();
+public Provider<RegularFile> getDependencyFile() {
+  return getProviderFactory().provider(() ->
+      getGosuOptions().isIncrementalCompilation()
+          ? getLayout().getBuildDirectory().file("tmp/gosuc-deps-" + getName() + ".json").get()
+          : null);
 }
 ```
 
-- **Path is derived from the task name and is not user-configurable**, so
-  `compileGosu` and `compileTestGosu` get separate graphs by construction.
 - **`@OutputFile` on a `@CacheableTask`** means the dep file rides the Gradle build
   cache alongside the `.class` files. On a `FROM_CACHE` restore the graph returns to
   disk, so the *next* build can compile incrementally instead of falling back to a
   full rebuild.
-- **`@Optional`** states the intent that the file is only conditionally produced:
-  `gosuc` is passed `-dependency-file` solely when `incrementalCompilation` is on, so
-  on a regular build the declared output never materialises. Without `@Optional`, a
-  permanently absent declared output is a problem for up-to-date checking and for the
-  cache round trip.
+- **Being a declared output is also what makes gosuc's full-rebuild detection work** —
+  Gradle deletes declared outputs before a non-incremental execution, which is the only
+  way `gosuc` learns that a full rebuild was requested (§4). Do not un-declare it.
+- **Lazy, but deliberately not settable.** A `Provider<RegularFile>` rather than a
+  `RegularFileProperty`: the value is computed on demand, but there is no `set()`. The
+  path stays derived from the task name, which is what stops `compileGosu` and
+  `compileTestGosu` being aimed at one another's graph — a guarantee a settable
+  property would give away for no benefit.
+- **`@Optional` means the value is absent, not merely unwritten.** The provider yields
+  nothing unless `gosuOptions.incrementalCompilation` is on, so a non-incremental build
+  declares no such output at all. That matches reality: `gosuc` is passed
+  `-dependency-file` solely in incremental mode, so nothing would ever write it.
+  Evaluating the flag inside the provider (rather than at task-creation time) means a
+  build script toggling it after the task is created is still seen.
+- `createSpec()` therefore reads it as
+  `getDependencyFile().map(RegularFile::getAsFile).getOrNull()` — `null` on a
+  non-incremental build. Safe, because the only consumer,
+  `CommandLineGosuCompiler.createArgFile`, dereferences it strictly inside its
+  `incrementalCompilation` branch (§7).
 - The build directory is reached through the **injected `ProjectLayout` service**, not
-  `getProject()`.
+  `getProject()`, and the provider through the injected `ProviderFactory`.
+
+Gradle accepts `Provider<RegularFile>` for `@OutputFile`; `validatePlugins` passes on
+8.6 through 9.6.1.
 
 ---
 
@@ -205,12 +221,23 @@ Three distinct states reach `gosuc`:
 | **Full rebuild** | `incrementalCompilation = true`, `inputChanges.isIncremental() == false` | `-incremental`, `-dependency-file`, `-local-java-types` — but **no** `-changed-types` / `-removed-types` |
 | **Incremental** | `incrementalCompilation = true`, `inputChanges.isIncremental() == true` | all of the above **plus** `-changed-types` / `-removed-types` when non-empty |
 
-The full-rebuild state is not a bypass: `gosuc` still runs its incremental path, but
-with an empty seed set it computes an empty recompile set, treats that as an initial
-build, compiles every source, and repopulates the graph from scratch. Gradle drives
-this state whenever it cannot supply reliable `InputChanges` — first run, output
-directory wiped, task properties changed, `.gradle/` fingerprint cache invalidated,
-or a declared output (including the dep file itself) gone missing.
+Gradle drives the full-rebuild state whenever it cannot supply reliable `InputChanges`
+— first run, output directory wiped, task properties changed, an external JAR or
+cross-subproject ABI change, `.gradle/` fingerprint cache invalidated, or a declared
+output (including the dep file itself) gone missing.
+
+> **The full-rebuild signal is the dep file's absence, not the missing flags.** `gosuc`
+> compiles everything iff the dep file does not exist. That has to cover a genuine first
+> build *and* a full rebuild with a previous graph still on disk — and the command line
+> cannot tell the second apart from an incremental round whose cascade came out empty,
+> since both send no `-changed-types`/`-removed-types` (and the latter must compile
+> *nothing*, §11). What separates them is that **Gradle deletes a task's declared outputs
+> before any non-incremental execution** (`RemovePreviousOutputsStep`), so by the time
+> `gosuc` runs in the full-rebuild state its `@OutputFile` dep file is already gone.
+>
+> This is load-bearing and breakable from a distance: if `getDependencyFile()` ever stops
+> being a declared output, or moves outside the task's output set, full rebuilds would
+> silently compile nothing. Any change to §3.3 needs to keep it true.
 
 ---
 
@@ -304,6 +331,10 @@ it" is the tempting wrong answer:
 Silent under-reporting is the one failure mode this design cannot tolerate: it turns
 a sound over-approximation into an unsound under-approximation. A loud failure costs
 a build; a dropped type costs correctness.
+
+One exception, upstream of the policy: it covers files that *reach* an extractor. A
+change whose extension is not in `ALL_EXTS` is dropped earlier, silently, by the
+`isGosuSourceFile` guard — `.java` being the reachable case (§11).
 
 ---
 
@@ -419,7 +450,10 @@ those edges. gosuc's own filter drops them symmetrically. The shape also matches
 Gradle's Java incremental compiler does — per-class dependency tracking within a
 subproject, ABI fingerprinting across subproject boundaries.
 
-All three rows are pinned by tests, including the negative one:
+All three rows are pinned by tests, including the negative one. Row 1 takes two, since
+"selective" has to mean *nothing* when the changed Java type has no consumers at all —
+which only became true in gosu-lang 1.18.9; before that an empty cascade was read as an
+initial build and rebuilt the module:
 
 - `JarLevelGranularityTest` — a JAR ABI change recompiles *both* the consumer and an
   unrelated Gosu class, and the dep file contains **no** entry for the JAR type. The
@@ -428,7 +462,11 @@ All three rows are pinned by tests, including the negative one:
   architectural decision rather than an accident.
 - `JavaInterfaceGosuImplementationTest` — an interface method addition recompiles only
   the implementing Gosu class, leaving an unrelated one untouched; an
-  implementation-only edit to a Java class leaves `compileGosu` `UP_TO_DATE`.
+  implementation-only edit to a Java class leaves `compileGosu` `UP_TO_DATE` (while
+  `compileJava` still re-runs, so the edit is proven to have taken effect).
+- *Java type with no Gosu consumers does not recompile every Gosu source* — the other
+  half of row 1. It also asserts the plugin took the incremental path and emitted a
+  complete change set, so a regression here is attributable to gosuc rather than here.
 
 ### Comparison with the Gradle Java plugin's driver
 
@@ -461,9 +499,8 @@ four behaviours, each pinned by a test in
    does not resurrect a file that was never stored.
    *(Build cache round trip is unaffected by the absent dep file when incremental is off)*
 3. **Deleting it self-heals.** Gradle's fingerprinter notices the missing declared
-   output and re-runs the task; `inputChanges.isIncremental()` is then false,
-   `fullRebuildRequired` is set, every source goes through gosuc, and the graph is
-   regenerated. Net cost: one full recompile.
+   output and re-runs the task non-incrementally; gosuc finds no dep file, so it
+   compiles every source and regenerates the graph (§4). Net cost: one full recompile.
    *(Deleting the dep file forces gosuc to re-run and regenerate it)*
 4. **Per-task isolation.** The name-derived path keeps `compileGosu` and
    `compileTestGosu` graphs apart without configuration.
@@ -489,24 +526,37 @@ hit would poison the following incremental build.
 - **`orderClasspath` remains a configuration-cache hazard.** The closure is invoked at
    execution time with a live `Project` reference (`getProject()`), flagged by an
    explicit `TODO` in `createSpec()`. It is only reached by builds that set the closure.
-- **`getDependencyFile()` returns a plain `File`**, not a `RegularFileProperty`. It
-   uses the injected `ProjectLayout` rather than `getProject()`, but the eager
-   `.get().getAsFile()` resolution at fingerprint time is not the modern lazy shape;
-   migrating to `objects.fileProperty()` with a `Provider`-based `convention(...)` is
-   the natural follow-up.
 - **`GosuSourceExtensions` duplicates `GosuClassTypeLoader.ALL_EXTS`** and is kept in
    sync by hand. A new Gosu extension added upstream and not mirrored here would make
    changed sources with that extension invisible to `collectFQCNs` — they simply would
    not match `isGosuSourceFile`, and no exception would fire.
+- **A `.java` file under `src/main/gosu` breaks the build.** `DefaultGosuSourceSet`
+   includes `**/*.java` in the Gosu source set, so such a file is handed to gosuc,
+   which tries to compile it and dies with an NPE in
+   `SoutCompilerDriver.sendCompileIssue` (a javac diagnostic with a null `file`; on
+   JDK 21 a trivial valid class is enough). Workaround: keep Java sources in
+   `src/main/java`, where `compileJava` owns them.
+
+   **The `**/*.java` include is deliberate — do not remove it.** It is the same split
+   Gradle's `GroovyBasePlugin` makes (`groovy` includes `**/*.java`, `allGroovy` does
+   not), and for the same reason: the compiler handles both languages together, so
+   mutually-referential Gosu and Java can share a directory. `gosu`/`allGosu` here
+   mirror `groovy`/`allGroovy` exactly. The defect is the missing null check, not the
+   include; deleting the include would remove joint compilation.
+
+   **A second, independent gap sits behind the crash.** `collectFQCNs` skips `.java`
+   because it is not in `GosuSourceExtensions.ALL_EXTS`, so editing a jointly-compiled
+   Java file yields an empty change set — which now means *compile nothing* (§4). Fixing
+   the NPE alone would leave that: a Java file compiled on the first build and never
+   recompiled after. It needs gosuc to accept a `.java` FQCN in `-changed-types` and map
+   it back to a source, which `getGosuFilePathFromFqcn` cannot currently do. Note this
+   skip is also the one exception to §5.4's "no skip what we can't name" rule.
 - **Over-recompilation is inherited from gosuc**, which keeps a single consumer bucket
    with no accessible/private split and no inlineable-constant ABI tracking, so every
    cascade is the full transitive closure. Correctness-neutral, wasteful at scale.
 - **Functional tests rely on `Thread.sleep(200)`** between builds to get observable
    `lastModified()` differences, and assert on `-i` log lines. Both are timing- and
    format-sensitive.
-- **Minor:** the `instanceof GosuCompile` check in `GosuBasePlugin.configureGosuCompile`
-    is redundant on a `TaskProvider<GosuCompile>`, and `GosuCompileOptions` carries an
-    unused `org.gradle.api.file.FileCollection` import.
 - **Empty-source skipping now rests on `stableSources` alone** (§3.1). The
     behaviour is unchanged — `@SkipWhenEmpty` moved from an inherited annotation on
     `source` to a declared one on `stableSources` — but the two existing tests that

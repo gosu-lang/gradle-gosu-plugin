@@ -1,6 +1,5 @@
 package org.gosulang.gradle.tasks.compile;
 
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
@@ -140,7 +139,7 @@ public class GosuCompileOptions implements Serializable {
   /**
    * Sets whether incremental compilation is enabled. Defaults to {@code false}.
    * When enabled, the compiler will track dependencies and only recompile affected files.
-   * Requires Gosu 1.18.8 or later.
+   * Requires Gosu 1.18.9 or later.
    * @param incrementalCompilation Enable incremental compilation
    */
   public void setIncrementalCompilation(boolean incrementalCompilation) {

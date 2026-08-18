@@ -126,17 +126,9 @@ public class GosuBasePlugin implements Plugin<Project> {
       t.dependsOn(sourceSet.getCompileJavaTaskName());
       t.getSourceRoots().from(gosuSourceSet.getGosu().getSourceDirectories());
       t.setSource((Object) gosuSourceSet.getGosu()); // Gradle 4.0 overloads setSource; must upcast to Object for backwards compatibility
-    });
-
       // Configure Java classes directory tracking for fine-grained Java → Gosu dependency tracking
-      gosuCompile.configure(t -> {
-          if (t instanceof GosuCompile) {
-              GosuCompile gosuCompileTask = (GosuCompile) t;
-              // Use the SourceSet's Java output directory (Gradle-idiomatic, not task lookup)
-              gosuCompileTask.setJavaClassesDir(_project.files(sourceSet.getJava().getDestinationDirectory()));
-          }
-      });
-
+      t.setJavaClassesDir(_project.files(sourceSet.getJava().getDestinationDirectory()));
+    });
     _project.getTasks().getByName(sourceSet.getClassesTaskName()).dependsOn(compileTaskName);
   }
 

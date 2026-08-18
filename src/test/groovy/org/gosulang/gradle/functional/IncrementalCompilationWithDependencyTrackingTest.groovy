@@ -382,9 +382,21 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         new File(buildOutput, 'ClassB.class').exists()
         new File(buildOutput, 'UnrelatedC.class').exists()
         dependencyFile.exists()
-        String depFileContentBeforeWipe = dependencyFile.text
+
+        and: 'the graph records the one real edge, with every compiled type registered as a producer'
+        String expectedJson = """
+  "consumers": {
+    "ClassA": [
+      "ClassB"
+    ],
+    "ClassB": [],
+    "UnrelatedC": []
+  }
+}"""
+        dependencyFile.text.contains(expectedJson)
 
         when: 'Wipe the build directory to simulate a fresh checkout, then restore via the build cache'
+        String depFileContentBeforeWipe = dependencyFile.text
         runner.withArguments('clean', '-i')
         runner.build()
 

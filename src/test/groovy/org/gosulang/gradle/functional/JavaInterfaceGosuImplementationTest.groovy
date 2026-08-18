@@ -210,9 +210,12 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
         String gosuOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + ['main', 'com', 'example'])
         File subClassFile = new File(gosuOutput, 'SubClass.class')
         subClassFile.exists()
+        File baseClassFile = new File(asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main', 'com', 'example']), 'BaseClass.class')
+        baseClassFile.exists()
 
         when: 'Change Java method IMPLEMENTATION only (not signature)'
         long subClassTimeBefore = subClassFile.lastModified()
+        long baseClassTimeBefore = baseClassFile.lastModified()
 
         Thread.sleep(SLEEP_MS) // Ensure timestamp difference
 
@@ -237,7 +240,13 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
 
         result = runner.build()
 
-        then: 'Gosu subclass was NOT recompiled (ABI unchanged)'
+        then: 'The edit really took effect -- compileJava re-ran and rewrote the Java class'
+        // Without this the next assertion would also pass if nothing had happened at all, e.g. if
+        // the source edit had been missed entirely.
+        result.task(':compileJava').outcome == SUCCESS
+        baseClassFile.lastModified() > baseClassTimeBefore
+
+        and: 'Gosu subclass was NOT recompiled (ABI unchanged)'
         // Task should be UP_TO_DATE because @CompileClasspath provides ABI-level sensitivity
         // Implementation-only changes don't affect the ABI, so Gradle doesn't need to run the task
         result.task(':compileGosu').outcome == UP_TO_DATE

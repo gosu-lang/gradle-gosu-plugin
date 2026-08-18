@@ -9,7 +9,10 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
@@ -56,6 +59,9 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
 
   @Inject
   protected abstract ProjectLayout getLayout();
+
+  @Inject
+  protected abstract ProviderFactory getProviderFactory();
 
   @TaskAction
   protected void compile(InputChanges inputChanges) {
@@ -489,21 +495,30 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   }
 
   /**
-   * The gosuc dependency-tracking file. Declared @OutputFile so Gradle caches
-   * it alongside the .class files - on a FROM_CACHE restore the dep file
-   * returns to disk and the next incremental compileGosu can use it as a
-   * baseline graph instead of falling back to a full rebuild.
+   * The gosuc dependency-tracking file. Declared {@code @OutputFile} so Gradle caches it alongside
+   * the {@code .class} files -- on a {@code FROM_CACHE} restore the dep file returns to disk and
+   * the next incremental compileGosu can use it as a baseline graph instead of falling back to a
+   * full rebuild.
    *
-   * Also @Optional, because the file is only conditionally produced: gosuc is passed
-   * -dependency-file solely when gosuOptions.incrementalCompilation is on.
-   * Path is derived from the task name; not user-configurable.
+   * <p>Returned as a {@link Provider}, not a {@link org.gradle.api.file.RegularFileProperty}:
+   * lazily evaluated, but deliberately with no setter.  The path is derived from the task name so
+   * that {@code compileGosu} and {@code compileTestGosu} cannot be aimed at one another's graph;
+   * a settable property would give that guarantee away for no benefit.
+   *
+   * <p>The provider is **absent unless {@code gosuOptions.incrementalCompilation} is on**, which is
+   * what {@code @Optional} now means here: not "a declared output that may fail to appear on disk",
+   * but "on a non-incremental build this task declares no such output at all".  That matches
+   * reality -- gosuc is passed {@code -dependency-file} solely in incremental mode, so nothing
+   * would ever write it.  Evaluated lazily, so a build script toggling the flag after task
+   * creation is still seen.
    */
   @OutputFile
   @Optional
-  public File getDependencyFile() {
-    return getLayout().getBuildDirectory()
-            .file("tmp/gosuc-deps-" + getName() + ".json")
-            .get().getAsFile();
+  public Provider<RegularFile> getDependencyFile() {
+    return getProviderFactory().provider(() ->
+        getGosuOptions().isIncrementalCompilation()
+            ? getLayout().getBuildDirectory().file("tmp/gosuc-deps-" + getName() + ".json").get()
+            : null);
   }
 
   private DefaultGosuCompileSpec createSpec() {
@@ -515,7 +530,9 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     spec.setGosuClasspath(getGosuClasspath());
     spec.setCompileOptions(getOptions());
     spec.setGosuCompileOptions(_gosuCompileOptions);
-    spec.setDependencyFile(getDependencyFile());
+    // null on a non-incremental build, where the provider has no value. Safe: the only reader,
+    // CommandLineGosuCompiler, dereferences it solely inside its incrementalCompilation branch.
+    spec.setDependencyFile(getDependencyFile().map(RegularFile::getAsFile).getOrNull());
 
     // Build the classpath for gosuc: combine regular classpath + Java classes directory
     // Note: javaClassesDir is tracked separately as an @Incremental input to enable selective recompilation,
