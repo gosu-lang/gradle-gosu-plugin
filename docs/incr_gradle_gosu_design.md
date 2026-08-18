@@ -475,59 +475,39 @@ hit would poison the following incremental build.
 
 ## 11. Known limitations and open items
 
-1. **No transactional safety.** gosuc deletes stale outputs *before* compiling with no
+- **No transactional safety.** gosuc deletes stale outputs *before* compiling with no
    stash/restore, so a failed compile leaves the output directory missing the deleted
    classes. The plugin does nothing to compensate — there is no equivalent of Gradle's
    `CompileTransaction` on either side of the contract. Recovery is `clean`.
-2. **A Java type with no Gosu consumers costs a full recompile.** Correct but badly
-   non-minimal, and the cause is not on this side of the contract. The plugin does the
-   right thing: an ABI change to a same-module Java type drives the incremental path and
-   emits a complete, non-empty `-changed-types`. gosuc seeds its BFS with that FQCN,
-   skips it (a `-local-java-types` entry is walked through but never compiled, since
-   `compileJava` already built it), finds no consumers, and ends with an **empty
-   recompile set** — which it cannot tell apart from "no baseline dependency graph", so
-   its empty-set-means-initial-build rule compiles every Gosu source in the module.
-
-   The incentives are backwards: change a Java type that Gosu code uses and the cascade
-   is precise (§9); change one nothing uses — the common case in a mixed module — and
-   the whole module rebuilds. Pinned by *Java type with no Gosu consumers recompiles
-   every Gosu source*, which also asserts that the plugin neither requested a full
-   rebuild nor produced an empty change set, so the failure stays attributed to gosuc.
-
-   Fixing it needs a gosuc change: discriminate on whether `-changed-types` was supplied
-   at all — present with an empty cascade means *nothing to do*, absent means *initial
-   build* — rather than on whether the recompile set came out empty. The plugin's half
-   would be to always emit `-changed-types`/`-removed-types` in incremental mode, even
-   when a set is empty, instead of suppressing them, so the signal is unambiguous.
-3. **`getJavaClassesDir().getSingleFile()`** assumes the collection holds exactly one
+- **`getJavaClassesDir().getSingleFile()`** assumes the collection holds exactly one
    directory. That holds for the `SourceSet`-derived value wired by `GosuBasePlugin`,
    but the setter is public and a caller passing a multi-directory collection would get
    an exception from `getSingleFile()`.
-4. **The local-Java-type scan is a full directory walk on every incremental run**,
+- **The local-Java-type scan is a full directory walk on every incremental run**,
    independent of how little changed. It is I/O-bound and proportional to the module's
    Java class count, not to the change size.
-5. **`orderClasspath` remains a configuration-cache hazard.** The closure is invoked at
+- **`orderClasspath` remains a configuration-cache hazard.** The closure is invoked at
    execution time with a live `Project` reference (`getProject()`), flagged by an
    explicit `TODO` in `createSpec()`. It is only reached by builds that set the closure.
-6. **`getDependencyFile()` returns a plain `File`**, not a `RegularFileProperty`. It
+- **`getDependencyFile()` returns a plain `File`**, not a `RegularFileProperty`. It
    uses the injected `ProjectLayout` rather than `getProject()`, but the eager
    `.get().getAsFile()` resolution at fingerprint time is not the modern lazy shape;
    migrating to `objects.fileProperty()` with a `Provider`-based `convention(...)` is
    the natural follow-up.
-7. **`GosuSourceExtensions` duplicates `GosuClassTypeLoader.ALL_EXTS`** and is kept in
+- **`GosuSourceExtensions` duplicates `GosuClassTypeLoader.ALL_EXTS`** and is kept in
    sync by hand. A new Gosu extension added upstream and not mirrored here would make
    changed sources with that extension invisible to `collectFQCNs` — they simply would
    not match `isGosuSourceFile`, and no exception would fire.
-8. **Over-recompilation is inherited from gosuc**, which keeps a single consumer bucket
+- **Over-recompilation is inherited from gosuc**, which keeps a single consumer bucket
    with no accessible/private split and no inlineable-constant ABI tracking, so every
    cascade is the full transitive closure. Correctness-neutral, wasteful at scale.
-9. **Functional tests rely on `Thread.sleep(200)`** between builds to get observable
+- **Functional tests rely on `Thread.sleep(200)`** between builds to get observable
    `lastModified()` differences, and assert on `-i` log lines. Both are timing- and
    format-sensitive.
-10. **Minor:** the `instanceof GosuCompile` check in `GosuBasePlugin.configureGosuCompile`
+- **Minor:** the `instanceof GosuCompile` check in `GosuBasePlugin.configureGosuCompile`
     is redundant on a `TaskProvider<GosuCompile>`, and `GosuCompileOptions` carries an
     unused `org.gradle.api.file.FileCollection` import.
-11. **Empty-source skipping now rests on `stableSources` alone** (§3.1). The
+- **Empty-source skipping now rests on `stableSources` alone** (§3.1). The
     behaviour is unchanged — `@SkipWhenEmpty` moved from an inherited annotation on
     `source` to a declared one on `stableSources` — but the two existing tests that
     pin it (`ExclusionFilterTest`, `SourceSetsModificationTest`, both asserting

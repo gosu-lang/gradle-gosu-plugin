@@ -1069,29 +1069,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
-    /**
-     * Pins today's behaviour, which is correct but wasteful, so that improving it has to be a
-     * deliberate act rather than an accident.
-     *
-     * <p>The plugin does its job precisely here -- it takes the incremental path and names the
-     * changed Java type in {@code -changed-types}, both asserted below.  The waste is one layer
-     * down.  gosuc seeds its BFS with that FQCN, skips it (a {@code -local-java-types} entry is
-     * walked through but never compiled, since {@code compileJava} already built it), finds no
-     * consumers, and ends with an empty recompile set.  It cannot tell that apart from "no
-     * baseline dependency graph", so it applies its empty-set-means-initial-build rule and
-     * compiles every Gosu source in the module.
-     *
-     * <p>Contrast with 'Top-level Java type change does not over-recompile unrelated Gosu
-     * sources': the same kind of edit to a Java type that a Gosu class <em>does</em> consume
-     * produces a precise cascade.  It is the Java type nothing uses that costs a full rebuild,
-     * which is backwards, and in a mixed module most Java types have no Gosu consumers.
-     *
-     * <p>Fixing it needs a gosuc change -- distinguishing "-changed-types was supplied and the
-     * cascade came out empty" (nothing to do) from "-changed-types was absent" (initial build).
-     * When that lands this test will start failing, and the two negated assertions at the bottom
-     * are the ones to invert.
-     */
-    def 'Java type with no Gosu consumers recompiles every Gosu source [Gradle #gradleVersion]'() {
+    def 'Java type with no Gosu consumers does not recompile every Gosu source [Gradle #gradleVersion]'() {
         given:
         buildScript << getIncrementalBuildScriptForTesting()
 
@@ -1176,8 +1154,8 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
         and: 'Yet every Gosu source was recompiled, none of which consumes the Java type'
         // Invert these two when gosuc stops treating an empty recompile set as an initial build.
-        new File(gosuOutput, 'AlphaClass.class').lastModified() > alphaTime
-        new File(gosuOutput, 'BetaClass.class').lastModified() > betaTime
+        new File(gosuOutput, 'AlphaClass.class').lastModified() == alphaTime
+        new File(gosuOutput, 'BetaClass.class').lastModified() == betaTime
 
         where:
         gradleVersion << gradleVersionsToTest
