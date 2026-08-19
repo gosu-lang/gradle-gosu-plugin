@@ -47,10 +47,6 @@ interface GosuCompileSpec {
 
   void setIncremental(boolean incremental);
 
-  boolean isFullRebuildRequired();
-
-  void setFullRebuildRequired(boolean fullRebuildRequired);
-
   Set<String> getChangedTypes();
 
   void setChangedTypes(Set<String> changedTypes);

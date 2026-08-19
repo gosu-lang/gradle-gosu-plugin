@@ -422,7 +422,6 @@ task's findings to the compiler:
 |---|---|---|---|
 | `dependencyFile` | `File` | `null` | Resolved dep-file path, set from `GosuCompile.getDependencyFile()` |
 | `incremental` | `boolean` | `false` | Gradle supplied usable per-file changes |
-| `fullRebuildRequired` | `boolean` | `false` | Incremental requested but `InputChanges` was not incremental |
 | `changedTypes` | `Set<String>` | empty | FQCNs added/modified (Gosu **and** Java) |
 | `removedTypes` | `Set<String>` | empty | FQCNs deleted (Gosu **and** Java) |
 | `localJavaTypes` | `Set<String>` | empty | All FQCNs under `javaClassesDir` |
@@ -440,7 +439,7 @@ determines the granularity of the response.
 | Origin of the change | Tracked as | Response |
 |---|---|---|
 | **Same-module Java type** (`build/classes/java/main`) | `@Incremental @CompileClasspath javaClassesDir` → `-changed-types` / `-removed-types` | Selective. Only Gosu types that (transitively) consume it are recompiled. |
-| **External JAR / cross-subproject class** | `@CompileClasspath classpath` (not `@Incremental`) | Coarse. The classpath's ABI fingerprint changes, Gradle marks the task non-incremental, the plugin sets `fullRebuildRequired`, and **every** Gosu source is recompiled. |
+| **External JAR / cross-subproject class** | `@CompileClasspath classpath` (not `@Incremental`) | Coarse. The classpath's ABI fingerprint changes, Gradle cannot supply per-file changes and wipes the declared outputs (the dep file among them), so gosuc recompiles **every** Gosu source. |
 | **Same-module Java method body only** | ABI hash unchanged under `@CompileClasspath` | Nothing. The task does not even re-run. |
 
 This split is deliberate, not an omission. Tracking external JAR types in the dep

@@ -183,7 +183,7 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       fileOutput.add("-dependency-file");
       fileOutput.add(spec.getDependencyFile().getAbsolutePath());
 
-      if (spec.isIncremental() && !spec.isFullRebuildRequired()) {
+      if (spec.isIncremental()) {
         // Incremental build - pass changed and deleted files
         Set<String> changedTypes = spec.getChangedTypes();
         Set<String> removedTypes = spec.getRemovedTypes();

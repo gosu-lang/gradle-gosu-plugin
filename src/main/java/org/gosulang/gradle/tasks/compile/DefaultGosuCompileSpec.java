@@ -61,7 +61,6 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   private File _destinationDir;
   private FileCollection _source;
   private boolean _incremental = false;
-  private boolean _fullRebuildRequired = false;
   private Set<String> _changedTypes = new HashSet<>();  // Changed type FQCNs (Java + Gosu)
   private Set<String> _removedTypes = new HashSet<>();  // Removed type FQCNs (Java + Gosu)
   private Set<String> _localJavaTypes = new HashSet<>();  // Local Java type FQCNs for selective tracking
@@ -118,16 +117,6 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   @Override
   public void setIncremental(boolean incremental) {
     _incremental = incremental;
-  }
-
-  @Override
-  public boolean isFullRebuildRequired() {
-    return _fullRebuildRequired;
-  }
-
-  @Override
-  public void setFullRebuildRequired(boolean fullRebuildRequired) {
-    _fullRebuildRequired = fullRebuildRequired;
   }
 
   @Override

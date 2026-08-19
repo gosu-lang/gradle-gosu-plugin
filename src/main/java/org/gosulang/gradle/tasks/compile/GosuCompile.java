@@ -76,9 +76,11 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
                                   + " support");
       }
 
+      // Nothing to tell gosuc in this branch. Gradle deletes a task's declared outputs whenever it
+      // cannot supply per-file changes -- exactly the case here -- so the dep file is already gone
+      // by the time gosuc runs, and its absence is what gosuc reads as "compile everything".
       if (!inputChanges.isIncremental()) {
         getLogger().info("Gosu full recompilation is required");
-        spec.setFullRebuildRequired(true);
       } else {
         getLogger().info("Gosu incremental compilation started");
         spec.setIncremental(true);

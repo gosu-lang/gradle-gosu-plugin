@@ -21,10 +21,11 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
  *   2. External JAR / cross-subproject classes are NOT tracked in the dep
  *      graph. They live in compileClasspath, which the plugin annotates
  *      @CompileClasspath (ABI-sensitive, not @Incremental). When the
- *      classpath's ABI fingerprint changes, Gradle marks the whole
- *      compileGosu task as non-incremental and the plugin sets
- *      spec.setFullRebuildRequired(true). Every Gosu source is recompiled,
- *      regardless of whether it actually used anything from the JAR.
+ *      classpath's ABI fingerprint changes, Gradle cannot supply per-file
+ *      changes, so it deletes the task's declared outputs -- the dep file
+ *      among them -- and gosuc reads that absence as "compile everything".
+ *      Every Gosu source is recompiled, regardless of whether it actually
+ *      used anything from the JAR.
  *
  * This split is intentional: tracking external-JAR types in the dep graph
  * would be dead weight (the FQCNs from a JAR never appear in changedTypes
@@ -179,9 +180,9 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         and: 'Unrelated was ALSO recompiled, even though it has no JAR reference -- the cross-classpath path is full task rebuild, not selective cascade'
         // This is the deliberate consequence of the @CompileClasspath +
         // not-@Incremental annotation on getClasspath(): when the JAR ABI
-        // fingerprint changes, Gradle marks the whole task non-incremental,
-        // the plugin calls setFullRebuildRequired(true), and every Gosu
-        // source is recompiled. If anyone in the future tries to make this
+        // fingerprint changes, Gradle cannot supply per-file changes, wipes
+        // the declared outputs including the dep file, and gosuc recompiles
+        // every Gosu source. If anyone in the future tries to make this
         // selective via the dep graph for external JAR types, this
         // assertion will fail and the failure should be a deliberate
         // architectural decision, not an accidental one.
