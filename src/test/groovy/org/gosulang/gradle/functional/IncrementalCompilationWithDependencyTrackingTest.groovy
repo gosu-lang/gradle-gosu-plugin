@@ -1164,8 +1164,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         and: 'No full rebuild was requested by the plugin -- the change set was complete and non-empty'
         !result.output.contains('Gosu full recompilation is required')
 
-        and: 'Yet every Gosu source was recompiled, none of which consumes the Java type'
-        // Invert these two when gosuc stops treating an empty recompile set as an initial build.
+        and: 'No Gosu source was recompiled, as none of them consumes the Java type'
         new File(gosuOutput, 'AlphaClass.class').lastModified() == alphaTime
         new File(gosuOutput, 'BetaClass.class').lastModified() == betaTime
 
