@@ -43,10 +43,6 @@ interface GosuCompileSpec {
 
   void setDependencyFile(File dependencyFile);
 
-  boolean isIncremental();
-
-  void setIncremental(boolean incremental);
-
   Set<String> getChangedTypes();
 
   void setChangedTypes(Set<String> changedTypes);

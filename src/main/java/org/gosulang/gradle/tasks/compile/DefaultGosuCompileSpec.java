@@ -60,7 +60,6 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
   private List<File> _classpath;
   private File _destinationDir;
   private FileCollection _source;
-  private boolean _incremental = false;
   private Set<String> _changedTypes = new HashSet<>();  // Changed type FQCNs (Java + Gosu)
   private Set<String> _removedTypes = new HashSet<>();  // Removed type FQCNs (Java + Gosu)
   private Set<String> _localJavaTypes = new HashSet<>();  // Local Java type FQCNs for selective tracking
@@ -107,16 +106,6 @@ public class DefaultGosuCompileSpec implements GosuCompileSpec {
     List<File> target = new ArrayList<>();
     classpath.forEach(target::add);
     _classpath = Collections.unmodifiableList(target);
-  }
-
-  @Override
-  public boolean isIncremental() {
-    return _incremental;
-  }
-
-  @Override
-  public void setIncremental(boolean incremental) {
-    _incremental = incremental;
   }
 
   @Override

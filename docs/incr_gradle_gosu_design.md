@@ -394,12 +394,19 @@ line, UTF-8) in `spec.getTempDir()` and passes `@<path>` to
 |---|---|---|
 | `-incremental` | `gosuOptions.incrementalCompilation` | — |
 | `-dependency-file <path>` | `gosuOptions.incrementalCompilation` | `spec.getDependencyFile()`, absolute |
-| `-changed-types <fqcns>` | incremental **and not** full-rebuild **and** set non-empty | `File.pathSeparator`-joined FQCNs |
-| `-removed-types <fqcns>` | incremental **and not** full-rebuild **and** set non-empty | `File.pathSeparator`-joined FQCNs |
+| `-changed-types <fqcns>` | `gosuOptions.incrementalCompilation` **and** set non-empty | `File.pathSeparator`-joined FQCNs |
+| `-removed-types <fqcns>` | `gosuOptions.incrementalCompilation` **and** set non-empty | `File.pathSeparator`-joined FQCNs |
 | `-local-java-types <fqcns>` | `gosuOptions.incrementalCompilation` **and** set non-empty | `File.pathSeparator`-joined FQCNs |
 
 Pre-existing flags (`-classpath`, `-d`, `-sourcepath`, `-nowarn`, `-verbose`,
 `-maxwarns`, `-maxerrs`, `-checkedArithmetic`) are unchanged.
+
+**All three change sets are guarded on emptiness alone** — the emitter carries no
+notion of which of §4's three states it is in. It does not need one: the change sets
+are populated only on the incremental path, so on a full rebuild they are still their
+default empties and nothing is emitted. What actually separates a full rebuild from an
+incremental round with an empty cascade is the dep file's absence, not the command line
+(§4) — so the emitter has nothing to say about it.
 
 **The full source list is always written, incremental or not.** The plugin never
 narrows the file set handed to the compiler; it only annotates it with change
@@ -421,7 +428,6 @@ task's findings to the compiler:
 | Member | Type | Default | Meaning |
 |---|---|---|---|
 | `dependencyFile` | `File` | `null` | Resolved dep-file path, set from `GosuCompile.getDependencyFile()` |
-| `incremental` | `boolean` | `false` | Gradle supplied usable per-file changes |
 | `changedTypes` | `Set<String>` | empty | FQCNs added/modified (Gosu **and** Java) |
 | `removedTypes` | `Set<String>` | empty | FQCNs deleted (Gosu **and** Java) |
 | `localJavaTypes` | `Set<String>` | empty | All FQCNs under `javaClassesDir` |

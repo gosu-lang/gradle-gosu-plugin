@@ -183,22 +183,19 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
       fileOutput.add("-dependency-file");
       fileOutput.add(spec.getDependencyFile().getAbsolutePath());
 
-      if (spec.isIncremental()) {
-        // Incremental build - pass changed and deleted files
-        Set<String> changedTypes = spec.getChangedTypes();
-        Set<String> removedTypes = spec.getRemovedTypes();
+      Set<String> changedTypes = spec.getChangedTypes();
+      Set<String> removedTypes = spec.getRemovedTypes();
 
-        // Add changed type FQCNs as a single path-separator-delimited string
-        if (!changedTypes.isEmpty()) {
-          fileOutput.add("-changed-types");
-          fileOutput.add(String.join(File.pathSeparator, changedTypes));
-        }
+      // Add changed type FQCNs as a single path-separator-delimited string
+      if (!changedTypes.isEmpty()) {
+        fileOutput.add("-changed-types");
+        fileOutput.add(String.join(File.pathSeparator, changedTypes));
+      }
 
-        // Add removed type FQCNs as a single path-separator-delimited string
-        if (!removedTypes.isEmpty()) {
-          fileOutput.add("-removed-types");
-          fileOutput.add(String.join(File.pathSeparator, removedTypes));
-        }
+      // Add removed type FQCNs as a single path-separator-delimited string
+      if (!removedTypes.isEmpty()) {
+        fileOutput.add("-removed-types");
+        fileOutput.add(String.join(File.pathSeparator, removedTypes));
       }
 
       // Pass local Java type FQCNs for selective dependency tracking

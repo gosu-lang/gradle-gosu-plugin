@@ -83,7 +83,6 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
         getLogger().info("Gosu full recompilation is required");
       } else {
         getLogger().info("Gosu incremental compilation started");
-        spec.setIncremental(true);
         Set<String> changedTypes = new HashSet<>();
         Set<String> removedTypes = new HashSet<>();
 
