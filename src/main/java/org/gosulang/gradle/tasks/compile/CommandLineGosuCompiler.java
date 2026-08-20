@@ -205,17 +205,12 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
         fileOutput.add("-local-java-types");
         fileOutput.add(String.join(File.pathSeparator, localJavaTypes));
       }
+    }
 
-      // Always add all source files for incremental mode
-      // The gosuc compiler will determine what needs to be compiled
-      for (File sourceFile : spec.getSource()) {
-        fileOutput.add(sourceFile.getPath());
-      }
-    } else {
-      // Standard compilation - compile all source files
-      for (File sourceFile : spec.getSource()) {
-        fileOutput.add(sourceFile.getPath());
-      }
+    // Always add all source files for incremental/standard mode
+    // The gosuc compiler will determine what needs to be compiled
+    for (File sourceFile : spec.getSource()) {
+      fileOutput.add(sourceFile.getPath());
     }
 
     Files.write(tempFile.toPath(), fileOutput, StandardCharsets.UTF_8);

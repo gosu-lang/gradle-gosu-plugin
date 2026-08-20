@@ -547,17 +547,16 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
       effectiveClasspath = _orderClasspath.call(project, project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
     }
 
-    // Subtract javaClassesDir before adding it back at the front. Load-bearing on the
-    // orderClasspath path above, which resolves the compileClasspath configuration directly and
-    // so never passes through getClasspath()'s filtering; a no-op otherwise, since
-    // getClasspath() has already removed it.
-    if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
-      effectiveClasspath = effectiveClasspath.minus(getJavaClassesDir());
-    }
 
-    // Add Java classes directory to the BEGINNING of the classpath for compiler execution
-    // Project Java classes should take precedence over classes from JARs
     if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+      // Subtract javaClassesDir before adding it back at the front. Load-bearing on the
+      // orderClasspath path above, which resolves the compileClasspath configuration directly and
+      // so never passes through getClasspath()'s filtering; a no-op otherwise, since
+      // getClasspath() has already removed it.
+      effectiveClasspath = effectiveClasspath.minus(getJavaClassesDir());
+
+      // Add Java classes directory to the BEGINNING of the classpath for compiler execution
+      // Project Java classes should take precedence over classes from JARs
       effectiveClasspath = getJavaClassesDir().plus(effectiveClasspath);
     }
 
