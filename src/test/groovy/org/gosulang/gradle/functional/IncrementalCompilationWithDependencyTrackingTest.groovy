@@ -14,7 +14,7 @@ import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPluginSpecification {
     private static final long SLEEP_MS = 200;
 
-    File srcMainGosu, baseClass, derivedClass, independentClass
+    File srcMainGosu
     File dependencyFile
 
     /**
@@ -32,16 +32,15 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
     def setup() {
         testKitDir.create()
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
-        baseClass = new File(srcMainGosu, 'BaseClass.gs')
-        derivedClass = new File(srcMainGosu, 'DerivedClass.gs')
-        independentClass = new File(srcMainGosu, 'IndependentClass.gs')
         dependencyFile = new File(testProjectDir.root, 'build/tmp/gosuc-deps-compileGosu.json')
     }
     
     def 'Incremental compilation with dependency tracking [Gradle #gradleVersion]'() {
         given:
         buildScript << getIncrementalBuildScriptForTesting()
-        
+        File baseClass = new File(srcMainGosu, 'BaseClass.gs')
+        File derivedClass = new File(srcMainGosu, 'DerivedClass.gs')
+        File independentClass = new File(srcMainGosu, 'IndependentClass.gs')
         baseClass << """
             class BaseClass {
                 static var value : int = 42
@@ -88,6 +87,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         
         when: 'Modify BaseClass (which DerivedClass depends on)'
         // Record initial modification times
+        long baseClassTime = new File(buildOutput, 'BaseClass.class').lastModified()
         long derivedClassTime = new File(buildOutput, 'DerivedClass.class').lastModified()
         long independentClassTime = new File(buildOutput, 'IndependentClass.class').lastModified()
         
@@ -115,7 +115,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         result.task(':compileGosu').outcome == SUCCESS
         
         // BaseClass should be recompiled (newer timestamp)
-        new File(buildOutput, 'BaseClass.class').lastModified() > derivedClassTime
+        new File(buildOutput, 'BaseClass.class').lastModified() > baseClassTime
         
         // DerivedClass should be recompiled due to dependency
         new File(buildOutput, 'DerivedClass.class').lastModified() > derivedClassTime
@@ -125,7 +125,8 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         
         when: 'Delete a file'
         derivedClass.delete()
-
+        baseClassTime = new File(buildOutput, 'BaseClass.class').lastModified()
+        independentClassTime = new File(buildOutput, 'IndependentClass.class').lastModified()
         runner.withArguments('compileGosu', '-i')
         result = runner.build()
 
@@ -134,6 +135,8 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         new File(buildOutput, 'BaseClass.class').exists()
         new File(buildOutput, 'IndependentClass.class').exists()
 
+        new File(buildOutput, 'BaseClass.class').lastModified() == baseClassTime
+        new File(buildOutput, 'IndependentClass.class').lastModified() == independentClassTime
         and: 'DerivedClass.class is deleted (no stale class files)'
         !new File(buildOutput, 'DerivedClass.class').exists()
         
@@ -144,7 +147,8 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
     def 'Incremental compilation disabled by default [Gradle #gradleVersion]'() {
         given:
         buildScript << getBasicBuildScriptForTesting()
-        
+        File baseClass = new File(srcMainGosu, 'BaseClass.gs')
+        File derivedClass = new File(srcMainGosu, 'DerivedClass.gs')
         baseClass << """
             class BaseClass {
                 protected static var value : int = 42
@@ -181,7 +185,8 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         given: 'a non-incremental build - gosuc is never passed -dependency-file, so getDependencyFile(), an @Optional @OutputFile, is never produced'
 
         buildScript << getBasicBuildScriptForTesting()
-
+        File baseClass = new File(srcMainGosu, 'BaseClass.gs')
+        File derivedClass = new File(srcMainGosu, 'DerivedClass.gs')
         baseClass << """
             class BaseClass {
                 protected static var value : int = 42
@@ -498,6 +503,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         result.task(':compileGosu').outcome == UP_TO_DATE
 
         when: 'Manually delete the dep file, simulating a stray rm or IDE clean'
+        String depFileContentBefore = dependencyFile.text
         long classATime = new File(buildOutput, 'ClassA.class').lastModified()
         long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
         Thread.sleep(SLEEP_MS) // ensure observable mtime difference on coarse filesystems
@@ -512,6 +518,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
         and: 'The dep file is regenerated'
         dependencyFile.exists()
+        dependencyFile.text == depFileContentBefore
 
         and: 'ClassA.class was rewritten - full rebuild path'
         new File(buildOutput, 'ClassA.class').lastModified() > classATime
