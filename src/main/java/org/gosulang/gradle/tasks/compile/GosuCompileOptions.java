@@ -19,6 +19,7 @@ public class GosuCompileOptions implements Serializable {
   private boolean verbose = false;
   private Integer maxwarns;
   private Integer maxerrs;
+  private boolean incrementalCompilation = false;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -127,4 +128,22 @@ public class GosuCompileOptions implements Serializable {
     return maxerrs;
   }
   
+  /**
+   * @return Whether incremental compilation is enabled. Defaults to {@code false}.
+   */
+  @Input
+  public boolean isIncrementalCompilation() {
+    return incrementalCompilation;
+  }
+
+  /**
+   * Sets whether incremental compilation is enabled. Defaults to {@code false}.
+   * When enabled, the compiler will track dependencies and only recompile affected files.
+   * Requires Gosu 1.18.9 or later.
+   * @param incrementalCompilation Enable incremental compilation
+   */
+  public void setIncrementalCompilation(boolean incrementalCompilation) {
+    this.incrementalCompilation = incrementalCompilation;
+  }
+
 }

@@ -3,6 +3,7 @@ package org.gosulang.gradle.tasks.compile;
 import org.gradle.api.file.FileCollection;
 
 import java.io.File;
+import java.util.Set;
 
 interface GosuCompileSpec {
 
@@ -36,5 +37,22 @@ interface GosuCompileSpec {
 
   @Deprecated
   void setClasspath(Iterable<File> classpath);
+
+  //--- incremental compilation state
+  File getDependencyFile();
+
+  void setDependencyFile(File dependencyFile);
+
+  Set<String> getChangedTypes();
+
+  void setChangedTypes(Set<String> changedTypes);
+
+  Set<String> getRemovedTypes();
+
+  void setRemovedTypes(Set<String> removedTypes);
+
+  Set<String> getLocalJavaTypes();
+
+  void setLocalJavaTypes(Set<String> localJavaTypes);
 
 }
