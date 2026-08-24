@@ -65,7 +65,7 @@ input, and modify the character of two existing properties.
 |---|---|---|
 | `getStableSources()` | `@InputFiles` **`@PathSensitive(RELATIVE)`** **`@SkipWhenEmpty`** **`@IgnoreEmptyDirectories`** | The Gosu source set, now queryable for per-file change events, and the task's only tracked view of it. |
 | `getSource()` | **`@Internal("tracked via stableSources")`** | No longer an input in its own right (§3.1). |
-| `getJavaClassesDir()` | **`@CompileClasspath` `@Incremental` `@Optional`** | *(new)* This source set's `compileJava` output directory, tracked ABI-sensitively and per-file. |
+| `getJavaClassesDir()` | **`@CompileClasspath` `@Incremental` `@Optional`**, an abstract `ConfigurableFileCollection` | *(new)* This source set's `compileJava` output directory, tracked ABI-sensitively and per-file. |
 | `getClasspath()` | `@CompileClasspath` | Unchanged annotation; the **value** now excludes `javaClassesDir` (§6). |
 | `getDependencyFile()` | **`@OutputFile` `@Optional`**, typed `Provider<RegularFile>` | *(new)* `build/tmp/gosuc-deps-{taskName}.json`, absent unless incremental is on (§3.3). |
 
@@ -150,8 +150,15 @@ construction.
 directory, using public API rather than a task lookup:
 
 ```java
-gosuCompileTask.setJavaClassesDir(_project.files(sourceSet.getJava().getDestinationDirectory()));
+gosuCompileTask.getJavaClassesDir().from(sourceSet.getJava().getDestinationDirectory());
 ```
+
+The property is an **abstract `ConfigurableFileCollection` getter** with no backing field
+and no setter — Gradle's task decoration supplies the instance. That keeps it
+configuration-cache safe by construction, makes the value lazy (the source set's
+`destinationDirectory` provider carries its own `compileJava` dependency), and means the
+getter can never return `null`: an unwired property is *empty*, not absent, so the
+Gosu-only source set case is a single `isEmpty()` check at every use site.
 
 The annotation triple is doing three separate jobs:
 
@@ -522,9 +529,9 @@ hit would poison the following incremental build.
    classes. The plugin does nothing to compensate — there is no equivalent of Gradle's
    `CompileTransaction` on either side of the contract. Recovery is `clean`.
 - **`getJavaClassesDir().getSingleFile()`** assumes the collection holds exactly one
-   directory. That holds for the `SourceSet`-derived value wired by `GosuBasePlugin`,
-   but the setter is public and a caller passing a multi-directory collection would get
-   an exception from `getSingleFile()`.
+   directory. That holds for the `SourceSet`-derived value wired by `GosuBasePlugin`, but
+   the property is a `ConfigurableFileCollection`, so a caller adding a second directory
+   via `from(...)` would get an exception from `getSingleFile()`.
 - **The local-Java-type scan is a full directory walk on every incremental run**,
    independent of how little changed. It is I/O-bound and proportional to the module's
    Java class count, not to the change size.

@@ -53,10 +53,6 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   @Inject
   protected abstract ExecOperations getExecOperations();
 
-  // Track compileJava output directory for fine-grained Java class change detection
-  // This will be configured by GosuBasePlugin using the SourceSet's Java output directory
-  private FileCollection javaClassesDir;
-
   @Inject
   protected abstract ProjectLayout getLayout();
 
@@ -143,7 +139,7 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     // Outer.class and Outer$Inner.class, each surfaced as its own change
     // here. Each maps to a distinct FQCN ("com.example.Outer" and
     // "com.example.Outer$Inner") and ends up in changedTypes.
-    if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+    if (!getJavaClassesDir().isEmpty()) {
       File javaClassesRoot = getJavaClassesDir().getSingleFile();
       for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
         File classFile = change.getFile();
@@ -239,7 +235,7 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   private Set<String> extractLocalJavaTypeFQCNs() {
     Set<String> localTypes = new HashSet<>();
 
-    if (getJavaClassesDir() == null || getJavaClassesDir().isEmpty()) {
+    if (getJavaClassesDir().isEmpty()) {
       return localTypes;
     }
 
@@ -375,29 +371,20 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   }
 
   /**
-   * Returns the Java classes output directory for fine-grained change tracking.
+   * The Java classes output directory, tracked for fine-grained change detection.
    * This tracks the compileJava task's output directory to detect which specific
    * Java class files have changed (ABI changes only, not implementation changes).
-   * Configured by GosuBasePlugin using the SourceSet's Java output directory.
+   * Populated by GosuBasePlugin from the SourceSet's Java output directory.
    *
-   * @return FileCollection pointing to the Java classes output directory
+   * <p>Gradle supplies the instance, so this is never null -- an unpopulated collection
+   * is empty, which is the Gosu-only source set case.
+   *
+   * @return the Java classes output directory
    */
   @CompileClasspath  // ABI-sensitivity: only API changes trigger re-execution; provides built-in normalization
   @Incremental       // Enables querying which specific .class files changed
   @Optional          // Optional because not all projects may have Java sources
-  public FileCollection getJavaClassesDir() {
-    return javaClassesDir;
-  }
-
-  /**
-   * Sets the Java classes output directory for fine-grained change tracking.
-   * This should be called by GosuBasePlugin during task configuration.
-   *
-   * @param javaClassesDir FileCollection pointing to the Java classes output directory
-   */
-  public void setJavaClassesDir(FileCollection javaClassesDir) {
-    this.javaClassesDir = javaClassesDir;
-  }
+  public abstract ConfigurableFileCollection getJavaClassesDir();
 
   /**
    * @return Gosu-specific compilation options.
@@ -426,13 +413,13 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
    * files are tracked instead through the {@code @Incremental} {@link #getJavaClassesDir()}
    * input; {@link #createSpec()} re-adds them to the classpath actually handed to gosuc.
    * <p>
-   * This filtering ONLY applies when incremental compilation is configured (i.e., when javaClassesDir is set).
-   * When javaClassesDir is not set, the classpath is returned unmodified for backwards compatibility.
+   * This filtering ONLY applies when javaClassesDir has been populated. When it is empty --
+   * a Gosu-only source set -- the classpath is returned unmodified.
    */
   @CompileClasspath
   public FileCollection getClasspath() {
     FileCollection classpath = super.getClasspath();
-    if (classpath != null && getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+    if (classpath != null && !getJavaClassesDir().isEmpty()) {
       classpath = classpath.minus(getJavaClassesDir());
     }
     return classpath;
@@ -548,7 +535,7 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     }
 
 
-    if (getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+    if (!getJavaClassesDir().isEmpty()) {
       // Subtract javaClassesDir before adding it back at the front. Load-bearing on the
       // orderClasspath path above, which resolves the compileClasspath configuration directly and
       // so never passes through getClasspath()'s filtering; a no-op otherwise, since
