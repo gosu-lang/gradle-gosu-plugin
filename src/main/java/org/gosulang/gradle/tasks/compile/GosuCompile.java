@@ -141,22 +141,52 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
     // "com.example.Outer$Inner") and ends up in changedTypes.
     if (!getJavaClassesDir().isEmpty()) {
       File javaClassesRoot = getJavaClassesDir().getSingleFile();
+
+      // First pass: bucket every FileChange event by file identity (change.getFile(), the
+      // absolute path -- the same key ClasspathFingerprintingStrategy uses for its fingerprint
+      // map, so it is stable and correct here).
+      //
+      // Why this is necessary: @CompileClasspath's underlying comparison (ClasspathCompareStrategy)
+      // walks the old and new fingerprint lists POSITIONALLY, not by key lookup -- the same
+      // ADDED/REMOVED-instead-of-MODIFIED substitution documented on InputChanges#getFileChanges
+      // for non-path-sensitive inputs. When compileJava emits one extra or one fewer .class file
+      // anywhere earlier in the sorted tree-walk order, every subsequent entry's position shifts,
+      // and Gradle greedily reports a REMOVED+ADDED pair for each shifted slot -- even for a file
+      // whose content never changed. The SAME absolute path can therefore show up as BOTH a REMOVED
+      // event and an ADDED event in this same change list. Classifying on a single event, as before,
+      // could tell gosuc a still-existing type was deleted, corrupting its dependency graph.
+      Set<File> filesAddedOrModified = new HashSet<>();
+      Set<File> filesRemoved = new HashSet<>();
       for (FileChange change : inputChanges.getFileChanges(getJavaClassesDir())) {
         File classFile = change.getFile();
-        if (classFile.getName().endsWith(".class")) {
-          String fqcn = extractFQCNFromClassFile(classFile, javaClassesRoot);
-          if (fqcn == null) {
-            throw new GradleException("Cannot determine the FQCN of changed Java class "
-              + classFile.getAbsolutePath() + ": it does not live under "
-              + javaClassesRoot.getAbsolutePath() + ".");
-          }
-          if (change.getChangeType() == ChangeType.REMOVED) {
-            removedTypes.add(fqcn);
-            getLogger().info("Java type removed: {}", fqcn);
-          } else {
-            changedTypes.add(fqcn);
-            getLogger().info("Java type changed: {}", fqcn);
-          }
+        if (!classFile.getName().endsWith(".class")) {
+          continue;
+        }
+        if (change.getChangeType() == ChangeType.REMOVED) {
+          filesRemoved.add(classFile);
+        } else {
+          filesAddedOrModified.add(classFile);
+        }
+      }
+
+      // Second pass: classify each distinct file. ADDED/MODIFIED always wins over REMOVED for the
+      // same file -- if it exists in the current snapshot at all, it is not gone. Only a file seen
+      // SOLELY as REMOVED is genuinely gone.
+      Set<File> allChangedClassFiles = new HashSet<>(filesAddedOrModified);
+      allChangedClassFiles.addAll(filesRemoved);
+      for (File classFile : allChangedClassFiles) {
+        String fqcn = extractFQCNFromClassFile(classFile, javaClassesRoot);
+        if (fqcn == null) {
+          throw new GradleException("Cannot determine the FQCN of changed Java class "
+            + classFile.getAbsolutePath() + ": it does not live under "
+            + javaClassesRoot.getAbsolutePath() + ".");
+        }
+        if (filesAddedOrModified.contains(classFile)) {
+          changedTypes.add(fqcn);
+          getLogger().info("Java type changed: {}", fqcn);
+        } else {
+          removedTypes.add(fqcn);
+          getLogger().info("Java type removed: {}", fqcn);
         }
       }
     }
