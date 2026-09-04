@@ -7,10 +7,12 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.TaskOutputsInternal;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.logging.Logger;
@@ -29,9 +31,12 @@ import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import static org.gradle.api.tasks.PathSensitivity.RELATIVE;
@@ -59,9 +64,22 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   @Inject
   protected abstract ProviderFactory getProviderFactory();
 
+  /**
+   * Injected so {@link #cleanStaleOutputs()} deletes through Gradle rather than through
+   * {@link File#delete()}, which would leave the virtual file system believing the removed files
+   * are still there.  {@code FileSystemOperations} is the public front door to the same
+   * {@code org.gradle.internal.file.Deleter} service Gradle's own compile tasks use.
+   */
+  @Inject
+  protected abstract FileSystemOperations getFileSystemOperations();
+
   @TaskAction
   protected void compile(InputChanges inputChanges) {
     DefaultGosuCompileSpec spec = createSpec();
+    // Hoisted out of the branch below so it is still in scope after the compiler has run; see the
+    // pruning call at the end of this method. Stays empty on every path that does not hand gosuc
+    // a -removed-types list, which is exactly what makes that call self-scoping.
+    Set<String> removedTypes = new HashSet<>();
 
     // Everything below only feeds gosuc's -changed-types/-removed-types/-local-java-types,
     // which CommandLineGosuCompiler emits solely when incrementalCompilation is on.
@@ -80,7 +98,6 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
       } else {
         getLogger().info("Gosu incremental compilation started");
         Set<String> changedTypes = new HashSet<>();
-        Set<String> removedTypes = new HashSet<>();
 
         collectFQCNs( inputChanges, changedTypes, removedTypes);
         spec.setChangedTypes(changedTypes);
@@ -90,10 +107,156 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
       // This allows gosuc to distinguish same-module Java types from JRE/JAR types
       Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
       spec.setLocalJavaTypes(localJavaTypes);
+    } else {
+      cleanStaleOutputs();
     }
 
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
+
+    // gosuc deletes a removed type's .class and the source it copied alongside it, but leaves the
+    // package directory standing once it holds nothing else -- so an incremental build and a full
+    // one produce different output trees from identical sources. That is not merely untidy: Jar
+    // extends AbstractCopyTask, whose includeEmptyDirs defaults to true, so a husk becomes a
+    // directory entry in the artifact.
+    //
+    // Deliberately after the compiler has run: gosuc is what empties these directories, and a
+    // failed compile should leave the output tree alone. Self-scoping, because removedTypes is
+    // populated on exactly one path -- a gosuc-incremental compile that Gradle also ran
+    // incrementally. Full compiles clean and prune in cleanStaleOutputs(), and a non-incremental
+    // execution is Gradle's to clean, which its OutputsCleaner already does, directories included.
+    if (!removedTypes.isEmpty()) {
+      File destinationDir = getDestinationDirectory().get().getAsFile();
+      pruneEmptyDirectories(packageDirectoriesOf(removedTypes, destinationDir),
+                            destinationDir.toPath().toAbsolutePath().normalize());
+    }
+  }
+
+  /**
+   * Maps type names to the output directories their compiled forms would occupy, for use as
+   * pruning starting points.
+   *
+   * <p>A type in the default package yields no candidate: its directory is the output root, which
+   * {@link #pruneEmptyDirectories} would refuse anyway.
+   *
+   * <p>{@code removedTypes} also carries Java types removed from {@code compileJava}'s output --
+   * {@link #collectFQCNs} collects both -- and those name packages that need not exist under the
+   * Gosu output root at all. Harmless: gosuc creates a package directory only when it writes a
+   * class into it, so such a directory is either absent or occupied, and the sweeper skips both.
+   *
+   * @param fqcns fully-qualified type names, as collected by {@link #collectFQCNs}
+   * @param destinationDir this task's output root
+   * @return the package directories under {@code destinationDir}, which may not exist on disk
+   */
+  private Set<File> packageDirectoriesOf(Set<String> fqcns, File destinationDir) {
+    Set<File> directories = new HashSet<>();
+    for (String fqcn : fqcns) {
+      int lastDot = fqcn.lastIndexOf('.');
+      if (lastDot > 0) {
+        directories.add(new File(destinationDir, fqcn.substring(0, lastDot).replace('.', File.separatorChar)));
+      }
+    }
+    return directories;
+  }
+
+  /**
+   * Deletes this task's previous outputs from the destination directory before a full compile.
+   *
+   * <p>Without this, deleting {@code B.gs} from the source tree leaves {@code B.class} (and the
+   * {@code B.gs} gosuc copies alongside it) behind forever: gosuc in full mode only ever writes,
+   * it never prunes, and Gradle does not step in either.  Gradle removes a task's previous outputs
+   * only on a <em>non-incremental</em> execution -- see {@code RemovePreviousOutputsStep} guarded
+   * by {@code TaskExecution.shouldCleanupOutputsOnNonIncrementalExecution()} -- and a deleted
+   * source is precisely a change Gradle <em>can</em> describe per-file, so it runs this task
+   * incrementally and cleans nothing.  In gosuc-incremental mode that is exactly right, because
+   * the removal reaches gosuc as {@code -removed-types}; in full mode nobody is left holding the
+   * broom.  See <a href="https://github.com/gosu-lang/gradle-gosu-plugin/issues/105">#105</a>.
+   *
+   * <p>Mirrors {@code JavaCompile}, which wraps every compile in {@code CleaningJavaCompiler}:
+   * only files recorded as outputs of this task's previous execution are considered, and only
+   * those living under the destination directory are removed.  Both limits matter.  Deleting the
+   * destination directory wholesale would discard a co-operating task's overlapping outputs, and
+   * confining the sweep to the destination directory keeps the {@code build/tmp} dependency file
+   * -- also a declared output -- out of scope.
+   *
+   * <p>{@code TaskOutputsInternal#getPreviousOutputFiles()} is a deliberate and, as far as the
+   * public API goes, unavoidable dependency on Gradle internals: it is the only way to ask what
+   * this task produced last time.  {@code TaskOutputs} exposes no equivalent, and the alternatives
+   * are worse -- wiping the destination directory destroys overlapping outputs, and inferring the
+   * expected file set from the sources would silently over-delete the moment gosuc emits a
+   * synthetic class outside the assumed naming scheme (it already emits hash-named ones such as
+   * {@code ClassA$ProxyFor_4689667750169763299.class}).  Deliberately left to fail loudly if the
+   * method ever disappears: swallowing that would silently reinstate #105.  {@code StaleOutputCleanupTest}
+   * and {@code StaleBlockClassCleanupTest} run against every Gradle version in {@code testedVersions},
+   * so a breaking change surfaces during qualification rather than in a consumer's build.
+   *
+   * <p>A no-op when Gradle has already cleaned (the non-incremental execution case): the recorded
+   * files are gone from disk, and anything that is not a file is skipped.
+   */
+  private void cleanStaleOutputs() {
+    File destinationDir = getDestinationDirectory().get().getAsFile();
+    Path root = destinationDir.toPath().toAbsolutePath().normalize();
+
+    Set<File> filesToDelete = new HashSet<>();
+    Set<File> maybeEmptied = new HashSet<>();
+    for (File previousOutput : ((TaskOutputsInternal) getOutputs()).getPreviousOutputFiles()) {
+      // Skip anything already deleted, and any directory -- directories are not deleted outright,
+      // only pruned below once emptied.
+      if (!previousOutput.isFile()) {
+        continue;
+      }
+      Path path = previousOutput.toPath().toAbsolutePath().normalize();
+      // Path#startsWith is path-component-aware, so a sibling such as .../main2/ is not mistaken
+      // for something under .../main/. Same check as extractFQCNFromSourceFile.
+      if (path.startsWith(root) && !path.equals(root)) {
+        filesToDelete.add(previousOutput);
+        maybeEmptied.add(previousOutput.getParentFile());
+      }
+    }
+
+    if (filesToDelete.isEmpty()) {
+      return;
+    }
+
+    getFileSystemOperations().delete(spec -> spec.delete(filesToDelete));
+    pruneEmptyDirectories(maybeEmptied, root);
+    getLogger().info("Deleted {} stale Gosu output file(s) from {}", filesToDelete.size(), destinationDir.getAbsolutePath());
+  }
+
+  /**
+   * Removes directories left empty by {@link #cleanStaleOutputs()}, so that deleting the last type
+   * in a package takes the package's output directories with it instead of leaving a husk.
+   *
+   * <p>Walks strictly upwards and deepest-first, re-queueing each pruned directory's parent, so a
+   * package whose subpackages all emptied out collapses in one pass.  {@code root} itself is never
+   * removed -- it is a declared {@code @OutputDirectory} and must survive -- and neither is
+   * anything outside it.
+   *
+   * @param startingPoints directories that just lost a file
+   * @param root the absolute, normalised destination directory; the point the walk stops at
+   */
+  private void pruneEmptyDirectories(Set<File> startingPoints, Path root) {
+    // Deepest first, so a parent is never examined before its children have had their chance to go.
+    NavigableSet<Path> pending = new TreeSet<>(
+        Comparator.comparingInt((Path path) -> path.getNameCount()).reversed()
+            .thenComparing(Comparator.naturalOrder()));
+    for (File dir : startingPoints) {
+      pending.add(dir.toPath().toAbsolutePath().normalize());
+    }
+
+    while (!pending.isEmpty()) {
+      Path dir = pending.pollFirst();
+      if (dir.equals(root) || !dir.startsWith(root)) {
+        continue;
+      }
+      String[] contents = dir.toFile().list();
+      if (contents == null || contents.length > 0) {
+        // Already gone, not a directory, unreadable, or still occupied -- either way, leave it.
+        continue;
+      }
+      getFileSystemOperations().delete(spec -> spec.delete(dir.toFile()));
+      pending.add(dir.getParent());
+    }
   }
 
   /**
