@@ -84,11 +84,13 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
                                   + " support");
       }
 
-      // Nothing to tell gosuc in this branch. Gradle deletes a task's declared outputs whenever it
-      // cannot supply per-file changes -- exactly the case here -- so the dep file is already gone
-      // by the time gosuc runs, and its absence is what gosuc reads as "compile everything".
       if (!inputChanges.isIncremental()) {
         getLogger().info("Gosu full recompilation is required");
+        // gosuc gets no change sets here, and in incremental mode it does a full rebuild only if no
+        // dep file is found -- so delete it. Gradle does not always remove it automatically.
+        // See FullRebuildStaleDepFileTest.
+        File staleDependencyFile = spec.getDependencyFile();
+        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete(staleDependencyFile));
       } else {
         getLogger().info("Gosu incremental compilation started");
         Set<String> changedTypes = new HashSet<>();
@@ -102,11 +104,11 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
       Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
       spec.setLocalJavaTypes(localJavaTypes);
     } else {
-      // Nothing else prunes here: gosuc gets no change set, and @SkipWhenEmpty on getStableSources()
-      // keeps execution incremental in Gradle's eyes, so RemovePreviousOutputsStep never empties the
-      // destination. Clean by hand as CleaningJavaCompiler does for JavaCompile, deleting the
-      // children rather than the root so the declared @OutputDirectory survives for gosuc to write
-      // into. The destination is this task's alone, so emptying it is safe.
+      // Nothing else prunes here: gosuc gets no change set, and RemovePreviousOutputsStep empties
+      // the destination only where Gradle executes the task non-incrementally, which a plain source
+      // edit or deletion is not. Clean by hand as CleaningJavaCompiler does for JavaCompile,
+      // deleting the children rather than the root so the declared @OutputDirectory survives for
+      // gosuc to write into. The destination is this task's alone, so emptying it is safe.
       File[] staleOutputs = spec.getDestinationDir().listFiles();
       if (staleOutputs != null) {
         getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete((Object[]) staleOutputs));
