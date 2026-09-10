@@ -17,7 +17,19 @@ import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.Classpath;
+import org.gradle.api.tasks.CompileClasspath;
+import org.gradle.api.tasks.IgnoreEmptyDirectories;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.SkipWhenEmpty;
+import org.gradle.api.tasks.SourceTask;
+import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.work.Incremental;
@@ -158,7 +170,7 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
           break; // already gone, not a directory, unreadable, or still occupied - leave it
         }
         Path emptied = dir;
-        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete(emptied.toFile()));
+        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete(emptied));
         dir = dir.getParent();
       }
     }
