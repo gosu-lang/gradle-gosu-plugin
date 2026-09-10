@@ -190,9 +190,9 @@ public Provider<RegularFile> getDependencyFile() {
   cache alongside the `.class` files. On a `FROM_CACHE` restore the graph returns to
   disk, so the *next* build can compile incrementally instead of falling back to a
   full rebuild.
-- **Being a declared output is also what makes gosuc's full-rebuild detection work** —
-  Gradle deletes declared outputs before a non-incremental execution, which is the only
-  way `gosuc` learns that a full rebuild was requested (§4). Do not un-declare it.
+- **Declaring it also puts it under up-to-date checking.** A dep file that goes missing
+  makes the task out of date and re-runs it, rather than leaving it `UP-TO-DATE` against
+  a graph that is no longer on disk (§10).
 - **Lazy, but deliberately not settable.** A `Provider<RegularFile>` rather than a
   `RegularFileProperty`: the value is computed on demand, but there is no `set()`. The
   path stays derived from the task name, which is what stops `compileGosu` and
@@ -238,13 +238,59 @@ output (including the dep file itself) gone missing.
 > build *and* a full rebuild with a previous graph still on disk — and the command line
 > cannot tell the second apart from an incremental round whose cascade came out empty,
 > since both send no `-changed-types`/`-removed-types` (and the latter must compile
-> *nothing*, §11). What separates them is that **Gradle deletes a task's declared outputs
-> before any non-incremental execution** (`RemovePreviousOutputsStep`), so by the time
-> `gosuc` runs in the full-rebuild state its `@OutputFile` dep file is already gone.
+> *nothing*, §11). What separates them is that **the task deletes the dep file itself on
+> the full-rebuild path**, before forking `gosuc` (§4.1).
 >
-> This is load-bearing and breakable from a distance: if `getDependencyFile()` ever stops
-> being a declared output, or moves outside the task's output set, full rebuilds would
-> silently compile nothing. Any change to §3.3 needs to keep it true.
+> Gradle's own output cleanup cannot carry that guarantee. `RemovePreviousOutputsStep`
+> deletes declared outputs outright only where it detects no overlapping outputs; a dep
+> file that does not match what the previous execution recorded for the property — which
+> includes there being no such execution, as after the version-scoped `executionHistory`
+> cache is dropped while the cross-version `buildOutputCleanup` registry still keeps
+> `HandleStaleOutputsStep` off the file — reads as another task's, and the step then
+> deletes only what that missing record held, i.e. nothing. `FullRebuildStaleDepFileTest`
+> drives both routes into that state and pins that the rebuild still compiles every
+> source.
+
+### 4.1 Stale-output cleanup
+
+The task action deletes on every path, because between them Gradle and `gosuc` leave
+gaps:
+
+| Path | What the task deletes | When |
+|---|---|---|
+| **Non-incremental** | the destination directory's children | before the compiler runs |
+| **Full rebuild** | the dep file | before the compiler runs |
+| **Incremental** | the package directories `-removed-types` left empty | after the compiler runs |
+
+- **Non-incremental.** `gosuc` gets no change set, and `RemovePreviousOutputsStep`
+  empties the destination only where Gradle executes the task non-incrementally, which a
+  plain source edit or deletion is not — so a deleted type's `.class` file would
+  otherwise survive a full compile. The children go rather than the root, so the declared
+  `@OutputDirectory` survives for `gosuc` to write into; the destination is this task's
+  alone, so emptying it is safe. This is what `CleaningJavaCompiler` does for
+  `JavaCompile`.
+- **Full rebuild.** The dep file's absence is the signal `gosuc` reads as "compile
+  everything" (§4).
+- **Incremental.** `gosuc` deletes a removed type's class file off `-removed-types` but
+  leaves the directory that held it, and `Jar` inherits `includeEmptyDirs = true` from
+  `AbstractCopyTask`, so the husk would become a directory entry in the artifact.
+  `pruneEmptyPackageDirs` walks upward from each emptied package, so a parent left empty
+  by its last subpackage goes too, stopping at the destination root. Directories that are
+  absent or still occupied are skipped — which is also what makes the Java FQCNs
+  `collectFQCNs` mixes into `removedTypes` harmless here. It runs *after* the compiler:
+  `gosuc` is what empties those directories, and a failed compile should leave the output
+  tree alone.
+
+Every delete goes through the injected `FileSystemOperations` rather than
+`File.delete()`, so it uses Gradle's own `Deleter` service and the virtual file system
+is not left believing the files are still there.
+
+Pinned by `NonIncrementalStaleOutputTest` (a deleted source, a moved source, and the
+output root surviving when every previous output leaves the default package),
+`IncrementalStaleOutputTest` (an emptied package pruned, one that still holds a type left
+alone), `BlockSyntheticClassCleanupTest` (*Removing a block prunes its synthetic
+classes*), and `SourcelessCompileCleanupTest` (*Deleting every source cleans the outputs,
+then settles to NO-SOURCE*) — the last two running both modalities.
 
 ---
 
@@ -358,7 +404,7 @@ This branch resolves it in one place: **`getClasspath()` subtracts on read.**
 @CompileClasspath
 public FileCollection getClasspath() {
   FileCollection classpath = super.getClasspath();
-  if (classpath != null && getJavaClassesDir() != null && !getJavaClassesDir().isEmpty()) {
+  if (classpath != null && !getJavaClassesDir().isEmpty()) {
     classpath = classpath.minus(getJavaClassesDir());
   }
   return classpath;
@@ -452,7 +498,7 @@ determines the granularity of the response.
 | Origin of the change | Tracked as | Response |
 |---|---|---|
 | **Same-module Java type** (`build/classes/java/main`) | `@Incremental @CompileClasspath javaClassesDir` → `-changed-types` / `-removed-types` | Selective. Only Gosu types that (transitively) consume it are recompiled. |
-| **External JAR / cross-subproject class** | `@CompileClasspath classpath` (not `@Incremental`) | Coarse. The classpath's ABI fingerprint changes, Gradle cannot supply per-file changes and wipes the declared outputs (the dep file among them), so gosuc recompiles **every** Gosu source. |
+| **External JAR / cross-subproject class** | `@CompileClasspath classpath` (not `@Incremental`) | Coarse. The classpath's ABI fingerprint changes, Gradle cannot supply per-file changes, so the task takes the full-rebuild path, deletes the dep file, and gosuc recompiles **every** Gosu source. |
 | **Same-module Java method body only** | ABI hash unchanged under `@CompileClasspath` | Nothing. The task does not even re-run. |
 
 This split is deliberate, not an omission. Tracking external JAR types in the dep
@@ -524,10 +570,13 @@ hit would poison the following incremental build.
 
 ## 11. Known limitations and open items
 
-- **No transactional safety.** gosuc deletes stale outputs *before* compiling with no
-   stash/restore, so a failed compile leaves the output directory missing the deleted
-   classes. The plugin does nothing to compensate — there is no equivalent of Gradle's
-   `CompileTransaction` on either side of the contract. Recovery is `clean`.
+- **No transactional safety.** Both sides delete *before* compiling with no
+   stash/restore: gosuc removes the stale outputs of the types it is about to rebuild,
+   and the task empties the destination on the non-incremental path and drops the dep
+   file on the full-rebuild path (§4.1). A failed compile therefore leaves the output
+   directory missing those classes — there is no equivalent of Gradle's
+   `CompileTransaction` on either side of the contract. Recovery is `clean`; the dep file
+   itself regenerates on the next successful build.
 - **`getJavaClassesDir().getSingleFile()`** assumes the collection holds exactly one
    directory. That holds for the `SourceSet`-derived value wired by `GosuBasePlugin`, but
    the property is a `ConfigurableFileCollection`, so a caller adding a second directory

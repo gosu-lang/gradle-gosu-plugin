@@ -7,6 +7,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFile;
@@ -16,7 +17,19 @@ import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.CacheableTask;
+import org.gradle.api.tasks.Classpath;
+import org.gradle.api.tasks.CompileClasspath;
+import org.gradle.api.tasks.IgnoreEmptyDirectories;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.SkipWhenEmpty;
+import org.gradle.api.tasks.SourceTask;
+import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.CompileOptions;
 import org.gradle.work.Incremental;
@@ -59,9 +72,20 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
   @Inject
   protected abstract ProviderFactory getProviderFactory();
 
+  /**
+   * Injected so deletes go through Gradle's own {@code Deleter} service rather than
+   * {@link File#delete()}, which would leave the virtual file system believing the files are there.
+   */
+  @Inject
+  protected abstract FileSystemOperations getFileSystemOperations();
+
   @TaskAction
   protected void compile(InputChanges inputChanges) {
     DefaultGosuCompileSpec spec = createSpec();
+    // Hoisted out of the branch below so it is still in scope after the compiler has run; see the
+    // pruning call at the end of this method. Stays empty on every path that hands gosuc no
+    // -removed-types, which is what scopes that call.
+    Set<String> removedTypes = new HashSet<>();
 
     // Everything below only feeds gosuc's -changed-types/-removed-types/-local-java-types,
     // which CommandLineGosuCompiler emits solely when incrementalCompilation is on.
@@ -72,15 +96,16 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
                                   + " support");
       }
 
-      // Nothing to tell gosuc in this branch. Gradle deletes a task's declared outputs whenever it
-      // cannot supply per-file changes -- exactly the case here -- so the dep file is already gone
-      // by the time gosuc runs, and its absence is what gosuc reads as "compile everything".
       if (!inputChanges.isIncremental()) {
         getLogger().info("Gosu full recompilation is required");
+        // gosuc gets no change sets here, and in incremental mode it does a full rebuild only if no
+        // dep file is found -- so delete it. Gradle does not always remove it automatically.
+        // See FullRebuildStaleDepFileTest.
+        File staleDependencyFile = spec.getDependencyFile();
+        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete(staleDependencyFile));
       } else {
         getLogger().info("Gosu incremental compilation started");
         Set<String> changedTypes = new HashSet<>();
-        Set<String> removedTypes = new HashSet<>();
 
         collectFQCNs( inputChanges, changedTypes, removedTypes);
         spec.setChangedTypes(changedTypes);
@@ -90,10 +115,65 @@ public abstract class GosuCompile extends AbstractCompile implements InfersGosuR
       // This allows gosuc to distinguish same-module Java types from JRE/JAR types
       Set<String> localJavaTypes = extractLocalJavaTypeFQCNs();
       spec.setLocalJavaTypes(localJavaTypes);
+    } else {
+      // Nothing else prunes here: gosuc gets no change set, and RemovePreviousOutputsStep empties
+      // the destination only where Gradle executes the task non-incrementally, which a plain source
+      // edit or deletion is not. Clean by hand as CleaningJavaCompiler does for JavaCompile,
+      // deleting the children rather than the root so the declared @OutputDirectory survives for
+      // gosuc to write into. The destination is this task's alone, so emptying it is safe.
+      File[] staleOutputs = spec.getDestinationDir().listFiles();
+      if (staleOutputs != null) {
+        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete((Object[]) staleOutputs));
+      }
     }
 
     _compiler = getCompiler(spec);
     _compiler.execute(spec);
+
+    // After the compiler, not before: gosuc is what empties these directories, and a failed compile
+    // should leave the output tree alone.
+    if (!removedTypes.isEmpty()) {
+      pruneEmptyPackageDirs(removedTypes, spec.getDestinationDir());
+    }
+  }
+
+  /**
+   * Removes the package directories a gosuc-incremental compile has just emptied.
+   *
+   * <p>gosuc deletes a removed type's class file off {@code -removed-types} but leaves the
+   * directory that held it, and {@code Jar} inherits {@code includeEmptyDirs = true} from
+   * {@code AbstractCopyTask}, so the husk becomes a directory entry in the artifact.
+   *
+   * <p>Walks upwards from each emptied package so a parent left empty by its last subpackage goes
+   * too, stopping at the destination root, which must survive. Directories that are absent or still
+   * occupied are skipped -- which is also what makes the Java FQCNs {@link #collectFQCNs} mixes
+   * into {@code removedTypes} harmless here.
+   *
+   * @param removedTypes the FQCNs handed to gosuc as {@code -removed-types}
+   * @param destinationDir this task's output root
+   */
+  private void pruneEmptyPackageDirs(Set<String> removedTypes, File destinationDir) {
+    Path root = destinationDir.toPath().toAbsolutePath().normalize();
+
+    for (String fqcn : removedTypes) {
+      int lastDot = fqcn.lastIndexOf('.');
+      if (lastDot < 1) {
+        continue; // default package - its directory is the root, which must survive
+      }
+
+      Path dir = new File(destinationDir, fqcn.substring(0, lastDot).replace('.', File.separatorChar))
+          .toPath().toAbsolutePath().normalize();
+
+      while (dir.startsWith(root) && !dir.equals(root)) {
+        String[] contents = dir.toFile().list();
+        if (contents == null || contents.length > 0) {
+          break; // already gone, not a directory, unreadable, or still occupied - leave it
+        }
+        Path emptied = dir;
+        getFileSystemOperations().delete(deleteSpec -> deleteSpec.delete(emptied));
+        dir = dir.getParent();
+      }
+    }
   }
 
   /**
