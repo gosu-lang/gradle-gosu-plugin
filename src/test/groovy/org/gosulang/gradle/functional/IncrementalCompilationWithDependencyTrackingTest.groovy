@@ -1179,6 +1179,82 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
+    def 'Unrelated sibling .class insertion must not report existing Java types as removed [Gradle #gradleVersion]'() {
+        given:
+        buildScript << getIncrementalBuildScriptForTesting()
+
+        File srcMainJavaPkg = new File(testProjectDir.root, 'src/main/java/com/example')
+        srcMainJavaPkg.mkdirs()
+        File betaFile = new File(srcMainJavaPkg, 'Beta.java')
+        File charlieFile = new File(srcMainJavaPkg, 'Charlie.java')
+        betaFile << """
+            package com.example;
+            public class Beta {
+                public static String tag() { return "beta"; }
+            }
+            """
+        charlieFile << """
+            package com.example;
+            public class Charlie {
+                public static String tag() { return "charlie"; }
+            }
+            """
+
+        File consumerFile = new File(srcMainGosu, 'Consumer.gs')
+        consumerFile << """
+            uses com.example.Charlie
+
+            class Consumer {
+                static function id() : String {
+                    return Charlie.tag()
+                }
+            }
+            """
+
+        when: 'Initial compilation with Beta and Charlie only'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+
+        String javaOutput = asPath([testProjectDir.root.absolutePath, 'build', 'classes', 'java', 'main'])
+
+        then: 'Both classes exist after the first compile'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Beta.class').exists()
+        new File(javaOutput, 'com/example/Charlie.class').exists()
+
+        when: 'Add a new, alphabetically-earlier, unrelated sibling class -- Beta and Charlie are untouched'
+        Thread.sleep(SLEEP_MS)
+        File alphaFile = new File(srcMainJavaPkg, 'Alpha.java')
+        alphaFile << """
+            package com.example;
+            public class Alpha {
+                public static String tag() { return "alpha"; }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'The build succeeds and Alpha is compiled'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(javaOutput, 'com/example/Alpha.class').exists()
+
+        and: 'Beta and Charlie -- untouched on disk -- must NEVER be reported as removed types, even ' +
+             'though the positional classpath diff misaligns their fingerprint-list slot because ' +
+             'Alpha now sorts before them'
+        !result.output.contains('Java type removed: com.example.Beta')
+        !result.output.contains('Java type removed: com.example.Charlie')
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
     def 'Nested Java class producer is recorded in dep file using $ separator [Gradle #gradleVersion]'() {
         given:
         buildScript << getIncrementalBuildScriptForTesting()
