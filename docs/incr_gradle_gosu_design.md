@@ -230,8 +230,9 @@ Three distinct states reach `gosuc`:
 
 Gradle drives the full-rebuild state whenever it cannot supply reliable `InputChanges`
 — first run, output directory wiped, task properties changed, an external JAR or
-cross-subproject ABI change, `.gradle/` fingerprint cache invalidated, or a declared
-output (including the dep file itself) gone missing.
+cross-subproject ABI change, `.gradle/` fingerprint cache invalidated, a previous
+execution that failed or was interrupted (§11), or a declared output (including the dep
+file itself) gone missing.
 
 > **The full-rebuild signal is the dep file's absence, not the missing flags.** `gosuc`
 > compiles everything iff the dep file does not exist. That has to cover a genuine first
@@ -573,10 +574,19 @@ hit would poison the following incremental build.
 - **No transactional safety.** Both sides delete *before* compiling with no
    stash/restore: gosuc removes the stale outputs of the types it is about to rebuild,
    and the task empties the destination on the non-incremental path and drops the dep
-   file on the full-rebuild path (§4.1). A failed compile therefore leaves the output
-   directory missing those classes — there is no equivalent of Gradle's
-   `CompileTransaction` on either side of the contract. Recovery is `clean`; the dep file
-   itself regenerates on the next successful build.
+   file on the full-rebuild path (§4.1). A failed or interrupted compile therefore leaves
+   the output directory missing those classes — there is no equivalent of Gradle's
+   `CompileTransaction` on either side of the contract.
+
+   Recovery needs no intervention, and `clean` is not required: deleting outputs before
+   compiling is what makes the *next* build non-incremental. Gradle preserves the
+   execution history of a failed run whenever its outputs changed, and a run interrupted
+   hard enough to record no history at all leaves its last recorded outputs not matching
+   the disk — either way the next build takes the full-rebuild path (§4), drops the dep
+   file, and gosuc recompiles every source. The dep file is never the casualty:
+   `updateDependencyFile` runs last, only on a clean compile, and writes through a temp
+   file plus an atomic move, so an abort leaves the previous graph byte-identical rather
+   than truncated. The cost of an abort is one full recompile.
 - **`getJavaClassesDir().getSingleFile()`** assumes the collection holds exactly one
    directory. That holds for the `SourceSet`-derived value wired by `GosuBasePlugin`, but
    the property is a `ConfigurableFileCollection`, so a caller adding a second directory
