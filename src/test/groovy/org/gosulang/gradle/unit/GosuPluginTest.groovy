@@ -3,7 +3,6 @@ package org.gosulang.gradle.unit
 import org.gosulang.gradle.GosuPlugin
 import org.gosulang.gradle.tasks.compile.GosuCompile
 import org.gradle.api.Project
-import org.gradle.api.internal.artifacts.configurations.Configurations
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
@@ -11,7 +10,6 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.testfixtures.ProjectBuilder
-import org.hamcrest.Matchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -64,10 +62,9 @@ class GosuPluginTest {
     }
 
     @Test
-    public void addsGosuConfigurationToTheProject() {
-        def configuration = project.configurations.getByName(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME)
-        assertThat(Configurations.getNames(configuration.extendsFrom), Matchers.emptyIterable())
-        assertFalse(configuration.visible)
+    void addsGosuConfigurationToTheProject() {
+        def configuration = project.configurations.named(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME).get()
+        assertTrue(configuration.extendsFrom.empty)
         assertTrue(configuration.transitive)
     }
 
