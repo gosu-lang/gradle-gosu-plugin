@@ -138,7 +138,7 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
         // Selective recompilation: Only MyImpl is recompiled (not UnrelatedClass)
         // because javaClassesDir is tracked separately with @Incremental
         result.output.contains('Java type changed: com.example.MyInterface')
-        result.output.contains('Incremental compilation: recompiling')
+        result.output.contains('Incremental compilation: recompiled')
 
         and: 'UnrelatedClass was NOT recompiled (selective recompilation works)'
         unrelatedClassFile.exists()
