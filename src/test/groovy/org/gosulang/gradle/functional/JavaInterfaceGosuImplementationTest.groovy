@@ -52,6 +52,7 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
 
             compileGosu {
                 gosuOptions.incrementalCompilation = true
+                gosuOptions.abiChecking = true
                 gosuOptions.verbose = true
             }
             """
@@ -167,6 +168,7 @@ class JavaInterfaceGosuImplementationTest extends AbstractGosuPluginSpecificatio
 
             compileGosu {
                 gosuOptions.incrementalCompilation = true
+                gosuOptions.abiChecking = true
                 gosuOptions.verbose = true
             }
             """

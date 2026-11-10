@@ -2,6 +2,7 @@ package org.gosulang.gradle.tasks.compile;
 
 import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.compile.BaseForkOptions;
@@ -20,6 +21,7 @@ public class GosuCompileOptions implements Serializable {
   private Integer maxwarns;
   private Integer maxerrs;
   private boolean incrementalCompilation = false;
+  private boolean abiChecking = false;
 
   /**
    * Tells whether the compilation task should fail if compile errors occurred. Defaults to {@code true}.
@@ -144,6 +146,35 @@ public class GosuCompileOptions implements Serializable {
    */
   public void setIncrementalCompilation(boolean incrementalCompilation) {
     this.incrementalCompilation = incrementalCompilation;
+  }
+
+  /**
+   * @return Whether ABI checking was requested. Defaults to {@code false}. Not a task input on its own:
+   * it has no effect unless incremental compilation is on, see {@link #isAbiCheckingEffective()}.
+   */
+  @Internal
+  public boolean isAbiChecking() {
+    return abiChecking;
+  }
+
+  /**
+   * Sets whether ABI checking is enabled in incremental compilation mode. Defaults to {@code false}.
+   * A debugging aid while ABI checking is validated; it is ignored unless incremental compilation is enabled.
+   * Requires Gosu 1.18.15 or later.
+   * @param abiChecking Enable ABI checking
+   */
+  public void setAbiChecking(boolean abiChecking) {
+    this.abiChecking = abiChecking;
+  }
+
+  /**
+   * @return Whether gosuc is asked to check ABIs: ABI checking was requested and incremental compilation is
+   * enabled. This, not {@link #isAbiChecking()}, is the task input, so toggling ABI checking on a
+   * non-incremental build does not re-run the task.
+   */
+  @Input
+  public boolean isAbiCheckingEffective() {
+    return incrementalCompilation && abiChecking;
   }
 
 }

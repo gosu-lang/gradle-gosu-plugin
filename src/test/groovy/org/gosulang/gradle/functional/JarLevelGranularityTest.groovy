@@ -41,6 +41,14 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
     File gosuClass
     File dependencyFile
 
+    /**
+     * The dep file with every real ABI digest replaced by a placeholder; NO_ABI_HASH stays literal.
+     * Golden assertions pin the graph and which types carry a hash, not digest bytes.
+     */
+    private String normalizedDepFile() {
+        dependencyFile.text.replaceAll(/"abi_hash": "[0-9a-f]{40}"/, '"abi_hash": "<abi_hash>"')
+    }
+
     def setup() {
         srcMainGosu = testProjectDir.newFolder('src', 'main', 'gosu')
         libDir = testProjectDir.newFolder('lib')
@@ -119,7 +127,6 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         dependencyFile.exists()
 
         and: 'Dependency file omits external JAR types (the dep graph only tracks project-local Java types)'
-        String actualJson = dependencyFile.text
 
         // The dep graph records edges only between Gosu types and Java types
         // that live in this project's javaClassesDir. com.example.LibraryClass
@@ -133,13 +140,19 @@ class JarLevelGranularityTest extends AbstractGosuPluginSpecification {
         // ensureTypeRegistered during their own compile), each with an empty
         // consumer list because nothing local depends on them.
         String expectedJson = """
-  "consumers": {
-    "com.example.Consumer": [],
-    "com.example.Unrelated": []
+  "dep_graph": {
+    "com.example.Consumer": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    },
+    "com.example.Unrelated": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    }
   }
 }"""
 
-        actualJson.contains(expectedJson)
+        normalizedDepFile().contains(expectedJson)
 
         when: 'Capture timestamps for both Gosu outputs'
         // Use expectedOutputDir() helper rather than hardcoding 'build/classes/gosu/main',

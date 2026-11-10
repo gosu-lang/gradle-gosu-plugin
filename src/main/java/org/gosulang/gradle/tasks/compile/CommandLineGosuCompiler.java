@@ -176,6 +176,9 @@ public class CommandLineGosuCompiler implements GosuCompiler<GosuCompileSpec> {
     if (spec.getGosuCompileOptions().isIncrementalCompilation()) {
       // Add incremental flag
       fileOutput.add("-incremental");
+      if (spec.getGosuCompileOptions().isAbiCheckingEffective()) {
+        fileOutput.add("-abi-checking");
+      }
 
       // Dependency file path - resolved on the GosuCompile task itself and
       // carried through on the spec, so Gradle's snapshotter sees it as an

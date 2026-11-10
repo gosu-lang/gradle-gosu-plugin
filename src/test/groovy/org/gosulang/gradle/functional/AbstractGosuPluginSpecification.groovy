@@ -61,8 +61,9 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
      * dependencies setup as the basic script, plus compileGosu configuration
      * with incrementalCompilation enabled and verbose logging on. Used by tests
      * that exercise the dep-graph / change-detection paths.
+     * @param abiChecking whether gosuc gates the cascade on ABI hashes
      */
-    protected String getIncrementalBuildScriptForTesting() {
+    protected String getIncrementalBuildScriptForTesting(boolean abiChecking = true) {
         String gosuVersion = this.gosuVersion
         return """
             plugins {
@@ -81,6 +82,7 @@ abstract class AbstractGosuPluginSpecification extends Specification implements 
 
             compileGosu {
                 gosuOptions.incrementalCompilation = true
+                gosuOptions.abiChecking = $abiChecking
                 gosuOptions.verbose = true
             }
             """

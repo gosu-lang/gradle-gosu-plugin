@@ -8,7 +8,7 @@ command-line contract:
 | Layer | Repo | Role |
 |---|---|---|
 | **Gradle plugin** (driver) | `gradle-gosu-plugin` | Declares the task's incremental inputs, uses Gradle's `InputChanges` to compute *which types changed / were removed*, enumerates the same-module Java types, and **forks `gosuc` once** with those sets. Runs no loop of its own. **This is the repo documented here.** |
-| **gosuc** (executor) | `gosu-lang` | Given those sets, computes the transitive recompile set from a persisted dependency graph, deletes stale outputs, compiles, records new edges from the produced bytecode, and rewrites the graph. |
+| **gosuc** (executor) | `gosu-lang` | Given those sets, computes the transitive recompile set from a persisted dependency graph (pruned by per-class ABI hashes when `-abi-checking` is given), deletes stale outputs, compiles, records new edges and ABI hashes from the produced bytecode, and rewrites the graph. |
 
 The division of labour is deliberate and asymmetric:
 
@@ -39,12 +39,35 @@ CLI flags. That "off by default, zero-cost" property is pinned by
 
 - *Incremental compilation disabled by default* — build succeeds, no dep file.
 
+### `abiChecking` — a temporary debugging switch
+
+`GosuCompileOptions.abiChecking` (default `false`) makes the task pass `-abi-checking`,
+which turns on gosuc's ABI gate: a recompiled type's consumers are recompiled only if its
+ABI hash moved, so a body-only or private-only edit recompiles the edited source alone.
+Without it gosuc recompiles the full transitive closure of consumers of every changed type.
+The switch exists so the gate can be turned off while it is being validated; once it is,
+ABI checking becomes unconditional and the option goes away. It is deliberately left out of
+user-facing documentation.
+
+The raw property is `@Internal`; the task input is the derived `@Input
+isAbiCheckingEffective()` (`incrementalCompilation && abiChecking`), which is also what the
+emitter reads (§7). So the option is inert on a non-incremental build, where toggling it
+leaves the task `UP_TO_DATE`. On an incremental build a toggle changes an input and makes
+the next run a full rebuild (§4), one full recompile; gosuc writes the same dep file either
+way, so nothing else is needed. Pinned by `IncrementalCompilationWithDependencyTrackingTest`:
+
+- *Body-only edit recompiles the whole consumer chain only without ABI checking* — run with
+  the switch on and off; checks the edited class alone is recompiled with it on, the whole
+  `ClassA <- ClassB <- ClassC` chain with it off.
+- *Toggling ABI checking does not re-run a non-incremental compile* — `UP_TO_DATE`.
+
 ### Preconditions
 
 | Requirement | Enforcement |
 |---|---|
 | `gosuOptions.fork = true` | Hard check at task-action time; a `GradleException` names the task and explains that the in-process compiler has no incremental support. `fork` already defaults to `true`, so the guard only fires for builds that explicitly opted out. |
 | gosu-lang ≥ 1.18.9 | Not enforced in code — an older `gosuc` would reject the new flags. |
+| gosu-lang ≥ 1.18.15 for `abiChecking = true` | Not enforced in code — an older `gosuc` rejects `-abi-checking` as an unknown option. |
 
 Only `CommandLineGosuCompiler` (the forked path, selected by
 `GosuCompilerFactory` when `fork` is true) emits the incremental flags;
@@ -225,7 +248,7 @@ Three distinct states reach `gosuc`:
 | State | Trigger | Flags emitted (§7) |
 |---|---|---|
 | **Non-incremental** | `incrementalCompilation = false` | none of the new flags |
-| **Full rebuild** | `incrementalCompilation = true`, `inputChanges.isIncremental() == false` | `-incremental`, `-dependency-file`, `-local-java-types` — but **no** `-changed-types` / `-removed-types` |
+| **Full rebuild** | `incrementalCompilation = true`, `inputChanges.isIncremental() == false` | `-incremental`, `-abi-checking` (if `abiChecking`), `-dependency-file`, `-local-java-types` — but **no** `-changed-types` / `-removed-types` |
 | **Incremental** | `incrementalCompilation = true`, `inputChanges.isIncremental() == true` | all of the above **plus** `-changed-types` / `-removed-types` when non-empty |
 
 Gradle drives the full-rebuild state whenever it cannot supply reliable `InputChanges`
@@ -235,7 +258,8 @@ execution that failed or was interrupted (§11), or a declared output (including
 file itself) gone missing.
 
 > **The full-rebuild signal is the dep file's absence, not the missing flags.** `gosuc`
-> compiles everything iff the dep file does not exist. That has to cover a genuine first
+> compiles everything iff it finds no usable dep file: absent, unreadable, or written for
+> another dependency-file version. That has to cover a genuine first
 > build *and* a full rebuild with a previous graph still on disk — and the command line
 > cannot tell the second apart from an incremental round whose cascade came out empty,
 > since both send no `-changed-types`/`-removed-types` (and the latter must compile
@@ -447,6 +471,7 @@ line, UTF-8) in `spec.getTempDir()` and passes `@<path>` to
 | Flag | Emitted when | Value |
 |---|---|---|
 | `-incremental` | `gosuOptions.incrementalCompilation` | — |
+| `-abi-checking` | `gosuOptions.isAbiCheckingEffective()` (`incrementalCompilation` **and** `abiChecking`, §2) | — |
 | `-dependency-file <path>` | `gosuOptions.incrementalCompilation` | `spec.getDependencyFile()`, absolute |
 | `-changed-types <fqcns>` | `gosuOptions.incrementalCompilation` **and** set non-empty | `File.pathSeparator`-joined FQCNs |
 | `-removed-types <fqcns>` | `gosuOptions.incrementalCompilation` **and** set non-empty | `File.pathSeparator`-joined FQCNs |
@@ -622,9 +647,12 @@ hit would poison the following incremental build.
    recompiled after. It needs gosuc to accept a `.java` FQCN in `-changed-types` and map
    it back to a source, which `getGosuFilePathFromFqcn` cannot currently do. Note this
    skip is also the one exception to §5.4's "no skip what we can't name" rule.
-- **Over-recompilation is inherited from gosuc**, which keeps a single consumer bucket
-   with no accessible/private split and no inlineable-constant ABI tracking, so every
-   cascade is the full transitive closure. Correctness-neutral, wasteful at scale.
+- **Recompile granularity is inherited from gosuc.** With `abiChecking`, gosuc gates
+   every step of the cascade on a per-class ABI hash: a body-only or private-only edit
+   recompiles the edited source alone, while any ABI change to a type recompiles every
+   consumer of that type, whether or not it used the changed member. Without it, every
+   cascade is the full transitive closure. Correctness-neutral either way. The functional
+   suite runs with `abiChecking` on, except the on/off test in §2.
 - **Functional tests rely on `Thread.sleep(200)`** between builds to get observable
    `lastModified()` differences, and assert on `-i` log lines. Both are timing- and
    format-sensitive.

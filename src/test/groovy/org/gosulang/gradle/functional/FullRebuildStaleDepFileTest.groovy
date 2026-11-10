@@ -122,6 +122,7 @@ class FullRebuildStaleDepFileTest extends AbstractGosuPluginSpecification {
         buildScript << """
             compileGosu {
                 gosuOptions.incrementalCompilation = !project.hasProperty('gosuIncrementalOff')
+                gosuOptions.abiChecking = true
             }
             """
 

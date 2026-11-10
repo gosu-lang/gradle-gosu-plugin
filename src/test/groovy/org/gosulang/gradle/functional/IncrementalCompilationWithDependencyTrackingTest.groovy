@@ -18,6 +18,14 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
     File dependencyFile
 
     /**
+     * The dep file with every real ABI digest replaced by a placeholder; NO_ABI_HASH stays literal.
+     * Golden assertions pin the graph and which types carry a hash, not digest bytes.
+     */
+    private String normalizedDepFile() {
+        dependencyFile.text.replaceAll(/"abi_hash": "[0-9a-f]{40}"/, '"abi_hash": "<abi_hash>"')
+    }
+
+    /**
      * Isolated Gradle user-home for tests that exercise the build cache, so
      * cache entries created here don't leak into other tests or other runs.
      * Mirrors the pattern in LocalBuildCacheTest.
@@ -181,6 +189,44 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         gradleVersion << gradleVersionsToTest
     }
 
+    def 'Toggling ABI checking does not re-run a non-incremental compile [Gradle #gradleVersion]'() {
+        given: 'incremental compilation off; ABI checking is read from a project property'
+        buildScript << getBasicBuildScriptForTesting()
+        buildScript << """
+            compileGosu {
+                gosuOptions.abiChecking = project.hasProperty('abiOn')
+            }
+            """
+        new File(srcMainGosu, 'ClassA.gs') << """
+            class ClassA {
+                static function value() : int {
+                    return 1
+                }
+            }
+            """
+
+        when:
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+        BuildResult result = runner.build()
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+
+        when: 'Turn ABI checking on'
+        result = runner.withArguments('compileGosu', '-PabiOn', '-i').build()
+
+        then: 'ABI checking is ignored without incremental compilation, so it is not a task input'
+        result.task(':compileGosu').outcome == UP_TO_DATE
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
     def 'Build cache round trip is unaffected by the absent dep file when incremental is off [Gradle #gradleVersion]'() {
         given: 'a non-incremental build - gosuc is never passed -dependency-file, so getDependencyFile(), an @Optional @OutputFile, is never produced'
 
@@ -249,7 +295,99 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         given:
         buildScript << getIncrementalBuildScriptForTesting()
 
-        // Chain: ClassA <- ClassB <- ClassC, every edge on the public API
+        // Chain: ClassA <- ClassB <- ClassC, every edge on the public API. gosuc only cascades
+        // past a recompiled type when that type's ABI changed, so each link folds the previous
+        // link's compile-time constant into a constant of its own: a new value for ClassA.BASE
+        // changes ClassB's ABI, which in turn changes ClassC's.
+        File classA = new File(srcMainGosu, 'ClassA.gs')
+        File classB = new File(srcMainGosu, 'ClassB.gs')
+        File classC = new File(srcMainGosu, 'ClassC.gs')
+
+        classA << """
+            class ClassA {
+                public static final var BASE : int = 1
+                static function value() : int {
+                    return BASE
+                }
+            }
+            """
+
+        classB << """
+            class ClassB {
+                // ClassB re-exposes ClassA's constant on its public API
+                public static final var DERIVED : int = ClassA.BASE + 10
+                static function transitive() : int {
+                    return ClassA.value() + 10
+                }
+            }
+            """
+
+        classC << """
+            class ClassC {
+                public static final var TOTAL : int = ClassB.DERIVED + 100
+                static function entry() : int {
+                    return ClassB.transitive() + 100
+                }
+            }
+            """
+
+        when: 'Initial compilation'
+        GradleRunner runner = GradleRunner.create()
+                .withProjectDir(testProjectDir.root)
+                .withPluginClasspath()
+                .withArguments('clean', 'compileGosu', '-i')
+                .withGradleVersion(gradleVersion)
+                .forwardOutput()
+
+        BuildResult result = runner.build()
+        String buildOutput = asPath([testProjectDir.root.absolutePath] + expectedOutputDir(gradleVersion) + 'main')
+
+        then:
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'ClassA.class').exists()
+        new File(buildOutput, 'ClassB.class').exists()
+        new File(buildOutput, 'ClassC.class').exists()
+
+        when: 'Modify ClassA (head of the chain): a new constant value, which its consumers fold'
+        long classATime = new File(buildOutput, 'ClassA.class').lastModified()
+        long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
+        long classCTime = new File(buildOutput, 'ClassC.class').lastModified()
+        Thread.sleep(SLEEP_MS)
+
+        classA.setText('') // truncate
+        classA << """
+            class ClassA {
+                public static final var BASE : int = 2  // changed
+                static function value() : int {
+                    return BASE
+                }
+            }
+            """
+
+        runner.withArguments('compileGosu', '-i')
+        result = runner.build()
+
+        then: 'ClassA is recompiled'
+        result.task(':compileGosu').outcome == SUCCESS
+        new File(buildOutput, 'ClassA.class').lastModified() > classATime
+
+        and: 'ClassB is recompiled (direct consumer of ClassA)'
+        new File(buildOutput, 'ClassB.class').lastModified() > classBTime
+
+        and: 'ClassC is recompiled, as it transitively depends on ClassA'
+        new File(buildOutput, 'ClassC.class').lastModified() > classCTime
+
+        where:
+        gradleVersion << gradleVersionsToTest
+    }
+
+    def 'Body-only edit recompiles the whole consumer chain only without ABI checking [Gradle #gradleVersion, abiChecking=#abiChecking]'() {
+        given:
+        buildScript << getIncrementalBuildScriptForTesting(abiChecking)
+
+        // Chain: ClassA <- ClassB <- ClassC, every edge on the public API. The edit below changes
+        // only ClassA's method body, so ClassA's ABI hash stays put: with ABI checking gosuc stops
+        // after recompiling ClassA, without it gosuc recompiles the full transitive closure.
         File classA = new File(srcMainGosu, 'ClassA.gs')
         File classB = new File(srcMainGosu, 'ClassB.gs')
         File classC = new File(srcMainGosu, 'ClassC.gs')
@@ -264,7 +402,6 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
 
         classB << """
             class ClassB {
-                // ClassB re-exposes ClassA's value on its public API
                 static function transitive() : int {
                     return ClassA.value() + 10
                 }
@@ -296,7 +433,7 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         new File(buildOutput, 'ClassB.class').exists()
         new File(buildOutput, 'ClassC.class').exists()
 
-        when: 'Modify ClassA (head of the chain)'
+        when: 'Modify the body of ClassA (head of the chain), leaving its ABI unchanged'
         long classATime = new File(buildOutput, 'ClassA.class').lastModified()
         long classBTime = new File(buildOutput, 'ClassB.class').lastModified()
         long classCTime = new File(buildOutput, 'ClassC.class').lastModified()
@@ -314,18 +451,20 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         runner.withArguments('compileGosu', '-i')
         result = runner.build()
 
-        then: 'ClassA is recompiled'
+        then: 'the plugin took the incremental path and forwarded the ABI checking choice to gosuc'
         result.task(':compileGosu').outcome == SUCCESS
+        result.output.contains('Gosu incremental compilation started')
+        result.output.contains('Incremental compilation: ABI checking is enabled') == abiChecking
+
+        and: 'ClassA is recompiled'
         new File(buildOutput, 'ClassA.class').lastModified() > classATime
 
-        and: 'ClassB is recompiled (direct consumer of ClassA)'
-        new File(buildOutput, 'ClassB.class').lastModified() > classBTime
-
-        and: 'ClassC is recompiled, as it transitively depends on ClassA'
-        new File(buildOutput, 'ClassC.class').lastModified() > classCTime
+        and: 'its consumers are recompiled iff ABI checking is off'
+        (new File(buildOutput, 'ClassB.class').lastModified() > classBTime) == !abiChecking
+        (new File(buildOutput, 'ClassC.class').lastModified() > classCTime) == !abiChecking
 
         where:
-        gradleVersion << gradleVersionsToTest
+        [gradleVersion, abiChecking] << [gradleVersionsToTest, [true, false]].combinations()
     }
 
     def 'Dependency file is restored from the Gradle build cache for incremental compilation [Gradle #gradleVersion]'() {
@@ -388,17 +527,26 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         new File(buildOutput, 'UnrelatedC.class').exists()
         dependencyFile.exists()
 
-        and: 'the graph records the one real edge, with every compiled type registered as a producer'
+        and: 'the graph records the one real edge, with every compiled type registered and hashed'
         String expectedJson = """
-  "consumers": {
-    "ClassA": [
-      "ClassB"
-    ],
-    "ClassB": [],
-    "UnrelatedC": []
+  "dep_graph": {
+    "ClassA": {
+      "abi_hash": "<abi_hash>",
+      "consumers": [
+        "ClassB"
+      ]
+    },
+    "ClassB": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    },
+    "UnrelatedC": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    }
   }
 }"""
-        dependencyFile.text.contains(expectedJson)
+        normalizedDepFile().contains(expectedJson)
 
         when: 'Wipe the build directory to simulate a fresh checkout, then restore via the build cache'
         String depFileContentBeforeWipe = dependencyFile.text
@@ -1231,18 +1379,27 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         new File(gosuOutput, 'com/example/Consumer.class').exists()
         dependencyFile.exists()
 
-        and: 'Dep file matches the golden form - inner-class producer uses $, not .'
-        String actualJson = dependencyFile.text
+        and: 'Dep file matches the golden form - inner-class producer uses $, not .; Java types carry no ABI hash'
+        String actualJson = normalizedDepFile()
 
         String expectedJson = """
-  "consumers": {
-    "com.example.Consumer": [],
-    "com.example.Outer": [
-      "com.example.Consumer"
-    ],
-    "com.example.Outer\$Inner": [
-      "com.example.Consumer"
-    ]
+  "dep_graph": {
+    "com.example.Consumer": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    },
+    "com.example.Outer": {
+      "abi_hash": "NO_ABI_HASH",
+      "consumers": [
+        "com.example.Consumer"
+      ]
+    },
+    "com.example.Outer\$Inner": {
+      "abi_hash": "NO_ABI_HASH",
+      "consumers": [
+        "com.example.Consumer"
+      ]
+    }
   }
 }"""
 
@@ -1343,19 +1500,28 @@ class IncrementalCompilationWithDependencyTrackingTest extends AbstractGosuPlugi
         dependencyFile.exists()
 
         and: 'Dependency file has correct JSON format with FQCNs'
-        String actualJson = dependencyFile.text
+        String actualJson = normalizedDepFile()
 
         // The exact format we expect (all types are registered, even with empty arrays)
         // Common types like java.lang.Object, java.lang.String, etc. are omitted as noise
         // Note: All compiled types are registered to ensure proper tracking
         String expectedJson = """
-  "consumers": {
-    "com.example.Consumer1": [],
-    "com.example.Consumer2": [],
-    "com.example.Producer": [
-      "com.example.Consumer1",
-      "com.example.Consumer2"
-    ]
+  "dep_graph": {
+    "com.example.Consumer1": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    },
+    "com.example.Consumer2": {
+      "abi_hash": "<abi_hash>",
+      "consumers": []
+    },
+    "com.example.Producer": {
+      "abi_hash": "<abi_hash>",
+      "consumers": [
+        "com.example.Consumer1",
+        "com.example.Consumer2"
+      ]
+    }
   }
 }"""
 
